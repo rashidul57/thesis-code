@@ -11,11 +11,23 @@ from keras.layers import Dense
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
+import datetime
+
+from sklearn.preprocessing import MinMaxScaler
 
 import pandas
 import pandas as pd
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+import json
+from json import JSONEncoder
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+class NumpyArrayEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)
 
 def arima_model():
     # contrived dataset
@@ -29,23 +41,35 @@ def arima_model():
     print(yhat)
 
 
-def load_data():
+def load_all_data(prop):
     df = pandas.read_csv('server/data/owid.csv', 
-        parse_dates=['date'], 
+        # parse_dates=['date'], 
         header=0
     )
-    cases_df = df[['location', 'date', 'total_cases']]
-    group_df = cases_df.groupby(by=["date"]).sum().reset_index()
-    group_df['date'] = group_df.date.values.astype(np.int64) // 10 ** 9
+    prop_df = df[['location', 'date', prop]]
+    return prop_df
+
+def get_grouped_data(df):
+    group_df = df.groupby(by=["date"]).sum().reset_index()
+
+    # group_df['date'] = (group_df.date.values.astype(np.int64) // 10 ** 9)/1000000
+    dates = group_df.date.values
+    for i in range(len(dates)):
+        date = datetime.datetime.strptime(str(dates[i]), "%Y-%m-%d")
+        timestamp = datetime.datetime.timestamp(date)
+        dates[i] = timestamp
+
+    group_df['date'] = np.asarray(dates).astype('float32')
+
+    # print('all....................')
+    # for i in range(len(group_df['date'])):
+    #     print('>', group_df['date'][i], group_df['total_cases'][i])
 
     return group_df
 
 def get_data(mode, group_df):
-    # group_df = group_df.iloc[0:50, :]
-
     total_size = group_df.shape[0]
-    
-    perc = 10
+    perc = 5
     test_size = int(total_size * perc/100)
     train_size = total_size - test_size
 
@@ -54,26 +78,14 @@ def get_data(mode, group_df):
     else:
         ret_df = group_df.iloc[train_size: -1, :]
     
-    # print(mode, total_size, train_size, test_size, ret_df.shape)
     return ret_df
 
 
-def build_n_save_mlp_model(group_df):
-    X = train_data['date'].values.ravel()
-    y = train_data['total_cases'].values.ravel()
+def forecast_from_mlp_model(train_data, test_data):
+    X = train_data['date'].values
+    y = train_data['total_cases'].values
 
-    # print('----training-----')
-    # print('Input')
-    # xx = X[-10:-1]
-    # for i in range(len(xx)):
-    #     print(xx[i])
-
-    # print('Output')
-    # yy = y[-10:-1]
-    # for i in range(len(yy)):
-    #     print(yy[i])
-
-    # define model
+    # build and train model
     model = Sequential()
     model.add(Dense(100, activation='relu', input_dim=1))
     # model.add(Dense(10, activation='relu', input_dim=1))
@@ -82,49 +94,26 @@ def build_n_save_mlp_model(group_df):
     # fit model
     model.fit(X, y, epochs=100, verbose=0)
 
-    model.save("trained-models/mlp.h5")
-    print("Saved model to disk")
+    # predict with test set
+    x_input = test_data['date'].values
 
-def load_n_test_mlp_model(test_data):
+    # print('-Testing-')
 
-    # load model
-    model = load_model('trained-models/mlp.h5')
-    print("Loaded model from disk")
+    y = test_data['total_cases'].values
+    y_pred = model.predict(x_input, verbose=0)
 
-    x_input = test_data['date'].values.ravel()
+    # print('\nActual<>Predicted:', len(y_pred))
+    # yhat1 = y_pred[-5:-1]
+    # for i in range(len(y_pred)):
+    #     print(x_input[i], ': ', y[i], '<>', y_pred[i][0])
 
-    print('----------Testing------------')
-
-    # print('Input')
-    # xx = x_input[-10:-1]
-    # for i in range(len(xx)):
-    #     print(xx[i])
-
-    y = test_data['total_cases'].values.ravel()
-    yhat = model.predict(x_input, verbose=0)
-    print('\nActual:', len(y))
-    yy = y[-5:-1]
-    for i in range(len(yy)):
-        print(yy[i])
-
-    print('\nPredicted:', len(yhat))
-    yhat1 = yhat[-5:-1]
-    for i in range(len(yhat1)):
-        print(yhat1[i][0])
+    # return predicted results
+    return y, y_pred
 
 
-def build_n_save_cnn_model(group_df):
+def forecast_from_cnn_model(train_data, test_data):
     dates = train_data['date'].values
     y = train_data['total_cases'].values
-
-    # define model
-    # model = Sequential()
-    # model.add(Dense(100, activation='relu', input_dim=1))
-    # # model.add(Dense(10, activation='relu', input_dim=1))
-    # model.add(Dense(1))
-    # model.compile(optimizer='adam', loss='mse')
-    # # fit model
-    # model.fit(X, y, epochs=100, verbose=0)
 
     n_features = 1
     n_steps = 3
@@ -134,16 +123,8 @@ def build_n_save_cnn_model(group_df):
         row = np.array([np.array([dates[i]]), np.array([1]), np.array([1])])
         X.append(row)
     X = np.array(X)
-    # print('...............................')
-    # print(X[0], X.shape)
-    # print(type(X))
-    # print(type(X[0]))
-    # print(type(X[0][0]))
-    # print(type(X[0][0][0]))
-    # print(y)
 
-    # X = X.reshape((X.shape[0], X.shape[1], n_features))
-
+    # build and train model 
     model = Sequential()
     model.add(Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(n_steps, n_features)))
     model.add(MaxPooling1D(pool_size=2))
@@ -154,55 +135,52 @@ def build_n_save_cnn_model(group_df):
     # fit model
     model.fit(X, y, epochs=100, verbose=0)
 
-    model.save("trained-models/cnn.h5")
-    print("Saved model to disk")
-
-def load_n_test_cnn_model(test_data):
-
-    # load model
-    model = load_model('trained-models/cnn.h5')
-    print("Loaded model from disk")
-
-    dates = test_data['date'].values.ravel()
-
+    # predict with test set
+    dates = test_data['date'].values
     X = []
     for i in range(len(dates)):
         row = np.array([np.array([dates[i]]), np.array([1]), np.array([1])])
         X.append(row)
     x_input = np.array(X)
 
-    print('----------Testing------------')
+    y = test_data['total_cases'].values
+    y_pred = model.predict(x_input, verbose=0)
 
-    # print('Input')
-    # xx = x_input[-10:-1]
-    # for i in range(len(xx)):
-    #     print(xx[i])
+    # return predicted results
+    return y, y_pred
 
-    y = test_data['total_cases'].values.ravel()
-    yhat = model.predict(x_input, verbose=0)
-    print('\nActual:', len(y))
-    yy = y[-5:-1]
-    for i in range(len(yy)):
-        print(yy[i])
 
-    print('\nPredicted:', len(yhat))
-    yhat1 = yhat[-5:-1]
-    for i in range(len(yhat1)):
-        print(yhat1[i][0])
-    
+all_data_df = load_all_data('total_cases')
+loc_df = all_data_df.groupby(by=["location"]).sum().reset_index()
 
-group_df = load_data()
-train_data = get_data('train', group_df)
-test_data = get_data('test', group_df)
+loc_df = loc_df.sort_values(by=['total_cases'], ascending=False)
+resp = {}
+for i in range(10):
+    location = loc_df.location.values[i]
+    # old_len = len(all_data_df)
+    filtered_df = all_data_df[all_data_df.location == location]
 
-# print(train_data.shape, test_data.shape)
+    group_df = get_grouped_data(filtered_df)
 
-print('---mlp---')
-build_n_save_mlp_model(train_data.copy())
-load_n_test_mlp_model(test_data.copy())
+    train_data = get_data('train', group_df)
+    test_data = get_data('test', group_df)
 
-print('---cnn---')
-build_n_save_cnn_model(train_data.copy())
-load_n_test_cnn_model(test_data.copy())
+    print(location)
+
+    print('---MLP---')
+    y, y_pred = forecast_from_mlp_model(train_data.copy(), test_data.copy())
+    mlp = {"y": y, "y_pred": y_pred}
+
+    print('---CNN---')
+    y, y_pred = forecast_from_cnn_model(train_data.copy(), test_data.copy())
+    cnn = {"y": y, "y_pred": y_pred}
+
+    resp[location] = {"mlp": mlp, "cnn": cnn}
+
+with open('resp.json', 'w+') as outfile:
+    json.dump(json.dumps(resp, cls=NumpyArrayEncoder), outfile)
+
+
+
 
 
