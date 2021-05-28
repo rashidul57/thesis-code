@@ -1,9 +1,10 @@
 import flask
 import os
 from flask import request, jsonify, render_template
-from server import models
+# from server import model-service
+import json
 
-app = flask.Flask(__name__, template_folder='./client/templates');
+app = flask.Flask(__name__, template_folder='./client/templates', static_folder="./client/static");
 
 app.config["DEBUG"] = True
 
@@ -37,6 +38,14 @@ def index():
 def api_all():
     return jsonify(books)
 
-# app.run()
 
-models.build_save_mlp_model()
+
+@app.route('/get-forcasts', methods=['GET'])
+def get_forcasts():
+    with open('resp.json') as json_file:
+        data = json.load(json_file)
+        return jsonify(data)
+
+app.run()
+
+# models.build_save_mlp_model()
