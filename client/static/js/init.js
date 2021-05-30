@@ -41,49 +41,91 @@ function draw(pred_data) {
 
     color = d3.scaleOrdinal()
     .domain(keys.slice(1))
-    .range(d3.schemeCategory10)
+    .range(d3.schemeCategory10);
 
     xAxis = g => g
     .attr("transform", `translate(0,${height - margin.bottom})`)
     .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
-    .call(g => g.select(".domain").remove())
+    .call(g => g.select(".domain").remove());
 
     series = d3.stack()
-        .keys(keys.slice(1))
+        .keys(keys)
         .offset(d3.stackOffsetWiggle)
         .order(d3.stackOrderInsideOut)
-    (data)
+    (data);
 
     y = d3.scaleLinear()
     .domain([d3.min(series, d => d3.min(d, d => d[0])), d3.max(series, d => d3.max(d, d => d[1]))])
-    .range([height - margin.bottom, margin.top])
+    .range([height - margin.bottom, margin.top]);
 
     x = d3.scaleUtc()
     .domain(d3.extent(data, d => d.date))
-    .range([margin.left, width - margin.right])
+    .range([margin.left, width - margin.right]);
 
     area = d3.area()
     .x(d => x(d.data.date))
     .y0(d => y(d[0]))
-    .y1(d => y(d[1]))
+    .y1(d => y(d[1]));
+
+    const c_svg = d3.select("#forecast_viz")
+    .append("svg")
+    .attr('width', 1500)
+    .attr('height', 50);
+
+    const country_g = c_svg.selectAll(".country")
+      .data(keys)
+      .enter()
+      .append("g");
+
+    country_g
+      .append("rect")
+      .attr('class', 'rect')
+      .attr("x", (d, i) => {
+            let space = 80;
+            keys.forEach((key, indx) => {
+                if (indx < i) {
+                    space += key.length * 8 + 25;
+                }
+            });
+            return space;
+      })
+      .attr('y', 10)
+      .attr('width', 15)
+      .attr('height', 15)
+      .attr("fill", (key) => color(key));
+
+    country_g
+      .append("text")
+      .attr("x", (d, i) => {
+        let space = 100;
+        keys.forEach((key, indx) => {
+            if (indx < i) {
+                space += key.length * 8 + 25;
+            }
+        });
+        return space;
+      })
+      .attr('y', 23)
+      .attr('width', 15)
+      .attr('height', 15)
+      .text(d => d);
 
     const svg = d3.select("#forecast_viz")
     .append("svg")
       .attr("viewBox", [0, 0, width, height]);
 
-  svg.append("g")
-    .selectAll("path")
-    .data(series)
-    .join("path")
-      .attr("fill", ({key}) => color(key))
-      .attr("d", area)
-    .append("title")
-      .text(({key}) => key);
+    svg.append("g")
+        .selectAll("path")
+        .data(series)
+        .join("path")
+        .attr("fill", ({key}) => color(key))
+        .attr("d", area)
+        .append("title")
+        .text(({key}) => key);
 
-  svg.append("g")
-      .call(xAxis);
+    svg.append("g")
+        .call(xAxis);
 
-  return svg.node();
 }
 
 

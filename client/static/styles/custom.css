@@ -18,9 +18,15 @@ body {
     shape-rendering: crispEdges;
   }
   
-  button {
-    position: absolute;
-    right: 50px;
-    top: 10px;
+
+  svg rect{
+      margin-top: 4px;
   }
-  
+
+  svg g.tick {
+    font-size: 5px;
+  }
+
+  g.tick line{
+    stroke-width: 0.4px;
+  }
