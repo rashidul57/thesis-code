@@ -18,10 +18,12 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas
 import pandas as pd
 import os
+import logging
 import json
 from json import JSONEncoder
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+logging.getLogger('tensorflow').setLevel(logging.FATAL)
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -69,7 +71,7 @@ def get_grouped_data(df):
 
 def get_data(mode, group_df):
     total_size = group_df.shape[0]
-    perc = 5
+    perc = 15
     test_size = int(total_size * perc/100)
     train_size = total_size - test_size
 
@@ -81,7 +83,7 @@ def get_data(mode, group_df):
     return ret_df
 
 
-def forecast_from_mlp_model(train_data, test_data):
+def mlp_model_forecast(train_data, test_data):
     X = train_data['date'].values
     y = train_data['total_cases'].values
 
@@ -111,7 +113,7 @@ def forecast_from_mlp_model(train_data, test_data):
     return y, y_pred
 
 
-def forecast_from_cnn_model(train_data, test_data):
+def cnn_model_forecast(train_data, test_data):
     dates = train_data['date'].values
     y = train_data['total_cases'].values
 
@@ -153,11 +155,14 @@ def forecast_from_cnn_model(train_data, test_data):
 all_data_df = load_all_data('total_cases')
 loc_df = all_data_df.groupby(by=["location"]).sum().reset_index()
 
+regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America']
+# filtered_df = all_data_df[all_data_df.location.isin(regions) == False]
+loc_df = loc_df[~loc_df.location.isin(regions)]
+
 loc_df = loc_df.sort_values(by=['total_cases'], ascending=False)
 resp = {}
 for i in range(10):
     location = loc_df.location.values[i]
-    # old_len = len(all_data_df)
     filtered_df = all_data_df[all_data_df.location == location]
 
     group_df = get_grouped_data(filtered_df)
@@ -167,13 +172,15 @@ for i in range(10):
 
     print(location)
 
-    print('---MLP---')
-    y, y_pred = forecast_from_mlp_model(train_data.copy(), test_data.copy())
-    mlp = {"y": y, "y_pred": y_pred}
+    start_timestamp = test_data['date'].values[0] * 1000
 
-    print('---CNN---')
-    y, y_pred = forecast_from_cnn_model(train_data.copy(), test_data.copy())
-    cnn = {"y": y, "y_pred": y_pred}
+    print('--MLP')
+    y, y_pred = mlp_model_forecast(train_data.copy(), test_data.copy())
+    mlp = {"y": y, "y_pred": y_pred, "start_timestamp": start_timestamp}
+
+    print('--CNN')
+    y, y_pred = cnn_model_forecast(train_data.copy(), test_data.copy())
+    cnn = {"y": y, "y_pred": y_pred, "start_timestamp": start_timestamp}
 
     resp[location] = {"mlp": mlp, "cnn": cnn}
 
