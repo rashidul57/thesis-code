@@ -155,9 +155,8 @@ def cnn_model_forecast(train_data, test_data):
 all_data_df = load_all_data('total_cases')
 loc_df = all_data_df.groupby(by=["location"]).sum().reset_index()
 
-regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America']
-# filtered_df = all_data_df[all_data_df.location.isin(regions) == False]
-loc_df = loc_df[~loc_df.location.isin(regions)]
+excl_regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America']
+loc_df = loc_df[~loc_df.location.isin(excl_regions)]
 
 loc_df = loc_df.sort_values(by=['total_cases'], ascending=False)
 resp = {}

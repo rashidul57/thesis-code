@@ -15,11 +15,28 @@
   
     <!-- Custom js codes -->
     <script src="../static/js/init.js"></script>
+    <script src="../static/js/chart.js"></script>
 
     <!-- Custom css styles -->
     <link rel="stylesheet" type="text/css" href="../static/styles/custom.css"/>
 </head>
 <body>
-   <div id='forecast_viz'></div>
+    <div class='toolbar'>
+        <span class='option chart-type-item'>
+            <span class='caption'>Chart Type</span>
+            <select id="drp-chart-type"></select>
+        </span>
+        <span class='hideable-item option countries-item'>
+            <span class='caption'>Select Country</span>
+            <select id="drp-countries"></select>
+        </span>
+        <span class='hideable-item option models-item'>
+            <span class='caption'>Select Model</span>
+            <select id="drp-models"></select>
+        </span>
+    </div>
+    <div class='container-box'>
+        <div class='chart-item'></div>
+    </div>
 </body>
 </html>

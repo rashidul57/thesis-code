@@ -41,8 +41,8 @@ X, y = split_sequences(dataset, n_steps)
 # flatten input
 n_input = X.shape[1] * X.shape[2]
 X = X.reshape((X.shape[0], n_input))
-print(X)
-print(y)
+# print(X)
+# print(y)
 # define model
 model = Sequential()
 model.add(Dense(100, activation='relu', input_dim=n_input))
