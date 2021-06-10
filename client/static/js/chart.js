@@ -13,23 +13,27 @@ function draw_predicted_lines(data, sel_country='United States') {
     countries.forEach(country => {
         const mlps = [];
         const cnns = [];
+        const lstms = [];
         const actuals = [];
         for (let i = 0; i < num_dates; i++) {
             const date = moment(new Date(data[countries[0]].mlp.start_timestamp)).add('days', i).toDate();
             const mlp = data[country].mlp.y_pred[i] && data[country].mlp.y_pred[i][0] || 0;
             const cnn = data[country].cnn.y_pred[i] && data[country].cnn.y_pred[i][0] || 0;
+            const lstm = data[country].lstm.y_pred[i] && data[country].lstm.y_pred[i][0] || 0;
             const actual = data[country].cnn.y[i] && data[country].cnn.y[i] || 0;
             mlps.push({date, count: mlp});
             cnns.push({date, count: cnn});
+            lstms.push({date, count: lstm});
             actuals.push({date, count: actual});
         }
-        line_data[country] = {mlps, cnns, actuals};
+        line_data[country] = {mlps, cnns, lstms, actuals};
     });
 
     const types = [
         {name: 'actuals', label: 'Actual'},
         {name: 'mlps', label: 'MLP Prediction'},
-        {name: 'cnns', label: 'CNN Prediction'}
+        {name: 'cnns', label: 'CNN Prediction'},
+        {name: 'lstms', label: 'LSTM Prediction'}
     ];
     for (var k = 0; k<types.length; k++) {
         const l_data = line_data[sel_country][types[k].name];
@@ -134,13 +138,13 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
     .attr("stroke", country_colors[indx%11])
     .attr("stroke-width", 2)
     .on('mouseover', function (event, d) {
-        show_dated_tip(event);
+        // show_dated_tip(event);
     })
     .on('mouseout', function (d) {
         tooltip.hide();
     })
     .on("mousemove", function(event, d){
-        show_dated_tip(event);
+        // show_dated_tip(event);
     })
     .on('mousedown', function (d) {
         tooltip.hide()
@@ -230,23 +234,35 @@ function set_cell_tooltip_position(event, tooltip, d) {
 }
 
 
-function draw_stream_graph(pred_data, algo='mlp') {
-
+function draw_stream_graph(pred_data, algo='mlp', sel_country) {
+    let data = [];
     var keys = Object.keys(pred_data)
     let max = 0;
     keys.forEach(country => {
         if (pred_data[country].mlp.y_pred.length > max) {
             max = pred_data[country].mlp.y_pred.length;
-        } 
+        }
     });
-    const data = []
-    for (let i = 0; i < max; i++) {
-        const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
-        const record = {date};
-        keys.forEach(country => {
-            record[country] = pred_data[country][algo].y_pred[i] && pred_data[country][algo].y_pred[i][0] || 0;
-        });
-        data.push(record);
+
+    if (sel_country) {
+        const model_types = ['mlp', 'cnn', 'lstm'];
+        for (let i = 0; i < max; i++) {
+            const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
+            const record = {date};
+            model_types.forEach(model => {
+                record[model] = pred_data[sel_country][model].y_pred[i] && pred_data[sel_country][model].y_pred[i][0] || 0;
+            });
+            data.push(record);
+        }
+    } else {
+        for (let i = 0; i < max; i++) {
+            const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
+            const record = {date};
+            keys.forEach(country => {
+                record[country] = pred_data[country][algo].y_pred[i] && pred_data[country][algo].y_pred[i][0] || 0;
+            });
+            data.push(record);
+        }
     }
 
     // set the dimensions and margins of the graph
@@ -282,52 +298,65 @@ function draw_stream_graph(pred_data, algo='mlp') {
     .y0(d => y(d[0]))
     .y1(d => y(d[1]));
 
-    const c_svg = d3.select(".chart-item")
-    .append("svg")
-    .attr('width', 1500)
-    .attr('height', 50);
+    // draw legend
+    if (!sel_country) {
+        const c_svg = d3.select(".chart-item")
+        .append("svg")
+        .attr('width', 1500)
+        .attr('height', 50);
 
-    const country_g = c_svg.selectAll(".country")
-      .data(keys)
-      .enter()
-      .append("g");
+        const country_g = c_svg.selectAll(".country")
+        .data(keys)
+        .enter()
+        .append("g");
 
-    country_g
-      .append("rect")
-      .attr('class', 'rect')
-      .attr("x", (d, i) => {
-            let space = 80;
+        country_g
+        .append("rect")
+        .attr('class', 'rect')
+        .attr("x", (d, i) => {
+                let space = 80;
+                keys.forEach((key, indx) => {
+                    if (indx < i) {
+                        space += key.length * 8 + 25;
+                    }
+                });
+                return space;
+        })
+        .attr('y', 10)
+        .attr('width', 15)
+        .attr('height', 15)
+        .attr("fill", (key) => color(key));
+
+        country_g
+        .append("text")
+        .attr("x", (d, i) => {
+            let space = 100;
             keys.forEach((key, indx) => {
                 if (indx < i) {
                     space += key.length * 8 + 25;
                 }
             });
             return space;
-      })
-      .attr('y', 10)
-      .attr('width', 15)
-      .attr('height', 15)
-      .attr("fill", (key) => color(key));
+        })
+        .attr('y', 23)
+        .attr('width', 15)
+        .attr('height', 15)
+        .text(d => d);
+    }
+    let svg;
+    // if (sel_country) {
+    // } else {
+        svg = d3.select(".chart-item")
+        .append("svg")
+          
+    // }
 
-    country_g
-      .append("text")
-      .attr("x", (d, i) => {
-        let space = 100;
-        keys.forEach((key, indx) => {
-            if (indx < i) {
-                space += key.length * 8 + 25;
-            }
-        });
-        return space;
-      })
-      .attr('y', 23)
-      .attr('width', 15)
-      .attr('height', 15)
-      .text(d => d);
-
-    const svg = d3.select(".chart-item")
-    .append("svg")
-      .attr("viewBox", [0, 0, width, height]);
+    if (sel_country) {
+        svg.attr('class', sel_country + '-stream, country-stream')
+        .attr("viewBox", [0, 0, 500, 300]);
+    } else {
+        svg.attr("viewBox", [0, 0, width, height]);
+    }
 
     svg.append("g")
         .selectAll("path")
@@ -345,119 +374,200 @@ function draw_stream_graph(pred_data, algo='mlp') {
 
 
 
-function draw_chart(pred_data) {
-    // set the dimensions and margins of the graph
-    var margin = {top: 20, right: 30, bottom: 0, left: 10},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
 
-    // append the svg object to the body of the page
-    var svg = d3.select(".chart-item")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
+// Draw bubble chart
 
-    // Parse the Data
-    // d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/5_OneCatSevNumOrdered_wide.csv", function(data) {
+function prepare_bubble_data(data, model) {
+    let num_dates = 0;
+    countries.forEach(country => {
+        if (data[country][model].y_pred.length > num_dates) {
+            num_dates = data[country][model].y_pred.length;
+        } 
+    });
+    // const line_data = {}
+    const bubble_data = countries.map(country => {
+        let count = 0;
+        for (let i = 0; i < num_dates; i++) {
+            count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
+        }
+        return {name: country, code: data[country].code, count};
+        // const mlps = [];
+        // const cnns = [];
+        // const actuals = [];
+        // for (let i = 0; i < num_dates; i++) {
+        //     const date = moment(new Date(data[countries[0]].mlp.start_timestamp)).add('days', i).toDate();
+        //     const mlp = data[country].mlp.y_pred[i] && data[country].mlp.y_pred[i][0] || 0;
+        //     const cnn = data[country].cnn.y_pred[i] && data[country].cnn.y_pred[i][0] || 0;
+        //     const actual = data[country].cnn.y[i] && data[country].cnn.y[i] || 0;
+        //     mlps.push({date, count: mlp});
+        //     cnns.push({date, count: cnn});
+        //     actuals.push({date, count: actual});
+        // }
+        // line_data[country] = {mlps, cnns, actuals};
+    });
+    return bubble_data;
+}
 
-        // List of groups = header of the csv files
-        var keys = Object.keys(pred_data)
-        let max = 0;
-        keys.forEach(country => {
-            if (pred_data[country].mlp.y_pred.length > max) {
-                max = pred_data[country].mlp.y_pred.length;
-            } 
+function draw_bubble_chart(data, model='mlp') {
+    data = prepare_bubble_data(data, model);
+
+    // sort data by count
+    data = _.orderBy(data, ['count'], ['desc']);
+
+    // initialize configs of the chart
+    const margin = {top: 20, right: 20, bottom: 20, left: 20},
+    width = 1000 - margin.left - margin.right;
+    const height = 660;
+
+    // Define color range of bubbles
+    const color_range = ["#a30f15", "#dfa6ad"];
+    let color_space = d3.scaleSequential()
+    .domain([data[0].count, data[data.length-1].count])
+    .range(color_range);
+
+    // define layout of the chart
+    const pack = data => d3.pack()
+    .size([width - 2, height - 2])(d3.hierarchy({children: data})
+    .sum(d => d.count));
+    const root = pack(data);
+
+    // calculate total count
+    let total_count = 0;
+    data.forEach(item => {
+        total_count += item.count || 0;
+    });
+
+    // clear chart container
+    d3.selectAll('.chart-item svg.bubble-svg').remove();
+    // set svg shape/size
+    const svg = d3.select('.chart-item')
+        .append("svg")
+        .attr('class', 'bubble-svg')
+        .attr("viewBox", [0, 0, width, height]);
+
+    // tooltip construction piece 
+    const tooltip = d3.tip().attr('class', 'd3-tip')
+    .html(function (event, d, x, y) {
+        const value = (d.data.count || 0).toLocaleString('en-US');
+        const name = d.data.name || 'Greenland';
+        return `<div>
+        <p>Country: <strong>${name}</strong></p>
+        <p>New Cases: <strong>${value}</strong></p>
+        </div>`;
+    });
+
+    svg.on('mousedown', function (d) {
+        tooltip.hide();
+    });
+    svg.attr("width", width)
+        .attr("height", height)
+        .style("background", 'ivory')
+        .append('g')
+        .call(tooltip);
+    
+    let cur_scale = 1;
+    redraw_bubble_text(root, svg, cur_scale);
+
+    // set zoom functon on to the svg
+    const zoom = d3.zoom()
+        .scaleExtent([1, 8])
+        .translateExtent([[-500,-300], [1500, 1000]])
+        .on("zoom", (event) => {
+            svg.attr('transform', event.transform)
+            cur_scale = event.transform.k;
+            redraw_bubble_text(root, svg, cur_scale)
         });
-        const data = []
-        for (let i = 0; i < max; i++) {
-            const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
-            const record = {date};
-            keys.forEach(country => {
-                record[country] = pred_data[country].mlp.y_pred[i] && pred_data[country].mlp.y_pred[i][0] || 0;
-            });
-            data.push(record);
+    svg.call(zoom);
+
+    // reset bubble label(country code) on change scale of the svg
+    function redraw_bubble_text(root, svg, cur_scale) {
+
+        // clear container
+        svg.selectAll(".country-code").remove();
+
+        // construct bubble circles
+        const leaf = svg.selectAll("g")
+        .data(root.leaves())
+        .join("g")
+        .attr("transform", d => `translate(${d.x + 1},${d.y + 1})`);
+
+        leaf.append("circle")
+        .attr("id", d => (d.data.name + '-' + d.data.count))
+        .attr("r", d => d.r)
+        .attr("fill-opacity", 0.7)
+        .attr("fill", d => color_space(d.data.count))
+        .on('mouseover', function (event, d) {
+            // set_cell_tooltip_position(event, tooltip, d);
+        })
+        .on('mouseout', function (d) {
+            tooltip.hide();
+        })
+        .on("mousemove", function(event, d){
+            // set_cell_tooltip_position(event, tooltip, d);
+        })
+        .on('mousedown', function (ev, d) {
+            // tooltip.hide()
+            draw_stream_graph(core_data, model, d.data.name);
+        });
+
+        leaf.append("text")
+        .attr("y", 5)
+        .attr("x", (d, i, nodes) => {
+            return (-d.data.name.length*4) + 'px';
+        })
+        .text(function(d){
+            return get_cell_label(total_count, cur_scale, d);
+        })
+        .attr("font-size", (d) => {
+            let size = 10 / cur_scale;
+            return size + 'px';
+        })
+        .attr("fill", (d) => {
+            const perc = get_cell_count_norm(data, d);
+            const color = perc <= 0.5 ? 'black' : 'white';
+            return color;
+        });
+    }
+}
+
+
+function get_cell_label(total_count, cur_scale, d) {
+    let text = d.data.code;
+    if (total_count > 100000000) {
+        if (cur_scale < 2 && d.data.count < 8000000) {
+            text = '';
         }
-
-        // Add X axis
-        var x = d3.scaleLinear()
-        .domain(d3.extent(data, function(d) { return d.date; }))
-        .range([ 0, width ]);
-        svg.append("g")
-        .attr("transform", "translate(0," + height*0.8 + ")")
-        .call(d3.axisBottom(x).tickSize(-height*.7).tickValues([1900, 1925, 1975, 2000]))
-        .select(".domain").remove()
-        // Customization
-        svg.selectAll(".tick line").attr("stroke", "#b8b8b8")
-
-        // Add X axis label:
-        svg.append("text")
-        .attr("text-anchor", "end")
-        .attr("x", width)
-        .attr("y", height-30 )
-        .text("Time (year)");
-
-        // Add Y axis
-        var y = d3.scaleLinear()
-        .domain([0, 30000000])
-        .range([ height, 0 ]);
-
-        // color palette
-        var color = d3.scaleOrdinal()
-        .domain(keys)
-        .range(d3.schemeDark2);
-
-        //stack the data?
-        var stackedData = d3.stack()
-        .offset(d3.stackOffsetSilhouette)
-        .keys(keys)
-        (data)
-
-        // create a tooltip
-        var Tooltip = svg
-        .append("text")
-        .attr("x", 0)
-        .attr("y", 0)
-        .style("opacity", 0)
-        .style("font-size", 17)
-
-        // Three function that change the tooltip when user hover / move / leave a cell
-        var mouseover = function(d) {
-        Tooltip.style("opacity", 1)
-        d3.selectAll(".myArea").style("opacity", .2)
-        d3.select(this)
-        .style("stroke", "black")
-        .style("opacity", 1)
+        if (cur_scale >= 2 && cur_scale < 3 && d.data.count < 2000000) {
+            text = '';
         }
-        var mousemove = function(d,i) {
-        grp = keys[i]
-        Tooltip.text(grp)
+        if (cur_scale >= 3 && cur_scale < 5 && d.data.count < 1500000) {
+            text = '';
         }
-        var mouseleave = function(d) {
-        Tooltip.style("opacity", 0)
-        d3.selectAll(".myArea").style("opacity", 1).style("stroke", "none")
+        if (cur_scale >= 5 && cur_scale < 7 && d.data.count < 1000000) {
+            text = '';
         }
+        if (cur_scale >= 7 && cur_scale < 10 && d.data.count < 500000) {
+            text = '';
+        }
+        if (cur_scale >= 10 && cur_scale < 14 && d.data.count < 300000) {
+            text = '';
+        }
+        if (cur_scale >= 14 && cur_scale < 17 && d.data.count < 100000) {
+            text = '';
+        }
+        if (cur_scale >= 17 && cur_scale < 45 && d.data.count < 50000) {
+            text = '';
+        }
+    }
+    return text;
+}
 
-        // Area generator
-        var area = d3.area()
-        .x(function(d) { return x(d.data.year); })
-        .y0(function(d) { return y(d[0]); })
-        .y1(function(d) { return y(d[1]); })
-
-        // Show the areas
-        svg
-        .selectAll("mylayers")
-        .data(stackedData)
-        .enter()
-        .append("path")
-        .attr("class", "myArea")
-        .style("fill", function(d) { return color(d.key); })
-        .attr("d", area)
-        .on("mouseover", mouseover)
-        .on("mousemove", mousemove)
-        .on("mouseleave", mouseleave)
-
-    // })
+function get_cell_count_norm(data, d) {
+    const total = _.reduce(data, (sum, item) => {
+        return sum += Number(item.count || 0);
+    }, 0);
+    count = Number(d.data.count || 0);
+    let perc = count * 10 / Number(total);
+    perc = perc > 1 ? 1 : perc;
+    return perc;
 }

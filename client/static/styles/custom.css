@@ -38,6 +38,11 @@ body {
 .chart-item { 
     background: #fff;
 }
+.country-stream{
+  position: absolute;
+  top: 50px;
+  left: 100px;
+}
 
 .container-box{
     overflow: hidden;
