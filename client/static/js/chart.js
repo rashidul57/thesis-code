@@ -358,41 +358,8 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
     // }
 
     if (sel_country) {
-
         if (ev.target) {
-            // check_click(ev);
-            const x = ev.clientX;
-            const y = ev.clientY;
-            const bubble_svg = d3.select('.bubble-svg');
-            const boxEl = $('.container-box')[0];
-            const start_x = boxEl.offsetLeft, end_x = boxEl.offsetWidth;
-            const start_y = boxEl.offsetTop, end_y = boxEl.offsetHeight;
-            const cent_x = (end_x+start_x)/2;
-            const cent_y = (end_y+start_y)/2;
-
-            // console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
-            
-            if (x >= (cent_x-100) && x <= (cent_x+100)) {
-                if (y <= cent_y) {
-                    cls = 'top-middle';
-                } else {
-                    cls = 'bottom-middle';
-                }
-            } else if (y >= (cent_y - 100) && y <= (cent_y + 100)) {
-                if (x <= cent_x) {
-                    cls = 'left-middle';
-                } else {
-                    cls = 'right-middle';
-                }
-            } else if (x <= cent_x && y <= cent_y) {
-                cls = 'top-left';
-            } else if (x > cent_x && y <= cent_y) {
-                cls = 'top-right';
-            } else if (x <= cent_x && y > cent_y) {
-                cls = 'bottom-left';
-            } else {
-                cls = 'bottom-right';
-            }
+            const cls = get_segment_class(ev, false);
             svg.attr('class', sel_country_cls + '-stream country-stream ' + cls);
             // console.log(cls, '...')
         }
@@ -447,22 +414,43 @@ function screenToSVG(svg, ev) {
  }
 
 
-function check_click(ev) {
-    const x = ev.clientX;
-    const y = ev.clientY;
-    const bubble_svg = d3.select('.bubble-svg');
-    const cent_x = 1320/2;
-    const cent_y = 784/2;
-    console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
-    if (x <= cent_x && y <= cent_y) {
-        console.log('top-left');
-    } else if (x > cent_x && y <= cent_y) {
-        console.log('top-right');
-    } else if (x <= cent_x && y > cent_y) {
-        console.log('bottom-left');
-    } else {
-        console.log('bottom-right');
+function get_segment_class(ev, show_log) {
+    const boxEl = $('.container-box')[0];
+    const start_x = boxEl.offsetLeft, end_x = boxEl.offsetWidth;
+    const start_y = boxEl.offsetTop, end_y = boxEl.offsetHeight;
+    const cent_x = end_x/2;
+    const cent_y = end_y/2;
+    const x = ev.clientX - start_x;
+    const y = ev.clientY - start_y;
+    if (show_log) {
+        console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
     }
+
+    if (x >= (cent_x - 80) && x <= (cent_x + 80)) {
+        if (y <= cent_y) {
+            cls = 'top-middle';
+        } else {
+            cls = 'bottom-middle';
+        }
+    } else if (y >= (cent_y - 70) && y <= (cent_y + 70)) {
+        if (x <= cent_x) {
+            cls = 'left-middle';
+        } else {
+            cls = 'right-middle';
+        }
+    } else if (x <= cent_x && y <= cent_y) {
+        cls = 'top-left';
+    } else if (x > cent_x && y <= cent_y) {
+        cls = 'top-right';
+    } else if (x <= cent_x && y > cent_y) {
+        cls = 'bottom-left';
+    } else {
+        cls = 'bottom-right';
+    }
+    if (show_log) {
+        console.log(cls)
+    }
+    return cls;
 }
 
 
@@ -549,7 +537,7 @@ function draw_bubble_chart(data, model='mlp') {
 
     svg.on('mousedown', function (ev) {
         // tooltip.hide();
-        check_click(ev);
+        get_segment_class(ev, true);
         // screenToSVG(svg, ev);
     });
     svg.attr("width", width)

@@ -50,9 +50,9 @@ body {
             height: 71px;
             width: 500px;
             &.top-left{
-                transform: rotate(45deg);
-                top: 80px;
-                left: 0;
+                transform: rotate(35deg);
+                top: 150px;
+                left: 20px;
             }
             &.top-middle{
                 transform: rotate(-90deg);
@@ -61,8 +61,8 @@ body {
             }
             &.top-right{
                 transform: rotate(-45deg);
-                top:80px;
-                left: 480px;
+                top: 135px;
+                left: 400px;
             }
             &.left-middle{
                 transform: rotate(0deg);
@@ -75,9 +75,9 @@ body {
                 left: 480px;
             }
             &.bottom-left{
-                transform: rotate(-45deg);
-                top: 410px;
-                left: 0;
+                transform: rotate(-35deg);
+                top: 450px;
+                left: 30px;
             }
             &.bottom-middle{
                 transform: rotate(90deg);
@@ -85,9 +85,9 @@ body {
                 left: 220px;
             }
             &.bottom-right{
-                transform: rotate(45deg);
-                top: 410px;
-                left: 480px;
+                transform: rotate(35deg);
+                top: 425px;
+                left: 410px;
             }
             &.focused{
                 opacity: 1;
