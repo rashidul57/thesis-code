@@ -359,7 +359,7 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
 
     if (sel_country) {
         if (ev.target) {
-            const cls = get_segment_class(ev, false);
+            cls = get_segment_class(ev, false);
             svg.attr('class', sel_country_cls + '-stream country-stream ' + cls);
             // console.log(cls, '...')
         }
