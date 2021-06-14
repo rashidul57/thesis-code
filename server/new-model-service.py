@@ -223,7 +223,7 @@ for k in range(len(props)):
 
 	grouped_loc_df = grouped_loc_df.sort_values(by=[prop], ascending=False)
 	resp[prop] = {}
-	for i in range(10):
+	for i in range(100):
 		location = grouped_loc_df.location.values[i]
 		print(location)
 		filtered_df = all_data_df[all_data_df.location == location]

@@ -234,9 +234,13 @@ function set_cell_tooltip_position(event, tooltip, d) {
 }
 
 
-function draw_stream_graph(pred_data, algo='mlp', sel_country) {
+function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
+    let cls;
+    sel_country_cls = sel_country.replace(/\s/g, '-');
+    d3.selectAll('.' + sel_country_cls + '-stream').remove();
+
     let data = [];
-    var keys = Object.keys(pred_data)
+    let keys = Object.keys(pred_data)
     let max = 0;
     keys.forEach(country => {
         if (pred_data[country].mlp.y_pred.length > max) {
@@ -254,6 +258,7 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country) {
             });
             data.push(record);
         }
+        keys = model_types;
     } else {
         for (let i = 0; i < max; i++) {
             const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
@@ -345,15 +350,52 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country) {
     }
     let svg;
     // if (sel_country) {
+    //     svg = d3.select(".tr-container")
+    //         .append('svg');
     // } else {
         svg = d3.select(".chart-item")
-        .append("svg")
-          
+        .append("svg");      
     // }
 
     if (sel_country) {
-        svg.attr('class', sel_country + '-stream, country-stream')
-        .attr("viewBox", [0, 0, 500, 300]);
+
+        if (ev.target) {
+            // check_click(ev);
+            const x = ev.clientX;
+            const y = ev.clientY;
+            const bubble_svg = d3.select('.bubble-svg');
+            const boxEl = $('.container-box')[0];
+            const start_x = boxEl.offsetLeft, end_x = boxEl.offsetWidth;
+            const start_y = boxEl.offsetTop, end_y = boxEl.offsetHeight;
+            const cent_x = (end_x+start_x)/2;
+            const cent_y = (end_y+start_y)/2;
+
+            // console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
+            
+            if (x >= (cent_x-100) && x <= (cent_x+100)) {
+                if (y <= cent_y) {
+                    cls = 'top-middle';
+                } else {
+                    cls = 'bottom-middle';
+                }
+            } else if (y >= (cent_y - 100) && y <= (cent_y + 100)) {
+                if (x <= cent_x) {
+                    cls = 'left-middle';
+                } else {
+                    cls = 'right-middle';
+                }
+            } else if (x <= cent_x && y <= cent_y) {
+                cls = 'top-left';
+            } else if (x > cent_x && y <= cent_y) {
+                cls = 'top-right';
+            } else if (x <= cent_x && y > cent_y) {
+                cls = 'bottom-left';
+            } else {
+                cls = 'bottom-right';
+            }
+            svg.attr('class', sel_country_cls + '-stream country-stream ' + cls);
+            // console.log(cls, '...')
+        }
     } else {
         svg.attr("viewBox", [0, 0, width, height]);
     }
@@ -365,14 +407,63 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country) {
         .attr("fill", ({key}) => color(key))
         .attr("d", area)
         .append("title")
-        .text(({key}) => key);
+        .text(({key}) => {
+            return key;
+        });
 
-    svg.append("g")
-        .call(xAxis);
+    if (!sel_country) {
+        svg.append("g")
+            .call(xAxis);
+    }
+
+    if (sel_country_cls) {
+        const seg_countries = d3.selectAll('.' + cls);
+        const sel_country_seg = d3.selectAll('.' + sel_country_cls + '-stream');
+        if (seg_countries.size() > 1) {
+            let nodes = seg_countries.nodes();
+            nodes.forEach(node => {
+                node.classList.remove('focused');
+                node.classList.add("dimmed");
+            });
+            
+            nodes = sel_country_seg.nodes();
+            nodes.forEach(node => {
+                node.classList.remove('dimmed');
+                node.classList.add("focused");
+            });
+        }
+    }
 
 }
 
+function screenToSVG(svg, ev) {
+    const x = ev.clientX;
+    const y = ev.clientY;
+    var p = svg.createSVGPoint()
+     p.x = x;
+     p.y = y;
+     const cc = p.matrixTransform(svg.getScreenCTM().inverse());
+     console.log(cc);
+ }
 
+
+function check_click(ev) {
+    const x = ev.clientX;
+    const y = ev.clientY;
+    const bubble_svg = d3.select('.bubble-svg');
+    const cent_x = 1320/2;
+    const cent_y = 784/2;
+    console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
+    if (x <= cent_x && y <= cent_y) {
+        console.log('top-left');
+    } else if (x > cent_x && y <= cent_y) {
+        console.log('top-right');
+    } else if (x <= cent_x && y > cent_y) {
+        console.log('bottom-left');
+    } else {
+        console.log('bottom-right');
+    }
+}
 
 
 // Draw bubble chart
@@ -415,7 +506,7 @@ function draw_bubble_chart(data, model='mlp') {
     data = _.orderBy(data, ['count'], ['desc']);
 
     // initialize configs of the chart
-    const margin = {top: 20, right: 20, bottom: 20, left: 20},
+    const margin = {top: 0, right: 0, bottom: 0, left: 0},
     width = 1000 - margin.left - margin.right;
     const height = 660;
 
@@ -456,8 +547,10 @@ function draw_bubble_chart(data, model='mlp') {
         </div>`;
     });
 
-    svg.on('mousedown', function (d) {
-        tooltip.hide();
+    svg.on('mousedown', function (ev) {
+        // tooltip.hide();
+        check_click(ev);
+        // screenToSVG(svg, ev);
     });
     svg.attr("width", width)
         .attr("height", height)
@@ -471,7 +564,7 @@ function draw_bubble_chart(data, model='mlp') {
     // set zoom functon on to the svg
     const zoom = d3.zoom()
         .scaleExtent([1, 8])
-        .translateExtent([[-500,-300], [1500, 1000]])
+        .translateExtent([[-width,-height], [width, height]])
         .on("zoom", (event) => {
             svg.attr('transform', event.transform)
             cur_scale = event.transform.k;
@@ -507,7 +600,7 @@ function draw_bubble_chart(data, model='mlp') {
         })
         .on('mousedown', function (ev, d) {
             // tooltip.hide()
-            draw_stream_graph(core_data, model, d.data.name);
+            draw_stream_graph(core_data, model, d.data.name, ev);
         });
 
         leaf.append("text")

@@ -1,0 +1,143 @@
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: "Open Sans", sans-serif;
+  overflow: hidden;
+  margin: 2px;
+}
+
+.toolbar {
+  text-align: left;
+  width: calc(960px - 5px);
+  padding-bottom: 2px;
+  border-top: 1px solid #000;
+  padding-top: 1px;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  padding-left: 5px;
+}
+.toolbar input, .toolbar select {
+  border-width: 1px;
+  margin-bottom: 2px;
+  border-radius: 5px;
+}
+.toolbar .option {
+  margin-right: 15px;
+  font-size: 14px;
+}
+.toolbar .option .caption {
+  font-size: 14px;
+}
+
+.container-box {
+  overflow: hidden;
+  border: 1px solid black;
+  height: 660px;
+  width: 960px;
+  position: relative;
+}
+.container-box .chart-item {
+  background: #fff;
+  z-index: 9;
+  position: absolute;
+}
+.container-box .chart-item .country-stream {
+  position: absolute;
+  height: 71px;
+  width: 500px;
+}
+.container-box .chart-item .country-stream.top-left {
+  transform: rotate(45deg);
+  top: 80px;
+  left: 0;
+}
+.container-box .chart-item .country-stream.top-middle {
+  transform: rotate(-90deg);
+  top: 80px;
+  left: 220px;
+}
+.container-box .chart-item .country-stream.top-right {
+  transform: rotate(-45deg);
+  top: 80px;
+  left: 480px;
+}
+.container-box .chart-item .country-stream.left-middle {
+  transform: rotate(0deg);
+  top: 300px;
+  left: 0px;
+}
+.container-box .chart-item .country-stream.right-middle {
+  transform: rotate(0deg);
+  top: 300px;
+  left: 480px;
+}
+.container-box .chart-item .country-stream.bottom-left {
+  transform: rotate(-45deg);
+  top: 410px;
+  left: 0;
+}
+.container-box .chart-item .country-stream.bottom-middle {
+  transform: rotate(90deg);
+  top: 500px;
+  left: 220px;
+}
+.container-box .chart-item .country-stream.bottom-right {
+  transform: rotate(45deg);
+  top: 410px;
+  left: 480px;
+}
+.container-box .chart-item .country-stream.focused {
+  opacity: 1;
+}
+.container-box .chart-item .country-stream.dimmed {
+  opacity: 0.1;
+}
+
+.clear-fish-graph {
+  font-size: 13px;
+  color: #2d88fd;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+}
+
+.d3-tip {
+  position: absolute;
+  text-align: left;
+  min-width: 60px;
+  transition: opacity 0.25s ease-in-out;
+  min-height: 28px;
+  padding: 8px 12px;
+  font: 12px sans-serif;
+  background: white;
+  border: 1px solid lightgray;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.line {
+  fill: none;
+}
+
+svg rect {
+  margin-top: 4px;
+}
+svg g.tick {
+  font-size: 5px;
+}
+svg g.tick line {
+  stroke-width: 0.4px;
+}
+
+.y-axis text, .x-axis text {
+  font-size: 12px;
+}
+
+/*# sourceMappingURL=app.css.map */

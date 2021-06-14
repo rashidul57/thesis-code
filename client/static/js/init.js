@@ -100,10 +100,15 @@ function load_control_data() {
         d3.select(".chart-item").selectAll("svg").remove();
         const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(core_data, model);
+            draw_stream_graph(core_data, model, undefined, undefined);
         } else {
             draw_bubble_chart(core_data, model);
         }
+    });
+
+    d3.selectAll(".clear-fish-graph")
+    .on("click", function(ev) {
+        d3.selectAll(".country-stream").remove();
     });
     
 }
@@ -122,7 +127,7 @@ function refresh_container() {
         break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item").style("display", "inline-block");
+        d3.selectAll(".models-item, .clear-fish-graph").style("display", "inline-block");
         draw_bubble_chart(core_data)
         break;
     }
