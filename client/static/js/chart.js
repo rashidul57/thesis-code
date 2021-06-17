@@ -479,12 +479,12 @@ function prepare_bubble_data(data, model) {
             count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
             actual += data[country][model].y && data[country][model].y[i] || 0;
         }
-        const diff = Math.abs(count - actual);
+        const diff = Math.abs(actual - count);
         return {name: country, code: data[country].code, count, actual, diff};
     });
     const max_diff = _.maxBy(bubble_data, 'diff').diff;
     bubble_data = bubble_data.map(item => {
-        item.deviation = item.diff * 10 / max_diff;
+        item.deviation = item.diff * 7 / max_diff;
         return item;
     });
     return bubble_data;
@@ -498,7 +498,7 @@ function draw_bubble_chart(data, model='mlp') {
 
     // initialize configs of the chart
     const margin = {top: 0, right: 0, bottom: 0, left: 0},
-    width = 1000 - margin.left - margin.right;
+    width = 960 - margin.left - margin.right;
     const height = 660;
 
     // Define color range of bubbles
@@ -544,7 +544,7 @@ function draw_bubble_chart(data, model='mlp') {
     });
     svg.attr("width", width)
         .attr("height", height)
-        .style("background", 'ivory')
+        // .style("background", 'ivory')
         .append('g')
         .call(tooltip);
     
@@ -556,9 +556,9 @@ function draw_bubble_chart(data, model='mlp') {
         .scaleExtent([1, 8])
         .translateExtent([[-width,-height], [width, height]])
         .on("zoom", (event) => {
-            svg.attr('transform', event.transform)
-            cur_scale = event.transform.k;
-            redraw_bubble_text(root, svg, cur_scale)
+            // svg.attr('transform', event.transform)
+            // cur_scale = event.transform.k;
+            // redraw_bubble_text(root, svg, cur_scale)
         });
     svg.call(zoom);
 
@@ -567,6 +567,7 @@ function draw_bubble_chart(data, model='mlp') {
 
         // clear container
         svg.selectAll(".country-code").remove();
+        svg.selectAll('.country-circle').remove();
 
         // construct bubble circles
         for (let k = 0; k < 2; k++) {
@@ -574,7 +575,6 @@ function draw_bubble_chart(data, model='mlp') {
         }
 
         function add_leaf(k) {
-            const shift = 5;
             const abberation = k === 0;
             const leaf = svg.selectAll("g")
             .data(root.leaves())
@@ -584,6 +584,7 @@ function draw_bubble_chart(data, model='mlp') {
             });
 
             leaf.append("circle")
+            .attr('class', 'country-circle')
             .attr("id", d => (d.data.name + '-' + d.data.count))
             .attr("r", d => {
                 return abberation ? (d.r + d.data.deviation) : d.r;
@@ -595,7 +596,7 @@ function draw_bubble_chart(data, model='mlp') {
                 return abberation ? d.data.deviation : 0;
             })
             .attr("fill-opacity", (d) => {
-                return abberation ? 0.1 : 1;
+                return abberation ? 0.15 : 1;
             })
             .attr('class', ()=> {
                 return abberation ? 'abberation' : 'actual';
@@ -623,6 +624,7 @@ function draw_bubble_chart(data, model='mlp') {
             });
 
             leaf.append("text")
+            .attr('class', 'country-text')
             .attr("y", 5)
             .attr("x", (d, i, nodes) => {
                 return (-d.data.name.length*4) + 'px';
