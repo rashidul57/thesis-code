@@ -120,7 +120,6 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
     svg.on('mousedown', function (d) {
         tooltip.hide()
     });
-    // svg.append('g').call(tooltip);
 
     // Draw data
     const lineGenerator = d3.line()
@@ -234,7 +233,7 @@ function set_cell_tooltip_position(event, tooltip, d) {
 }
 
 
-function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
+function draw_stream_graph(pred_data, algo='mlp', sel_country='', ev) {
     let cls;
     sel_country_cls = sel_country.replace(/\s/g, '-');
     d3.selectAll('.' + sel_country_cls + '-stream').remove();
@@ -249,16 +248,25 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
     });
 
     if (sel_country) {
-        const model_types = ['mlp', 'cnn', 'lstm'];
-        for (let i = 0; i < max; i++) {
-            const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
-            const record = {date};
-            model_types.forEach(model => {
-                record[model] = pred_data[sel_country][model].y_pred[i] && pred_data[sel_country][model].y_pred[i][0] || 0;
-            });
-            data.push(record);
+        if (country_stream_mode === 'Prediction') {
+            const model_types = ['mlp', 'cnn', 'lstm'];
+            for (let i = 0; i < max; i++) {
+                const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
+                const record = {date};
+                model_types.forEach(model => {
+                    record[model] = pred_data[sel_country][model].y_pred[i] && pred_data[sel_country][model].y_pred[i][0] || 0;
+                });
+                data.push(record);
+            }
+            data = get_normalized_data(data, model_types);
+            keys = model_types;
+        } else {
+            const country_data = all_covid_data[sel_country];
+            keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
+
+            data = get_normalized_data(country_data, keys);
         }
-        keys = model_types;
+
     } else {
         for (let i = 0; i < max; i++) {
             const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
@@ -268,6 +276,7 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
             });
             data.push(record);
         }
+        data = get_normalized_data(data, keys);
     }
 
     // set the dimensions and margins of the graph
@@ -348,14 +357,8 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
         .attr('height', 15)
         .text(d => d);
     }
-    let svg;
-    // if (sel_country) {
-    //     svg = d3.select(".tr-container")
-    //         .append('svg');
-    // } else {
-        svg = d3.select(".chart-item")
-        .append("svg");      
-    // }
+    let svg = d3.select(".chart-item")
+        .append("svg");
 
     if (sel_country) {
         if (ev.target) {
@@ -403,16 +406,22 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country, ev) {
 
 }
 
-function screenToSVG(svg, ev) {
-    const x = ev.clientX;
-    const y = ev.clientY;
-    var p = svg.createSVGPoint()
-     p.x = x;
-     p.y = y;
-     const cc = p.matrixTransform(svg.getScreenCTM().inverse());
-     console.log(cc);
- }
+function get_normalized_data(data, keys) {
+    const maxs = {};
+    keys.forEach(key => {
+        const max_item = _.maxBy(data, key);
+        maxs[key] = max_item && max_item[key] || 1;
+    });
 
+    data = data.map(item => {
+        item.date = new Date(item.date);
+        keys.forEach(key => {
+            item[key] = item[key] / maxs[key];
+        });
+        return item;
+    });
+    return data;
+}
 
 function get_segment_class(ev, show_log) {
     const boxEl = $('.container-box')[0];
@@ -463,26 +472,20 @@ function prepare_bubble_data(data, model) {
             num_dates = data[country][model].y_pred.length;
         } 
     });
-    // const line_data = {}
-    const bubble_data = countries.map(country => {
+    let bubble_data = countries.map(country => {
         let count = 0;
+        let actual = 0;
         for (let i = 0; i < num_dates; i++) {
             count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
+            actual += data[country][model].y && data[country][model].y[i] || 0;
         }
-        return {name: country, code: data[country].code, count};
-        // const mlps = [];
-        // const cnns = [];
-        // const actuals = [];
-        // for (let i = 0; i < num_dates; i++) {
-        //     const date = moment(new Date(data[countries[0]].mlp.start_timestamp)).add('days', i).toDate();
-        //     const mlp = data[country].mlp.y_pred[i] && data[country].mlp.y_pred[i][0] || 0;
-        //     const cnn = data[country].cnn.y_pred[i] && data[country].cnn.y_pred[i][0] || 0;
-        //     const actual = data[country].cnn.y[i] && data[country].cnn.y[i] || 0;
-        //     mlps.push({date, count: mlp});
-        //     cnns.push({date, count: cnn});
-        //     actuals.push({date, count: actual});
-        // }
-        // line_data[country] = {mlps, cnns, actuals};
+        const diff = Math.abs(count - actual);
+        return {name: country, code: data[country].code, count, actual, diff};
+    });
+    const max_diff = _.maxBy(bubble_data, 'diff').diff;
+    bubble_data = bubble_data.map(item => {
+        item.deviation = item.diff * 10 / max_diff;
+        return item;
     });
     return bubble_data;
 }
@@ -492,7 +495,6 @@ function draw_bubble_chart(data, model='mlp') {
 
     // sort data by count
     data = _.orderBy(data, ['count'], ['desc']);
-    // data = [data[0], data[1]];
 
     // initialize configs of the chart
     const margin = {top: 0, right: 0, bottom: 0, left: 0},
@@ -539,7 +541,6 @@ function draw_bubble_chart(data, model='mlp') {
     svg.on('mousedown', function (ev) {
         // tooltip.hide();
         get_segment_class(ev, true);
-        // screenToSVG(svg, ev);
     });
     svg.attr("width", width)
         .attr("height", height)
@@ -585,21 +586,23 @@ function draw_bubble_chart(data, model='mlp') {
             leaf.append("circle")
             .attr("id", d => (d.data.name + '-' + d.data.count))
             .attr("r", d => {
-                return abberation ? (d.r + shift) : d.r;
+                return abberation ? (d.r + d.data.deviation) : d.r;
             })
-            .attr("cx", d => {
-                return abberation ? 0 : 0;
-            })
+            // .attr("cx", d => {
+            //     return abberation ? 0 : 0;
+            // })
             .attr("cy", d => {
-                return abberation ? shift : 0;
+                return abberation ? d.data.deviation : 0;
             })
-            .attr("fill-opacity", 0.7)
+            .attr("fill-opacity", (d) => {
+                return abberation ? 0.1 : 1;
+            })
             .attr('class', ()=> {
                 return abberation ? 'abberation' : 'actual';
             })
             .attr("fill", d => {
                 if (abberation) {
-                    return 'gray';
+                    return 'blue';
                 } else {
                     return color_space(d.data.count);
                 }
@@ -615,7 +618,7 @@ function draw_bubble_chart(data, model='mlp') {
             })
             .on('mousedown', function (ev, d) {
                 if (!abberation) {
-                    draw_stream_graph(core_data, model, d.data.name, ev);
+                    draw_stream_graph(prop_pred_data, model, d.data.name, ev);
                 }
             });
 

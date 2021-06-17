@@ -1,4 +1,4 @@
-let whole_dataset, core_data, countries, sel_chart_type;
+let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
 
 
@@ -11,10 +11,10 @@ window.onload = init;
  */
 async function init() {
     const forecasts = await $.get("/get-forcasts");
-    whole_dataset = JSON.parse(forecasts);
-    core_data = whole_dataset[sel_property];
+    forecast_data = JSON.parse(forecasts);
+    prop_pred_data = forecast_data[sel_property];
 
-    countries = Object.keys(core_data);
+    countries = Object.keys(prop_pred_data);
     load_control_data();
 
 
@@ -30,9 +30,7 @@ async function init() {
         }
         covid_data.push(rec);
     });
-    const grp = _.groupBy(covid_data, 'location')
-    
-    debugger
+    all_covid_data = _.groupBy(covid_data, 'location');
     
 
 }
@@ -53,8 +51,8 @@ function load_control_data() {
      d3.selectAll("#drp-property")
     .on("change", function(ev) {
         sel_property = d3.select(this).property("value");
-        core_data = whole_dataset[sel_property];
-        countries = Object.keys(core_data);
+        prop_pred_data = forecast_data[sel_property];
+        countries = Object.keys(prop_pred_data);
         refresh_container();
     });
 
@@ -95,7 +93,7 @@ function load_control_data() {
     .on("change", function(ev) {
         d3.select(".chart-item").selectAll("svg").remove();
         const country = d3.select(this).property("value");
-        draw_predicted_lines(core_data, country);
+        draw_predicted_lines(prop_pred_data, country);
     });
 
     // Machine learning predictive models
@@ -115,9 +113,9 @@ function load_control_data() {
         d3.select(".chart-item").selectAll("svg").remove();
         const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(core_data, model, undefined, undefined);
+            draw_stream_graph(prop_pred_data, model, undefined, undefined);
         } else {
-            draw_bubble_chart(core_data, model);
+            draw_bubble_chart(prop_pred_data, model);
         }
     });
 
@@ -125,6 +123,24 @@ function load_control_data() {
     .on("click", function(ev) {
         d3.selectAll(".country-stream").remove();
     });
+
+    // country stream-graph options
+    const country_stream_modes = ['Prediction', 'By Properties'];
+    country_stream_mode = country_stream_modes[0];
+    d3.select("#drp-country-stream-type")
+    .selectAll('model-list')
+    .data(country_stream_modes)
+    .enter()
+    .append('option')
+    .text((d) => { return d; })
+    .attr("value", (d) => { return d; });
+    
+    d3.selectAll("#drp-country-stream-type")
+    .on("change", function(ev) {
+        country_stream_mode = d3.select(this).property("value");
+    });
+
+
     
     // initial load
     refresh_container();
@@ -135,17 +151,17 @@ function refresh_container() {
     switch (sel_chart_type) {
         case "Line":
         d3.selectAll(".countries-item").style("display", "inline-block");
-        draw_predicted_lines(core_data, undefined);
+        draw_predicted_lines(prop_pred_data, undefined);
         break;
 
         case "Stream Graphs":
         d3.selectAll(".models-item").style("display", "inline-block");
-        draw_stream_graph(core_data, undefined);
+        draw_stream_graph(prop_pred_data, undefined);
         break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph").style("display", "inline-block");
-        draw_bubble_chart(core_data)
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type").style("display", "inline-block");
+        draw_bubble_chart(prop_pred_data)
         break;
     }
 }
