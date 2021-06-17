@@ -96,6 +96,13 @@ body {
   opacity: 0.1;
 }
 
+.bubble-svg g circle.abberation {
+  z-index: 1;
+}
+.bubble-svg g circle.actual {
+  z-index: 2;
+}
+
 .clear-fish-graph {
   font-size: 13px;
   color: #2d88fd;

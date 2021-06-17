@@ -492,6 +492,7 @@ function draw_bubble_chart(data, model='mlp') {
 
     // sort data by count
     data = _.orderBy(data, ['count'], ['desc']);
+    // data = [data[0], data[1]];
 
     // initialize configs of the chart
     const margin = {top: 0, right: 0, bottom: 0, left: 0},
@@ -567,47 +568,75 @@ function draw_bubble_chart(data, model='mlp') {
         svg.selectAll(".country-code").remove();
 
         // construct bubble circles
-        const leaf = svg.selectAll("g")
-        .data(root.leaves())
-        .join("g")
-        .attr("transform", d => `translate(${d.x + 1},${d.y + 1})`);
+        for (let k = 0; k < 2; k++) {
+            add_leaf(k);
+        }
 
-        leaf.append("circle")
-        .attr("id", d => (d.data.name + '-' + d.data.count))
-        .attr("r", d => d.r)
-        .attr("fill-opacity", 0.7)
-        .attr("fill", d => color_space(d.data.count))
-        .on('mouseover', function (event, d) {
-            // set_cell_tooltip_position(event, tooltip, d);
-        })
-        .on('mouseout', function (d) {
-            tooltip.hide();
-        })
-        .on("mousemove", function(event, d){
-            // set_cell_tooltip_position(event, tooltip, d);
-        })
-        .on('mousedown', function (ev, d) {
-            // tooltip.hide()
-            draw_stream_graph(core_data, model, d.data.name, ev);
-        });
+        function add_leaf(k) {
+            const shift = 5;
+            const abberation = k === 0;
+            const leaf = svg.selectAll("g")
+            .data(root.leaves())
+            .join("g")
+            .attr("transform", d => {
+                return `translate(${d.x + 1},${d.y + 1})`
+            });
 
-        leaf.append("text")
-        .attr("y", 5)
-        .attr("x", (d, i, nodes) => {
-            return (-d.data.name.length*4) + 'px';
-        })
-        .text(function(d){
-            return get_cell_label(total_count, cur_scale, d);
-        })
-        .attr("font-size", (d) => {
-            let size = 10 / cur_scale;
-            return size + 'px';
-        })
-        .attr("fill", (d) => {
-            const perc = get_cell_count_norm(data, d);
-            const color = perc <= 0.5 ? 'black' : 'white';
-            return color;
-        });
+            leaf.append("circle")
+            .attr("id", d => (d.data.name + '-' + d.data.count))
+            .attr("r", d => {
+                return abberation ? (d.r + shift) : d.r;
+            })
+            .attr("cx", d => {
+                return abberation ? 0 : 0;
+            })
+            .attr("cy", d => {
+                return abberation ? shift : 0;
+            })
+            .attr("fill-opacity", 0.7)
+            .attr('class', ()=> {
+                return abberation ? 'abberation' : 'actual';
+            })
+            .attr("fill", d => {
+                if (abberation) {
+                    return 'gray';
+                } else {
+                    return color_space(d.data.count);
+                }
+            })
+            .on('mouseover', function (event, d) {
+                // set_cell_tooltip_position(event, tooltip, d);
+            })
+            .on('mouseout', function (d) {
+                tooltip.hide();
+            })
+            .on("mousemove", function(event, d){
+                // set_cell_tooltip_position(event, tooltip, d);
+            })
+            .on('mousedown', function (ev, d) {
+                if (!abberation) {
+                    draw_stream_graph(core_data, model, d.data.name, ev);
+                }
+            });
+
+            leaf.append("text")
+            .attr("y", 5)
+            .attr("x", (d, i, nodes) => {
+                return (-d.data.name.length*4) + 'px';
+            })
+            .text(function(d){
+                return abberation ? '' : get_cell_label(total_count, cur_scale, d);
+            })
+            .attr("font-size", (d) => {
+                let size = 10 / cur_scale;
+                return size + 'px';
+            })
+            .attr("fill", (d) => {
+                const perc = get_cell_count_norm(data, d);
+                const color = perc <= 0.5 ? 'black' : 'white';
+                return color;
+            });
+        }
     }
 }
 

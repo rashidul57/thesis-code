@@ -99,6 +99,22 @@ body {
     }
 }
 
+.bubble-svg{
+    g{
+        circle{
+            &.abberation{
+                // opacity: 0.2;
+                z-index: 1;
+            }
+            &.actual{
+                // opacity: 1;
+                z-index: 2;
+            }
+        }
+    }
+}
+
+
 .clear-fish-graph{
     font-size: 13px;
     color: #2d88fd;

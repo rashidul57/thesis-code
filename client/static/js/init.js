@@ -10,16 +10,31 @@ window.onload = init;
  * Excecutes on page load(start of the application)
  */
 async function init() {
-     $.get("/get-forcasts", function(data, status){
-        whole_dataset = JSON.parse(data);
-        core_data = whole_dataset[sel_property];
+    const forecasts = await $.get("/get-forcasts");
+    whole_dataset = JSON.parse(forecasts);
+    core_data = whole_dataset[sel_property];
 
-        countries = Object.keys(core_data);
-        load_control_data();
+    countries = Object.keys(core_data);
+    load_control_data();
 
-        draw_predicted_lines(core_data, undefined);
 
+    let cov_data = await $.get("/get-covid-data");
+    cov_data = JSON.parse(cov_data)
+    const columns = cov_data.columns;
+    const data_arr = cov_data.data
+    const covid_data = [];
+    data_arr.forEach(item => {
+        const rec = {};
+        for (let k = 0; k < columns.length; k++) {
+            rec[columns[k]] = item[k]
+        }
+        covid_data.push(rec);
     });
+    const grp = _.groupBy(covid_data, 'location')
+    
+    debugger
+    
+
 }
 
 function load_control_data() {
@@ -47,18 +62,18 @@ function load_control_data() {
     d3.select("#drp-chart-type option").remove();
 
     const chart_types = ['Line', 'Stream Graphs', 'Bubble Chart'];
-    sel_chart_type = chart_types[0];
+    sel_chart_type = chart_types[2];
     d3.select("#drp-chart-type")
     .selectAll('chart-types')
     .data(chart_types)
     .enter()
     .append('option')
     .text((d) => { return d; })
-    .attr("value", (d) => { return d; });
+    .attr("value", (d) => { return d; })
+    .property("selected", sel_chart_type);
 
     d3.selectAll("#drp-chart-type")
     .on("change", function(ev) {
-
         hide_items();
 
         sel_chart_type = d3.select(this).property("value");
@@ -111,6 +126,8 @@ function load_control_data() {
         d3.selectAll(".country-stream").remove();
     });
     
+    // initial load
+    refresh_container();
 }
 
 function refresh_container() {
