@@ -1,5 +1,6 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
+let control_mode = 'pan';
 
 
 window.onload = init;
@@ -113,7 +114,7 @@ function load_control_data() {
         d3.select(".chart-item").selectAll("svg").remove();
         const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(prop_pred_data, model, undefined, undefined);
+            draw_stream_graph(prop_pred_data, model, undefined, undefined, undefined);
         } else {
             draw_bubble_chart(prop_pred_data, model);
         }
@@ -121,7 +122,8 @@ function load_control_data() {
 
     d3.selectAll(".clear-fish-graph")
     .on("click", function(ev) {
-        d3.selectAll(".country-stream").remove();
+        // d3.selectAll(".country-stream").remove();
+        d3.selectAll(".country-stream-svg").remove();
     });
 
     // country stream-graph options
@@ -138,8 +140,31 @@ function load_control_data() {
     d3.selectAll("#drp-country-stream-type")
     .on("change", function(ev) {
         country_stream_mode = d3.select(this).property("value");
+        if (sel_chart_type === "Stream Graphs") {
+            d3.select(".chart-item").selectAll("svg").remove();
+            draw_stream_graph(prop_pred_data, undefined, undefined, undefined);
+        }
     });
 
+    // view control items
+    d3.selectAll('.view-controls .control-item')
+    .on("click", function(ev) {
+        const streamEl = d3.select('.control-item.stream');
+        const panEl = d3.select('.control-item.pan');
+        let streamCls = streamEl.attr('class');
+        let panCls = panEl.attr('class');
+        if (ev.target.className.indexOf('pan') > -1) {
+            streamCls = streamCls.replace('active', '').trim();
+            panCls = panCls + ' active';
+            control_mode = 'pan';
+        } else {
+            panCls = panCls.replace('active', '').trim();
+            streamCls = streamCls + ' active';
+            control_mode = 'stream';
+        }
+        streamEl.attr('class', streamCls);
+        panEl.attr('class', panCls);
+    });
 
     
     // initial load
@@ -155,8 +180,8 @@ function refresh_container() {
         break;
 
         case "Stream Graphs":
-        d3.selectAll(".models-item").style("display", "inline-block");
-        draw_stream_graph(prop_pred_data, undefined);
+        d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
+        draw_stream_graph(prop_pred_data, undefined, undefined, undefined);
         break;
 
         case 'Bubble Chart':

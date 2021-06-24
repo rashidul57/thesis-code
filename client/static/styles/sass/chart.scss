@@ -9,6 +9,43 @@ body {
     margin: 2px;
 }
 
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    // src: url(https://example.com/MaterialIcons-Regular.eot); /* For IE6-8 */
+    // src: local('Material Icons'),
+    //   local('MaterialIcons-Regular'),
+    //   url(https://example.com/MaterialIcons-Regular.woff2) format('woff2'),
+    //   url(https://example.com/MaterialIcons-Regular.woff) format('woff'),
+    //   url(https://example.com/MaterialIcons-Regular.ttf) format('truetype');
+  }
+
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+  
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+  
+    /* Support for IE. */
+    font-feature-settings: 'liga';
+  }
+
 .toolbar{
     text-align: left;
     width: calc(960px - 5px);
@@ -18,6 +55,7 @@ body {
     border-left: 1px solid #000;
     border-right: 1px solid #000;
     padding-left: 5px;
+    position: relative;
     
     input, select {
         border-width: 1px;
@@ -30,6 +68,43 @@ body {
     }
     .option .caption{
         font-size: 14px;
+    }
+
+    .view-controls{
+        position: absolute;
+        right: 3px;
+        .control-container{
+            position: relative;
+            .control-item{
+                margin-top: 2px;
+                position: absolute;
+                
+                &.pan{
+                    font-size: 14px;
+                    right: 27px;
+                    top: 2px;
+                    padding-bottom: 2px;
+                }
+                &.stream{
+                    font-size: 17px;
+                    right: 5px;
+                    top: 1px;
+                }
+                // &.zoom-in{
+                //     font-size: 20px;
+                //     right: 5px;
+                // }
+                // &.zoom-out{
+                //     font-size: 20px;
+                //     right: 0;
+                // }
+                &.active{
+                    color: blue;
+                    border-bottom: 2px solid blue;
+                    padding-bottom: 1px;
+                }
+            }
+        }
     }
 }
 
@@ -44,51 +119,83 @@ body {
         background: #fff;
         z-index: 9;
         position: absolute;
+        overflow: visible;
+        .bubble-svg{
+            overflow: visible;
+        }
+
+        .country-stream-svg{
+            overflow: visible;
+            &.focused{
+                opacity: 1;
+            }
+            &.dimmed{
+                opacity: 0.3;
+            }
+            &.top-left{
+                g{
+                    transform: rotate(-135deg);
+                    top: 150px;
+                    left: 20px;
+                }
+            }
+            &.top-middle{
+                g{
+                    // transform: rotate(-90deg);
+                    // top: 80px;
+                    // left: 220px;
+                    transform: rotate(-90deg);
+                    transform-origin: -13px 50px;
+                }
+            }
+            &.top-right{
+                g{
+                    transform: rotate(-45deg);
+                    top: 155px;
+                    left: 430px;
+                }
+            }
+            &.left-middle{
+                g{
+                    transform: rotate(-180deg);
+                    top: 300px;
+                    left: 0px;
+                }
+            }
+            &.right-middle{
+                g{
+                    transform: rotate(0deg);
+                    top: 300px;
+                    left: 480px;
+                }
+            }
+            &.bottom-left{
+                g{
+                    transform: rotate(-35deg);
+                    top: 450px;
+                    left: 30px;
+                }
+            }
+            &.bottom-middle{
+                g{
+                    transform: rotate(90deg);
+                    top: 515px;
+                    left: 220px;
+                }
+            }
+            &.bottom-right{
+                g{
+                    transform: rotate(34deg);
+                    transform-origin: 104px -35px;
+                }
+            }
+        }
 
         .country-stream{
             position: absolute;
             height: 71px;
             width: 500px;
-            &.top-left{
-                transform: rotate(35deg);
-                top: 150px;
-                left: 20px;
-            }
-            &.top-middle{
-                transform: rotate(90deg);
-                top: 80px;
-                left: 220px;
-            }
-            &.top-right{
-                transform: rotate(145deg);
-                top: 155px;
-                left: 430px;
-            }
-            &.left-middle{
-                transform: rotate(5deg);
-                top: 300px;
-                left: 0px;
-            }
-            &.right-middle{
-                transform: rotate(180deg);
-                top: 300px;
-                left: 480px;
-            }
-            &.bottom-left{
-                transform: rotate(-35deg);
-                top: 450px;
-                left: 30px;
-            }
-            &.bottom-middle{
-                transform: rotate(270deg);
-                top: 515px;
-                left: 220px;
-            }
-            &.bottom-right{
-                transform: rotate(-150deg);
-                top: 430px;
-                left: 445px;
-            }
+            
             &.focused{
                 opacity: 1;
             }
