@@ -154,11 +154,11 @@ function load_control_data() {
         let streamCls = streamEl.attr('class');
         let panCls = panEl.attr('class');
         if (ev.target.className.indexOf('pan') > -1) {
-            streamCls = streamCls.replace('active', '').trim();
+            streamCls = streamCls.replace(/(active)/g, '').trim();
             panCls = panCls + ' active';
             control_mode = 'pan';
         } else {
-            panCls = panCls.replace('active', '').trim();
+            panCls = panCls.replace(/(active)/g, '').trim();
             streamCls = streamCls + ' active';
             control_mode = 'stream';
         }

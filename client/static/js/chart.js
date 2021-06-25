@@ -322,9 +322,16 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country='', sel_country_cl
     .domain(d3.extent(data, d => d.date))
     .range([margin.left, width - margin.right]);
 
+    let start_path_y;
     area = d3.area()
     .x(d => x(d.data.date))
-    .y0(d => y(d[0]))
+    .y0((d, indx) => {
+        const d1 = y(d[0]);
+        if (indx === 0) {
+            start_path_y = d1;
+        }
+        return d1;
+    })
     .y1(d => y(d[1]));
 
     // draw legend
@@ -402,6 +409,9 @@ function draw_stream_graph(pred_data, algo='mlp', sel_country='', sel_country_cl
         .text(({key}) => {
             return key;
         });
+
+    svg.select('g').style('transform', "translate(-" + 20 + "px,-" + start_path_y + "px)")
+    // $('.cicle-container-' + sel_country_cls + ' svg g').css('transform', "translate(-" + 20 + "px,-" + start_path_y + "px)")
 
     if (sel_country) {
         // add_zoom_listener(svg, width, height, 150);
@@ -577,13 +587,13 @@ function draw_bubble_chart(data, model='mlp') {
     //     .call(tooltip);
     
     let cur_scale = 1;
-    redraw_bubble_text(root, svg, cur_scale);
+    redraw_bubbles(root, svg, cur_scale);
 
     // set zoom functon on to the svg
     add_zoom_listener(svg, width, height, margin_w/2, margin_h/2);
 
     // reset bubble label(country code) on change scale of the svg
-    function redraw_bubble_text(root, svg, cur_scale) {
+    function redraw_bubbles(root, svg, cur_scale) {
 
         // clear container
         svg.selectAll(".country-code").remove();
@@ -661,8 +671,9 @@ function draw_bubble_chart(data, model='mlp') {
                     return abberation ? 'country-text-del': 'country-text';
                 })
                 .attr("y", 5)
-                .attr("x", (d, i, nodes) => {
-                    return (-d.data.name.length*4) + 'px';
+                .attr("x1", (d, i, nodes) => {
+                    const r = d.r + d.data.deviation;
+                    return ((-d.data.name.length*5)/r) + 'px';
                 })
                 .text(function(d){
                     return abberation ? '' : get_cell_label(total_count, cur_scale, d);
@@ -697,7 +708,7 @@ function add_zoom_listener(svg, width, height, margin_w, margin_h) {
             }
         });
     svg.call(zoom);
-    // svg.call(zoom.scaleBy, .25);
+    // svg.call(zoom.scaleBy, .5);
 
     let drag = d3.drag()
         .on('start', dragstarted)

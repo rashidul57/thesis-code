@@ -113,44 +113,6 @@ body {
 .container-box .chart-item .country-stream-svg.dimmed {
   opacity: 0.3;
 }
-.container-box .chart-item .country-stream-svg.top-left g {
-  transform: rotate(-135deg);
-  top: 150px;
-  left: 20px;
-}
-.container-box .chart-item .country-stream-svg.top-middle g {
-  transform: rotate(-90deg);
-  transform-origin: -13px 50px;
-}
-.container-box .chart-item .country-stream-svg.top-right g {
-  transform: rotate(-45deg);
-  top: 155px;
-  left: 430px;
-}
-.container-box .chart-item .country-stream-svg.left-middle g {
-  transform: rotate(-180deg);
-  top: 300px;
-  left: 0px;
-}
-.container-box .chart-item .country-stream-svg.right-middle g {
-  transform: rotate(0deg);
-  top: 300px;
-  left: 480px;
-}
-.container-box .chart-item .country-stream-svg.bottom-left g {
-  transform: rotate(-35deg);
-  top: 450px;
-  left: 30px;
-}
-.container-box .chart-item .country-stream-svg.bottom-middle g {
-  transform: rotate(90deg);
-  top: 515px;
-  left: 220px;
-}
-.container-box .chart-item .country-stream-svg.bottom-right g {
-  transform: rotate(34deg);
-  transform-origin: 104px -35px;
-}
 .container-box .chart-item .country-stream {
   position: absolute;
   height: 71px;
