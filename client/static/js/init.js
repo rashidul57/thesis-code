@@ -92,7 +92,7 @@ function load_control_data() {
 
     d3.selectAll("#drp-countries")
     .on("change", function(ev) {
-        d3.select(".chart-item").selectAll("svg").remove();
+        d3.select(".left-chart-container").selectAll("svg").remove();
         const country = d3.select(this).property("value");
         draw_predicted_lines(prop_pred_data, country);
     });
@@ -111,10 +111,10 @@ function load_control_data() {
 
     d3.selectAll("#drp-models")
     .on("change", function(ev) {
-        d3.select(".chart-item").selectAll("svg").remove();
+        d3.select(".left-chart-container").selectAll("svg").remove();
         const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(prop_pred_data, model, undefined, undefined, undefined);
+            draw_stream_graph(prop_pred_data, model, 'left-chart-container', undefined, undefined, undefined);
         } else {
             draw_bubble_chart(prop_pred_data, model);
         }
@@ -141,8 +141,9 @@ function load_control_data() {
     .on("change", function(ev) {
         country_stream_mode = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            d3.select(".chart-item").selectAll("svg").remove();
-            draw_stream_graph(prop_pred_data, undefined, undefined, undefined);
+            draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
+        } else {
+            draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         }
     });
 
@@ -172,7 +173,8 @@ function load_control_data() {
 }
 
 function refresh_container() {
-    d3.select(".chart-item").selectAll("svg").remove();
+    $('.container-box').removeClass('two-columns');
+    d3.select(".left-chart-container").selectAll("svg").remove();
     switch (sel_chart_type) {
         case "Line":
         d3.selectAll(".countries-item").style("display", "inline-block");
@@ -181,12 +183,14 @@ function refresh_container() {
 
         case "Stream Graphs":
         d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
-        draw_stream_graph(prop_pred_data, undefined, undefined, undefined);
+        draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
         break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type").style("display", "inline-block");
-        draw_bubble_chart(prop_pred_data)
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart").style("display", "inline-block");
+        draw_bubble_chart(prop_pred_data);
+        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+        $('.container-box').addClass('two-columns');
         break;
     }
 }

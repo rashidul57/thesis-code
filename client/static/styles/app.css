@@ -95,33 +95,37 @@ body {
   width: 960px;
   position: relative;
 }
-.container-box .chart-item {
+.container-box.two-columns {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  width: 1500px;
+}
+.container-box .left-chart-container {
   background: #fff;
   z-index: 9;
-  position: absolute;
   overflow: visible;
 }
-.container-box .chart-item .bubble-svg {
+.container-box .left-chart-container .bubble-svg {
   overflow: visible;
 }
-.container-box .chart-item .country-stream-svg {
+.container-box .left-chart-container .country-stream-svg {
   overflow: visible;
 }
-.container-box .chart-item .country-stream-svg.focused {
+.container-box .left-chart-container .country-stream-svg.focused {
   opacity: 1;
 }
-.container-box .chart-item .country-stream-svg.dimmed {
+.container-box .left-chart-container .country-stream-svg.dimmed {
   opacity: 0.3;
 }
-.container-box .chart-item .country-stream {
+.container-box .left-chart-container .country-stream {
   position: absolute;
   height: 71px;
   width: 500px;
 }
-.container-box .chart-item .country-stream.focused {
+.container-box .left-chart-container .country-stream.focused {
   opacity: 1;
 }
-.container-box .chart-item .country-stream.dimmed {
+.container-box .left-chart-container .country-stream.dimmed {
   opacity: 0.1;
 }
 
@@ -130,6 +134,13 @@ body {
 }
 .bubble-svg g circle.actual {
   z-index: 2;
+}
+
+.main-stream-cell {
+  opacity: 0.8;
+}
+.main-stream-cell.focused {
+  opacity: 1;
 }
 
 .clear-fish-graph {

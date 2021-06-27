@@ -114,11 +114,16 @@ body {
     height: 750px;
     width: 960px;
     position: relative;
+    &.two-columns{
+        display: grid;
+        grid-template-columns: 50% 50%;
+        width: 1500px;
+    }
 
-    .chart-item { 
+    .left-chart-container {
         background: #fff;
         z-index: 9;
-        position: absolute;
+        // position: absolute;
         overflow: visible;
         .bubble-svg{
             overflow: visible;
@@ -221,6 +226,13 @@ body {
                 z-index: 2;
             }
         }
+    }
+}
+
+.main-stream-cell{
+    opacity: 0.8;
+    &.focused{
+        opacity: 1;
     }
 }
 
