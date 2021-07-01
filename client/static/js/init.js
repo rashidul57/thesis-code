@@ -1,6 +1,6 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
-let control_mode = 'pan';
+let control_mode = 'stream';
 
 
 window.onload = init;
@@ -14,10 +14,7 @@ async function init() {
     const forecasts = await $.get("/get-forcasts");
     forecast_data = JSON.parse(forecasts);
     prop_pred_data = forecast_data[sel_property];
-
     countries = Object.keys(prop_pred_data);
-    load_control_data();
-
 
     let cov_data = await $.get("/get-covid-data");
     cov_data = JSON.parse(cov_data)
@@ -32,6 +29,8 @@ async function init() {
         covid_data.push(rec);
     });
     all_covid_data = _.groupBy(covid_data, 'location');
+
+    load_control_data();
     
 
 }
@@ -127,7 +126,7 @@ function load_control_data() {
     });
 
     // country stream-graph options
-    const country_stream_modes = ['Prediction', 'By Properties'];
+    const country_stream_modes = ['By Properties', 'Prediction'];
     country_stream_mode = country_stream_modes[0];
     d3.select("#drp-country-stream-type")
     .selectAll('model-list')

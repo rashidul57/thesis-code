@@ -3,6 +3,8 @@ const date_format = 'YYYY-MM-DD';
 const drag_start = {};
 const bubble_chart_width = 780;
 const bubble_chart_height = 750;
+let bubble_chart_scale = 1;
+let stream_chart_scale = 1;
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -263,7 +265,17 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             data = get_normalized_data(data, model_types);
             keys = model_types;
         } else {
-            const country_data = all_covid_data[sel_country];
+            let country_data = all_covid_data[sel_country];
+            let found = false;
+            const len = country_data.length;
+            country_data = country_data.filter(item => {
+                if (!found) {
+                    found = item.new_cases;
+                }
+                return found;
+            });
+            const len1 = country_data.length;
+            console.log(len, len1);
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
             data = get_normalized_data(country_data, keys);
         }
@@ -299,7 +311,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     }
 
     // set the dimensions and margins of the graph
-    margin = ({top: 0, right: 20, bottom: 30, left: 20});
+    margin = ({top: 0, right: 0, bottom: 0, left: 0});
 
     height = sel_country ? 150 : 500;
     width = 500;
@@ -389,7 +401,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     if (sel_country) {
         if (ev.target) {
             // const seg_cls = get_segment_class(ev, false);
-            svg = d3.select('.' + 'cicle-container-' + sel_country_cls)
+            svg = d3.select('.' + 'circle-container-' + sel_country_cls)
             .append('svg')
             .attr('class', 'country-stream-svg ');
         } else {
@@ -397,11 +409,15 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         }
     } else {
         svg = d3.select("." + container)
-        .append("svg");
+        .append("svg")
+        .attr('class', 'main-stream-svg');
         svg.attr("viewBox", [0, 0, width, height]);
     }
 
     svg.append("g")
+        .attr('class', () => {
+            return sel_country ? '' : 'main-stream-g';
+        })
         .selectAll("path")
         .data(series)
         .join("path")
@@ -409,7 +425,8 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .attr("d", area)
         .attr('class', ({key}) =>{
             const nameCls = key.replace(/\s/g, '-') || '';
-            return 'main-stream-cell stream-cell-' + nameCls;
+            const cls = 'main-stream-cell stream-cell-' + nameCls;
+            return sel_country ? '' : cls;
         })
         .append("title")
         .text(({key}) => {
@@ -417,48 +434,27 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         });
 
     if (sel_country) {
-        const country_center = d3.select('.cicle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
+        const country_center = d3.select('.circle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
         const c_cx = Number(country_center[0]);
         const c_cy = Number(country_center[1]);
         const p1 = {x: bubble_chart_width/2, y: bubble_chart_height/2};
         const p2 = {x: c_cx, y: c_cy};
         const angle = get_angle(p1, p2);
-        let tx = 20, ty = start_path_y;
-        if (Math.abs(angle) < 90) {
-            tx = -tx;
-            ty = -ty;
-        }
-
-        const trans = "translate(" + tx + "px," + ty + "px) rotate(" + angle + "deg)";
-        console.log(trans)
-        svg.select('g').style('transform', trans)
+        const country_g = svg.select('g');
+        country_g
+            .style('transform', `translate(0px,-${ty}px) rotate(${angle}deg)`)
+            .style('transform-origin', `0px ${ty}px`);
     }
-    // $('.cicle-container-' + sel_country_cls + ' svg g').css('transform', "translate(-" + 20 + "px,-" + start_path_y + "px)")
 
     if (sel_country) {
         // add_zoom_listener(svg, width, height, 150);
     } else {
         svg.append("g")
             .call(xAxis);
+        
+        add_zoom_listener(svg, width, height, 'main-stream-svg');
     }
 
-    // if (sel_country_cls) {
-    //     const seg_countries = d3.selectAll('.' + cls);
-    //     const sel_country_seg = d3.selectAll('.' + sel_country_cls + '-stream-svg');
-    //     if (seg_countries.size() > 1) {
-    //         let nodes = seg_countries.nodes();
-    //         nodes.forEach(node => {
-    //             node.classList.remove('focused');
-    //             node.classList.add("dimmed");
-    //         });
-            
-    //         nodes = sel_country_seg.nodes();
-    //         nodes.forEach(node => {
-    //             node.classList.remove('dimmed');
-    //             node.classList.add("focused");
-    //         });
-    //     }
-    // }
 
 }
 
@@ -547,11 +543,14 @@ function prepare_bubble_data(data, model) {
     return bubble_data;
 }
 
+
+let bubble_data;
+
 function draw_bubble_chart(data, model='mlp') {
     data = prepare_bubble_data(data, model);
 
     // sort data by count
-    data = _.orderBy(data, ['count'], ['desc']);
+    bubble_data = data = _.orderBy(data, ['count'], ['desc']);
 
     // initialize configs of the chart
     const width = bubble_chart_width;
@@ -580,7 +579,7 @@ function draw_bubble_chart(data, model='mlp') {
     // set svg shape/size
     const svg = d3.select('.left-chart-container')
         .append("svg")
-        .attr('class', 'bubble-svg zoomable')
+        .attr('class', 'bubble-svg')
         .attr("width", width)
         .attr("height", height)
         // .attr("transform", 
@@ -601,7 +600,7 @@ function draw_bubble_chart(data, model='mlp') {
 
     svg.on('mousedown', function (ev) {
         // tooltip.hide();
-        get_segment_class(ev, true);
+        // get_segment_class(ev, true);
     });
 
     // svg.append('g')
@@ -611,7 +610,7 @@ function draw_bubble_chart(data, model='mlp') {
     redraw_bubbles(root, svg, cur_scale);
 
     // set zoom functon on to the svg
-    add_zoom_listener(svg, width, height);
+    add_zoom_listener(svg, width, height, 'bubble-svg');
 
     // reset bubble label(country code) on change scale of the svg
     function redraw_bubbles(root, svg, cur_scale) {
@@ -632,7 +631,7 @@ function draw_bubble_chart(data, model='mlp') {
             .join("g")
             .attr('class', (d) => {
                 const nameCls = d && d.data.nameCls || '';
-                let cls = 'cicle-container cicle-container-' + nameCls;
+                let cls = 'circle-container circle-container-' + nameCls;
                 return cls;
             })
             .attr("transform", d => {
@@ -668,80 +667,103 @@ function draw_bubble_chart(data, model='mlp') {
                 }
             })
             .on('mouseover', function (event, d) {
-                reorder_bubbles(this.parentNode, root.leaves());
-                // const el = d3.select(".cicle-container-" + d.data.nameCls + ' .country-stream-svg');
-                // el.attr('class', 'country-stream-svg focused');
-                toggle_focus(d.data.nameCls, 'mouseover');
+                if (control_mode === 'stream') {
+                    reorder_bubbles(this.parentNode, root.leaves());
+                    toggle_focus(d.data.nameCls, 'mouseover');
+                }
             })
             .on('mouseout', function (event, d) {
-                toggle_focus(d.data.nameCls, 'mouseout');
-                // const el = d3.select(".cicle-container-" + d.data.nameCls + ' .country-stream-svg');
-                // const cur_classes = 
-                // el.attr('class', 'country-stream-svg dimmed')
+                if (control_mode === 'stream') {
+                    toggle_focus(d.data.nameCls, 'mouseout');
+                }
             })
             .on("mousemove", function(event, d){
                 // set_cell_tooltip_position(event, tooltip, d);
             })
             .on('mousedown', function (ev, d) {
                 if (!abberation && control_mode === 'stream') {
-                    d3.selectAll('.cicle-container-' + d.data.nameCls + ' .country-stream-svg').remove();
+                    d3.selectAll('.circle-container-' + d.data.nameCls + ' .country-stream-svg').remove();
                     draw_stream_graph(prop_pred_data, model, undefined, d.data.name, d.data.nameCls, ev);
                 }
             });
 
             if (!abberation) {
-                leaf.append("text")
-                .attr('class', (d) => {
-                    return abberation ? 'country-text-del': 'country-text';
-                })
-                .attr("y", 5)
-                .attr("x", (d, i, nodes) => {
-                    const r = d.r + d.data.deviation;
-                    const mult = 25/r;
-                    const shift = (-d.data.name.length*mult);
-                    // console.log(d.data.name, shift)
-                    return shift + 'px';
-                })
-                .text(function(d){
-                    return abberation ? '' : get_cell_label(cur_scale, d);
-                })
-                .attr("font-size", (d) => {
-                    let size = 10 / cur_scale;
-                    return size + 'px';
-                })
-                .attr("fill", (d) => {
-                    const perc = get_cell_count_norm(data, d);
-                    const color = perc <= 0.5 ? 'black' : 'white';
-                    return color;
-                });
+                add_country_code(leaf);
             }
         }
     }
 }
 
-function add_zoom_listener(svg, width, height) {
-    svg = d3.selectAll('.zoomable')
+function add_country_code(country_cell) {
+    country_cell.append("text")
+        .attr('class', 'country-code')
+        .attr("y", 5)
+        .attr("x", (d, i, nodes) => {
+            const shift = -d.data.code.length * 3/bubble_chart_scale;
+            // if (d.data.code === 'EGY') {
+            //     console.log(d.r, bubble_chart_scale, shift);
+            // }
+            return shift + 'px';
+        })
+        .text(function(d){
+            
+            const ratio = d.r*bubble_chart_scale;
+            let label = ratio > 14 ? d.data.code : '';
+            return label;
+        })
+        .attr("font-size", (d) => {
+            let size = 10 / bubble_chart_scale;
+            return size + 'px';
+        })
+        .attr("fill", (d) => {
+            const perc = get_cell_count_norm(bubble_data, d);
+            const color = perc <= 0.5 ? 'black' : 'white';
+            return color;
+        });
+}
+
+function add_zoom_listener(svg, width, height, selector) {
+    svg = d3.selectAll('.' + selector)
     const zoom_level = 10;
     const zoom = d3.zoom()
         .scaleExtent([-5, zoom_level])
         .extent([[-width,-height], [width, height]])
         .translateExtent([[-width/zoom_level, -height/zoom_level], [width/zoom_level, height/zoom_level]])
         .on("zoom", (event) => {
+            if (selector === 'main-stream-svg') {
+                stream_chart_scale = event.transform.k;
+            } else {
+                bubble_chart_scale = event.transform.k;
+                d3.selectAll('.circle-container text').remove();
+                const circles = d3.selectAll('.circle-container');
+                add_country_code(circles)
+            }
             // console.log(event.sourceEvent.type, event.transform);
             if (!event.sourceEvent || event.sourceEvent.type === 'wheel') {
-                svg.attr('transform', event.transform);
+                const trans_str = svg.attr("transform") || '';
+                if (trans_str && trans_str.indexOf('translate') > -1 && trans_str.indexOf('scale') > -1) {
+                    const parts = trans_str.split(' ');
+                    const translate = parts[0];
+                    svg.attr("transform",
+                        translate + " scale(" + event.transform.k + ")"
+                    );
+                } else {
+                    svg.attr('transform', event.transform);
+                }
             } else {
                 return false;
             }
         });
     svg.call(zoom);
-    // svg.call(zoom.scaleBy, .5);
 
     let drag = d3.drag()
-        .on('start', dragstarted)
+        .on('start', dragstarted, selector)
         // .on('drag', dragged)
-        .on('end', dragended);
-    svg.selectAll('.cicle-container')
+        .on('end', (ev, data)=> {
+            dragended(ev, data, selector);
+        });
+    const item_sel = selector === 'main-stream-svg' ? 'main-stream-g' : 'circle-container';
+    svg.selectAll('.' + item_sel)
     .call(drag);
     
 }
@@ -753,31 +775,33 @@ function dragstarted(d) {
     }
 }
 
-function dragged(d, ev) {
+function dragged(d, ev, selector) {
     // console.log('dragged')
     // svg = d3.selectAll('.zoomable')
 }
 
-function dragended(d) {
+function dragended(ev, d, selector) {
     if (control_mode === 'pan') {
-        const diff_x = d.sourceEvent.clientX - drag_start.clientX;
-        const diff_y = d.sourceEvent.clientY - drag_start.clientY;
-        const svg = d3.selectAll('.zoomable')
+        const diff_x = ev.sourceEvent.clientX - drag_start.clientX;
+        const diff_y = ev.sourceEvent.clientY - drag_start.clientY;
+        const svg = d3.selectAll('.' + selector)
         const trans_str = svg.attr("transform") || '';
-        var points = trans_str.replace(/[(translate\()\)]/g, '').split(',');
+        const parts = trans_str.split(' ');
+        var points = parts[0].replace(/[(translate\()\)]/g, '').split(',');
+        let scale = parts.length > 1 ? parts[1] : '';
         var x = Number(points[0]) || 10;
         var y = Number(points[1]) || 10;
         const new_x = x + diff_x;
         const new_y = y + diff_y;
         svg.attr("transform",
-            "translate(" + new_x + "," + new_y + ")"
+            "translate(" + new_x + "," + new_y + ") " + scale
         );
     }
 }
 
 function toggle_focus(nameCls, _event) {
     const selectors = [
-        ".cicle-container-" + nameCls + ' .country-stream-svg',
+        ".circle-container-" + nameCls + ' .country-stream-svg',
         ".main-stream-chart" + ' .stream-cell-' + nameCls
     ]
     selectors.forEach(selector => {
@@ -801,7 +825,7 @@ function toggle_focus(nameCls, _event) {
 function reorder_bubbles(country_node, leaves) {
     const parent_node = country_node.parentNode; // 
     leaves.forEach(leaf => {
-        const node = d3.select('.cicle-container-' + leaf.data.nameCls);
+        const node = d3.select('.circle-container-' + leaf.data.nameCls);
         if (node._groups[0][0] !== country_node) {
             parent_node.appendChild(node._groups[0][0]);
         }
