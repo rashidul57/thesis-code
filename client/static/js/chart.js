@@ -266,16 +266,14 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             keys = model_types;
         } else {
             let country_data = all_covid_data[sel_country];
+            // Filtering is needed to ensure country stream start point go inside circle
             let found = false;
-            const len = country_data.length;
             country_data = country_data.filter(item => {
                 if (!found) {
                     found = item.new_cases;
                 }
                 return found;
             });
-            const len1 = country_data.length;
-            console.log(len, len1);
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
             data = get_normalized_data(country_data, keys);
         }
@@ -437,6 +435,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         const country_center = d3.select('.circle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
         const c_cx = Number(country_center[0]);
         const c_cy = Number(country_center[1]);
+        const ty = start_path_y;
         const p1 = {x: bubble_chart_width/2, y: bubble_chart_height/2};
         const p2 = {x: c_cx, y: c_cy};
         const angle = get_angle(p1, p2);
