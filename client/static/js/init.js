@@ -1,6 +1,6 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
-let control_mode = 'stream';
+let control_mode = 'wing-stream';
 
 
 window.onload = init;
@@ -149,35 +149,57 @@ function load_control_data() {
     // view control items
     d3.selectAll('.view-controls .control-item')
     .on("click", function(ev) {
-        const streamEl = d3.select('.control-item.stream');
-        const panEl = d3.select('.control-item.pan');
-        let streamCls = streamEl.attr('class');
-        let panCls = panEl.attr('class');
-        if (ev.target.className.indexOf('pan') > -1) {
-            streamCls = streamCls.replace(/(active)/g, '').trim();
-            panCls = panCls + ' active';
-            control_mode = 'pan';
-        } else {
-            panCls = panCls.replace(/(active)/g, '').trim();
-            streamCls = streamCls + ' active';
-            control_mode = 'stream';
-        }
-        streamEl.attr('class', streamCls);
-        panEl.attr('class', panCls);
+        // remove active flag from all
+        const controls = d3.selectAll('.view-controls .control-item').nodes();
+        controls.forEach(el => {
+            const cls = el.className.replace(/(active)/g, '').trim();
+            d3.select(el).attr('class', cls);
+        });
+
+        const el = ev.target.className.indexOf('control-item') > -1 ? d3.select(ev.target) : d3.select(ev.target.parentElement);
+        let cur_cls = el.attr('class').trim();
+        control_mode = cur_cls.split(' ')[1].trim();
+        cur_cls = cur_cls + ' active';
+        el.attr('class', cur_cls);
     });
 
-    
+    // refresh chart by clearing selection
+    d3.selectAll('.btn-go')
+    .on("click", function(ev) {
+        if (bubble_removed.length || global_streams.length) {
+            refresh_container();
+        }
+    });
+
+    // refresh chart by clearing selection
+    d3.selectAll('.control-item .cross')
+    .on("click", function(ev) {
+        switch (control_mode) {
+            case 'bubble-remove':
+                bubble_removed = [];
+                toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
+                break;
+            case 'global-streams':
+                global_streams = [];
+                toggle_cross('.' + control_mode + ' .cross', global_streams.length);
+                break;
+        }
+        toggle_go();
+        refresh_container();
+    });
+
     // initial load
     refresh_container();
 }
 
 function refresh_container() {
-    $('.container-box').removeClass('two-columns');
+    $('body').removeClass('min-size');
     d3.select(".left-chart-container").selectAll("svg").remove();
     switch (sel_chart_type) {
         case "Line":
         d3.selectAll(".countries-item").style("display", "inline-block");
         draw_predicted_lines(prop_pred_data, undefined);
+        $('body').addClass('min-size');
         break;
 
         case "Stream Graphs":
@@ -189,7 +211,6 @@ function refresh_container() {
         d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart").style("display", "inline-block");
         draw_bubble_chart(prop_pred_data);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
-        $('.container-box').addClass('two-columns');
         break;
     }
 }

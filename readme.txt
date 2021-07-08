@@ -15,3 +15,11 @@ Start app:
 1. flask run
 2. python server/model-service.py
 3. sass --watch client/static/styles/sass/chart.scss client/static/styles/app.css
+
+
+
+
+
+
+Texture:
+https://css-tricks.com/creating-patterns-with-svg-filters/

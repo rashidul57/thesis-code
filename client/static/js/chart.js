@@ -5,6 +5,8 @@ const bubble_chart_width = 780;
 const bubble_chart_height = 750;
 let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
+let bubble_removed = [];
+let global_streams = [];
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -308,6 +310,19 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         }
     }
 
+    // apply the selected filter only
+    if (global_streams.length) {
+        data = data.map(item => {
+            for (let prop in item) {
+                if (!(prop === 'date' || global_streams.indexOf(prop) > -1)) {
+                    delete item[prop];
+                }
+            }
+            return item;
+        });
+    }
+
+
     // set the dimensions and margins of the graph
     margin = ({top: 0, right: 0, bottom: 0, left: 0});
 
@@ -547,6 +562,10 @@ let bubble_data;
 
 function draw_bubble_chart(data, model='mlp') {
     data = prepare_bubble_data(data, model);
+    
+    data = data.filter(item => {
+        return bubble_removed.indexOf(item.name) === -1;
+    });
 
     // sort data by count
     bubble_data = data = _.orderBy(data, ['count'], ['desc']);
@@ -666,13 +685,13 @@ function draw_bubble_chart(data, model='mlp') {
                 }
             })
             .on('mouseover', function (event, d) {
-                if (control_mode === 'stream') {
+                if (control_mode === 'wing-stream') {
                     reorder_bubbles(this.parentNode, root.leaves());
                     toggle_focus(d.data.nameCls, 'mouseover');
                 }
             })
             .on('mouseout', function (event, d) {
-                if (control_mode === 'stream') {
+                if (control_mode === 'wing-stream') {
                     toggle_focus(d.data.nameCls, 'mouseout');
                 }
             })
@@ -680,10 +699,44 @@ function draw_bubble_chart(data, model='mlp') {
                 // set_cell_tooltip_position(event, tooltip, d);
             })
             .on('mousedown', function (ev, d) {
-                if (!abberation && control_mode === 'stream') {
-                    d3.selectAll('.circle-container-' + d.data.nameCls + ' .country-stream-svg').remove();
-                    draw_stream_graph(prop_pred_data, model, undefined, d.data.name, d.data.nameCls, ev);
+                let nameCls = d.data.nameCls;
+                switch (control_mode) {
+                    case 'wing-stream':
+                        if (!abberation) {
+                            d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
+                            draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
+                        }
+                        break;
+                    case 'bubble-remove':
+                        d3.select('.circle-container-' + nameCls).style("opacity", 0.1);
+                        if (bubble_removed.indexOf(d.data.name) > -1) {
+                            d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                            bubble_removed = bubble_removed.filter(item => item !== d.data.name);
+                        } else {
+                            bubble_removed.push(d.data.name);
+                            d3.select('.circle-container-' + nameCls).style("opacity", 0.1);
+                        }
+                        toggle_go();
+                        toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
+                        break;
+                    case 'global-streams':
+                        if (global_streams.indexOf(d.data.name) > -1) {
+                            global_streams = global_streams.filter(item => item !== d.data.name);
+                        } else {
+                            global_streams.push(d.data.name);
+                        }
+                        d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", 0.1);
+                        global_streams.forEach(name => {
+                            nameCls = name.replace(/\s/g, '-') || '';
+                            d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
+                        });
+
+                        toggle_go();
+                        toggle_cross('.' + control_mode + ' .cross', global_streams.length);
+
+                        break;
                 }
+                
             });
 
             if (!abberation) {
@@ -691,6 +744,16 @@ function draw_bubble_chart(data, model='mlp') {
             }
         }
     }
+}
+
+function toggle_go() {
+    const opacity = (bubble_removed.length > 0 || global_streams.length > 0) ? 1 : 0.3;
+    d3.select('.btn-go').style("opacity", opacity);
+}
+
+function toggle_cross(selector, len) {
+    const opacity = len ? 'inline' : 'none';
+    d3.select(selector).style("display", opacity);
 }
 
 function add_country_code(country_cell) {
@@ -705,7 +768,6 @@ function add_country_code(country_cell) {
             return shift + 'px';
         })
         .text(function(d){
-            
             const ratio = d.r*bubble_chart_scale;
             let label = ratio > 14 ? d.data.code : '';
             return label;
