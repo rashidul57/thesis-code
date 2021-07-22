@@ -1,6 +1,7 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
+let stream_blur_on = true;
 
 
 window.onload = init;
@@ -188,6 +189,14 @@ function load_control_data() {
         refresh_container();
     });
 
+    // toggle toggle-stream-blur
+    d3.selectAll('.toggle-stream-blur')
+    .on("click", function(ev) {
+        stream_blur_on = !stream_blur_on;
+        const display = stream_blur_on ? 'inline-block' : 'none';
+        d3.selectAll('.sec-path').style("display", display);
+    });
+
     // initial load
     refresh_container();
 }
@@ -208,7 +217,7 @@ function refresh_container() {
         break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart").style("display", "inline-block");
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .toggle-stream-blur").style("display", "inline-block");
         draw_bubble_chart(prop_pred_data);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         break;

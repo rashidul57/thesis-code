@@ -183,17 +183,25 @@ body {
     }
 }
 
-.main-stream-cell{
-    opacity: 0.8;
-    &.focused{
-        opacity: 1;
+
+.main-stream-svg{
+    .main-stream-cell{
+        opacity: 0.8;
+        &.focused{
+            opacity: 1;
+        }
+    }
+    .sec-path{
+        fill: white;
+        // opacity: 0.5;
     }
 }
 
 
-.clear-fish-graph{
+.clear-fish-graph, .toggle-stream-blur{
     font-size: 13px;
     color: #2d88fd;
+    margin-left: 15px;
 }
 
 .axis path, .axis line {
