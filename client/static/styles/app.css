@@ -158,10 +158,6 @@ body.min-size .toolbar, body.min-size .container-box {
 .main-stream-svg .main-stream-cell.focused {
   opacity: 1;
 }
-.main-stream-svg .sec-path {
-  fill: white;
-}
-
 .clear-fish-graph, .toggle-stream-blur {
   font-size: 13px;
   color: #2d88fd;

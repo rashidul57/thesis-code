@@ -1,7 +1,7 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
-let stream_blur_on = true;
+let stream_blur_on = false;
 
 
 window.onload = init;
@@ -192,9 +192,17 @@ function load_control_data() {
     // toggle toggle-stream-blur
     d3.selectAll('.toggle-stream-blur')
     .on("click", function(ev) {
-        stream_blur_on = !stream_blur_on;
-        const display = stream_blur_on ? 'inline-block' : 'none';
-        d3.selectAll('.sec-path').style("display", display);
+        const len = d3.selectAll('.sec-path').nodes().length;
+        if (len) {
+            stream_blur_on = !stream_blur_on;
+            const display = stream_blur_on ? 'inline-block' : 'none';
+            d3.selectAll('.sec-path').style("display", display);
+        } else {
+            add_blur_layers(sel_property);
+        }
+        const base_path_display = stream_blur_on ? 'none' : 'inline-block';
+        d3.selectAll('.main-stream-cell').style("display", base_path_display);
+        
     });
 
     // initial load

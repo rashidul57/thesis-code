@@ -7,7 +7,7 @@ let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
 // let global_streams = ['Turkey', 'Bangladesh'];
-let global_streams = [];
+let global_streams = ['Turkey', 'Bangladesh'];
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -439,7 +439,8 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .data(series)
         .join("path")
         // .attr("fill", ({key}) => color(key))
-        .attr("fill", ({key}, index) => {
+        .attr("fill", (d) => {
+            const key = d.key;
             let fill_code = color(key);
             if (!sel_country) {
                 const nameCls = get_name_cls(key);
@@ -475,75 +476,86 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     if (sel_country) {
         // add_zoom_listener(svg, width, height, 150);
     } else {
-        const texture_prop = sel_property === 'new_cases' ? 'new_deaths' : 'new_cases';
-        const paths = svg.selectAll('.main-stream-g path').nodes();
-        const poly_item_count = 20;
-        paths.forEach((path_item, index) => {
-            const country = path_item.textContent;
-            const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
-            const parts = d.split('L');
-            let poly_data = {};
-            
-            const size = parts.length;
-            const side1 = _.take(parts, size/2);
-            const side2 = _.takeRight(parts, size/2);
-            const side_len = side1.length;
-            let log = false;
-            side1.forEach((item, index) => {
-                const sec_indx = parseInt(index / poly_item_count, 10);
-                const cc = pred_data;
-                const dd = pred_data[country];
-                if (!poly_data[sec_indx]) {
-                    poly_data[sec_indx] = {start: [], end: [], count: 0};
-                    log = true;
-                }
-                
-                poly_data[sec_indx].count += pred_data[country][algo].y[sec_indx];
-                const ind = index%poly_item_count;
-                const val = side2[side_len - (poly_item_count*(sec_indx+1)) + ind - 1];
-                if (val) {
-                    poly_data[sec_indx].start.push(item);
-                    poly_data[sec_indx].end.push(val);
-                }
-            });
-
-            const max_val = _.maxBy(_.values(poly_data), ['count']).count;
-            const cont_g = svg.select('.main-stream-g');
-            for (let prop in poly_data) {
-                const start = poly_data[prop].start.join('L');
-                const end = poly_data[prop].end.join('L');
-                
-                const d_str = 'M' + start + 'L' + end + ' Z';
-                // console.log(d_str)
-                cont_g.append('path')
-                    .attr('class', 'sec-path')
-                    .style('opacity', () => {
-                        const opacity = 1 - poly_data[prop].count/max_val;
-                        // console.log(opacity)
-                        return opacity;
-                    })
-                    .attr('d', d_str)
-                    .on('mousedown', function (ev, d) {
-                        const el = d3.select(this);
-                        const opacity = el.style('opacity');
-                        let actual_opacity = el.attr('actual-opacity');
-                        if (!actual_opacity) {
-                            actual_opacity = opacity;
-                            el.attr('actual-opacity', actual_opacity);
-                        }
-                        const new_opacity = opacity === actual_opacity ? 0 : actual_opacity;
-                        el.style('opacity', new_opacity);
-                    });
-                // c++;
-            }
-        });
-
         svg.append("g")
             .call(xAxis);
 
         add_zoom_listener(svg, width, height, 'main-stream-svg');
     }
+}
 
+function add_blur_layers(sel_property) {
+    const texture_prop = sel_property === 'new_cases' ? 'new_deaths' : 'new_cases';
+    const paths = d3.selectAll('.main-stream-g path').nodes();
+    const num_of_days = 30;
+    paths.forEach((path_item, index) => {
+        const country = path_item.textContent;
+        const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
+        const parts = d.split('L');
+        let poly_data = {};
+        
+        const size = parts.length;
+        const side1 = _.take(parts, size/2);
+        const side2 = _.takeRight(parts, size/2);
+        const side_len = side1.length;
+        let log = false;
+        const country_data = all_covid_data[country];
+        
+        side1.forEach((item, index) => {
+            const sec_indx = parseInt(index / num_of_days, 10);
+            if (!poly_data[sec_indx]) {
+                poly_data[sec_indx] = {start: [], end: [], count: 0};
+                log = true;
+            }
+
+            // poly_data[sec_indx].count += pred_data[country][algo].y[sec_indx];
+            poly_data[sec_indx].count += country_data[index] && country_data[index][texture_prop] || 0;
+
+            const ind = index%num_of_days;
+            const val = side2[side_len - (num_of_days*(sec_indx+1)) + ind - 1];
+            if (val) {
+                poly_data[sec_indx].start.push(item);
+                poly_data[sec_indx].end.push(val);
+            }
+        });
+
+        const max_val = _.maxBy(_.values(poly_data), 'count').count;
+        const cont_g = d3.select('.main-stream-g');
+        for (let prop in poly_data) {
+            const start = poly_data[prop].start.join('L');
+            const end = poly_data[prop].end.join('L');
+            
+            const d_str = 'M' + start + 'L' + end + ' Z';
+            cont_g.append('path')
+                .attr('class', 'sec-path')
+                .attr("fill", (d) => {
+                    const nameCls = get_name_cls(country);
+                    let count = parseInt(poly_data[prop].count*100/max_val, 10);
+                    // count = count > 100 ? 100 : count;
+                    // console.log(count)
+                    const fill_code = 'url(#texture-' + nameCls + '-' + count + ')';
+                    return fill_code;
+                })
+                // .style('opacity', () => {
+                //     let opacity = poly_data[prop].count/max_val;
+                //     if (opacity > 0.8) {
+                //         opacity = 0.8;
+                //     }
+                //     return opacity;
+                // })
+                .attr('d', d_str)
+                .on('mousedown', function (ev, d) {
+                    const el = d3.select(this);
+                    const opacity = el.style('opacity');
+                    let actual_opacity = el.attr('actual-opacity');
+                    if (!actual_opacity) {
+                        actual_opacity = opacity;
+                        el.attr('actual-opacity', actual_opacity);
+                    }
+                    const new_opacity = opacity === actual_opacity ? 0 : actual_opacity;
+                    el.style('opacity', new_opacity);
+                });
+        }
+    });
 }
 
 function get_name_cls(key) {
@@ -565,6 +577,44 @@ function add_texture_defs(svg, keys, color) {
           .attr('cy', 4)
           .attr('r', 3)
           .attr('fill', color(key));
+
+        // For blur layers
+        for (k = 0; k <= 100; k++) {
+            const pattern = svg
+            .append('defs')
+            .append('pattern')
+            .attr('id', 'texture-' + nameCls + '-' +k)
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', 7)
+            .attr('height', 7);
+
+            const linGrad = pattern.append('linearGradient')
+                .attr('id', 'lin-grad-' + nameCls + '-' +k )
+                // .attr('patternUnits', 'userSpaceOnUse')
+                .attr('x1', '0%')
+                .attr('y1', '0%')
+                .attr('x2', '100%')
+                .attr('y2', '0%');
+
+            linGrad.append('stop')
+                .attr('offset', '0%')
+                .attr('style', () => {
+                    const c = color(key);
+                    // console.log(key, c)
+                    return 'stop-color:' + c;
+                });
+
+            linGrad.append('stop')
+                .attr('offset', k +'%')
+                .attr('style', () => {
+                    return 'stop-color:rgb(255,255,255)';
+                });
+            pattern.append('circle')
+                .attr('cx', 4)
+                .attr('cy', 4)
+                .attr('r', 3)
+                .attr('fill', 'url(#lin-grad-' + nameCls + '-' + k + ')');
+        }
     });
     
 }
