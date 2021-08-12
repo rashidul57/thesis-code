@@ -7,7 +7,8 @@ let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
 // let global_streams = ['Turkey', 'Bangladesh'];
-let global_streams = ['Turkey', 'Bangladesh'];
+let global_streams = [];
+let bubble_data;
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -201,43 +202,6 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
         line_chart_state = {bounds, xScale, yScale, xAccessor, yAccessor, clip};
     }
 
-    // Show tooltip for the date at which mouse pointed out
-    function show_dated_tip(event) {
-        const mousePosition = d3.pointer(event);
-        let date = xScale.invert(mousePosition[0]);
-        const formated_date = moment(date).format("LL").replace('00', '20');
-        const dmy_date = moment(date).format(date_format);
-        const dated_count = mappedData[dmy_date] && mappedData[dmy_date].count || 0;
-        const cur_date = new Date(date);
-        const total_count = _.reduce(dataset, (sum, item) => {
-            const in_date = new Date(item.date).getTime() <= cur_date.getTime();
-            return sum += in_date ? (item.count || 0) : 0;
-        }, 0);
-        set_cell_tooltip_position(event, tooltip, {data: {name: leg_label, date:formated_date, dated_count, total_count}});
-    }
-
-}
-
-/**
- * Update tooltip position on mouse move
- * @param {*} event 
- * @param {*} tooltip 
- * @param {*} d 
- */
-
-function set_cell_tooltip_position(event, tooltip, d) {
-    let x = Math.abs(event.pageX) - 50;
-    let y = Math.abs(event.pageY) + 15;
-    if (y > 620) {
-        y = 600;
-        if (x > 500) {
-            x -= 150;
-        } else {
-            x += 150;
-        }
-    }
-    tooltip.show(event, d);
-    $('.d3-tip').css({"left": (x + "px"), "top": (y + "px")});
 }
 
 
@@ -483,7 +447,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     }
 }
 
-function add_blur_layers(sel_property) {
+function add_texture_layer(sel_property) {
     const texture_prop = sel_property === 'new_cases' ? 'new_deaths' : 'new_cases';
     const paths = d3.selectAll('.main-stream-g path').nodes();
     const num_of_days = 30;
@@ -558,154 +522,307 @@ function add_blur_layers(sel_property) {
     });
 }
 
-function get_name_cls(key) {
-    return key.replace(/\s/g, '-') || '';
-}
-
-function add_texture_defs(svg, keys, color) {
-    keys.forEach((key, index) => {
-        const nameCls = get_name_cls(key);
-        svg
-        .append('defs')
-        .append('pattern')
-          .attr('id', 'texture-' + nameCls)
-          .attr('patternUnits', 'userSpaceOnUse')
-          .attr('width', 7)
-          .attr('height', 7)
-        .append('circle')
-          .attr('cx', 4)
-          .attr('cy', 4)
-          .attr('r', 3)
-          .attr('fill', color(key));
-
-        // For blur layers
-        for (k = 0; k <= 100; k++) {
-            const pattern = svg
-            .append('defs')
-            .append('pattern')
-            .attr('id', 'texture-' + nameCls + '-' +k)
-            .attr('patternUnits', 'userSpaceOnUse')
-            .attr('width', 7)
-            .attr('height', 7);
-
-            const linGrad = pattern.append('linearGradient')
-                .attr('id', 'lin-grad-' + nameCls + '-' +k )
-                // .attr('patternUnits', 'userSpaceOnUse')
-                .attr('x1', '0%')
-                .attr('y1', '0%')
-                .attr('x2', '100%')
-                .attr('y2', '0%');
-
-            linGrad.append('stop')
-                .attr('offset', '0%')
-                .attr('style', () => {
-                    const c = color(key);
-                    // console.log(key, c)
-                    return 'stop-color:' + c;
-                });
-
-            linGrad.append('stop')
-                .attr('offset', k +'%')
-                .attr('style', () => {
-                    return 'stop-color:rgb(255,255,255)';
-                });
-            pattern.append('circle')
-                .attr('cx', 4)
-                .attr('cy', 4)
-                .attr('r', 3)
-                .attr('fill', 'url(#lin-grad-' + nameCls + '-' + k + ')');
-        }
-    });
-    
-}
-
-function get_normalized_data(data, keys) {
-    const maxs = {};
-    keys.forEach(key => {
-        const max_item = _.maxBy(data, key);
-        maxs[key] = max_item && max_item[key] || 1;
-    });
-
-    data = data.map(item => {
-        item.date = new Date(item.date);
-        keys.forEach(key => {
-            item[key] = item[key] / maxs[key];
-        });
-        return item;
-    });
-    return data;
-}
-
-function get_segment_class(ev, show_log) {
-    const boxEl = $('.container-box')[0];
-    const start_x = boxEl.offsetLeft, end_x = boxEl.offsetWidth;
-    const start_y = boxEl.offsetTop, end_y = boxEl.offsetHeight;
-    const cent_x = end_x/2;
-    const cent_y = end_y/2;
-    const x = ev.clientX - start_x;
-    const y = ev.clientY - start_y;
-    if (show_log) {
-        console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
-    }
-
-    if (x >= (cent_x - 80) && x <= (cent_x + 80)) {
-        if (y <= cent_y) {
-            cls = 'top-middle';
-        } else {
-            cls = 'bottom-middle';
-        }
-    } else if (y >= (cent_y - 70) && y <= (cent_y + 70)) {
-        if (x <= cent_x) {
-            cls = 'left-middle';
-        } else {
-            cls = 'right-middle';
-        }
-    } else if (x <= cent_x && y <= cent_y) {
-        cls = 'top-left';
-    } else if (x > cent_x && y <= cent_y) {
-        cls = 'top-right';
-    } else if (x <= cent_x && y > cent_y) {
-        cls = 'bottom-left';
-    } else {
-        cls = 'bottom-right';
-    }
-    if (show_log) {
-        // console.log(cls)
-    }
-    return cls;
-}
-
-
-// Draw bubble chart
-
-function prepare_bubble_data(data, model) {
+function draw_horizon_chart(pred_data, model='mlp') {
+    let countries = Object.keys(pred_data)
     let num_dates = 0;
+    let start_date;
+    const overlap = 0;
+    const width = 1000;
     countries.forEach(country => {
-        if (data[country][model].y_pred.length > num_dates) {
-            num_dates = data[country][model].y_pred.length;
-        } 
-    });
-    let bubble_data = countries.map(country => {
-        let count = 0;
-        let actual = 0;
-        for (let i = 0; i < num_dates; i++) {
-            count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
-            actual += data[country][model].y && data[country][model].y[i] || 0;
+        if (pred_data[country][model].y_pred.length > num_dates) {
+            num_dates = pred_data[country][model].y_pred.length;
         }
-        const diff = Math.abs(actual - count);
-        const nameCls = get_name_cls(country);
-        return {name: country, code: data[country].code, count, actual, diff, nameCls};
+        const date = new Date(pred_data[country][model].start_timestamp);
+        if (start_date) {
+            if (start_date.getTime() < date.getTime()) {
+                start_date = date;
+            }
+        } else {
+            start_date = date;
+        }
     });
-    const max_diff = _.maxBy(bubble_data, 'diff').diff;
-    bubble_data = bubble_data.map(item => {
-        item.deviation = item.diff * 7 / max_diff;
-        return item;
+
+    const dates = [];
+    for (let i = 0; i < num_dates; i++) {
+        const date = moment(start_date).add('days', i).toDate();
+        dates.push(date);
+    }
+    
+    const series = [];
+    countries.forEach(country => {
+        const values = [];
+        // const predictions = [];
+        // const diffs = [];
+        for (let i = 0; i < num_dates; i++) {
+            const actual = pred_data[country][model].y && pred_data[country][model].y[i] || 0;
+            const pred = pred_data[country][model].y_pred[i] && pred_data[country][model].y_pred[i][0] || 0;
+            const diff = Math.abs(actual - pred);
+            values.push(actual/100);
+            // diffs.push(diff)
+        }
+        series.push({name: country, values});
+        // values.push(actuals);
+        // diff_values.push(diffs);
     });
-    return bubble_data;
+    const data = {dates, series};
+
+    const step = 23;
+    const margin = ({top: 30, right: 10, bottom: 0, left: 10});
+    const height = data.series.length * (step + 1) + margin.top + margin.bottom;
+
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data.series, d => d3.max(d.values))])
+    .range([0, -overlap * step]);
+
+    const x = d3.scaleUtc()
+    .domain(d3.extent(data.dates))
+    .range([0, width]);
+
+    const area = d3.area()
+    .curve(d3.curveBasis)
+    .defined(d => !isNaN(d))
+    .x((d, i) => x(data.dates[i]))
+    .y0(0)
+    .y1(d => y(d));
+
+    const xAxis = g => g
+    .attr("transform", `translate(0,${margin.top})`)
+    .call(d3.axisTop(x).ticks(width / 80).tickSizeOuter(0))
+    .call(g => g.selectAll(".tick").filter(d => x(d) < margin.left || x(d) >= width - margin.right).remove())
+    .call(g => g.select(".domain").remove());
+
+    const color = i => d3[d3.schemeYlGn][Math.max(3, overlap)][i + Math.max(0, 3 - overlap)];
+
+    d3.selectAll('.left-chart-container svg.rate-svg').remove();
+    d3.selectAll('.container-box').classed('whole-width', true);
+    d3.selectAll('.left-chart-container').classed('rate-svg-container', true);
+
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'rate-svg')
+      .attr("viewBox", [0, 0, width, height])
+      .style("font", "10px sans-serif");
+
+    const new_data = data.series.map(d => Object.assign({
+        clipId: DOM.uid("clip"),
+        pathId: DOM.uid("path")
+    }, d));
+    const g = svg.append("g")
+        .selectAll("g")
+        .data(new_data)
+        .join("g")
+        .attr("transform", (d, i) => `translate(0,${i * (step + 1) + margin.top})`);
+
+    g.append("clipPath")
+        .attr("id", d => d.clipId.id)
+        .append("rect")
+        .attr("width", width)
+        .attr("height", step);
+
+    g.append("defs").append("path")
+        .attr("id", d => d.pathId.id)
+        .attr("d", d => area(d.values));
+
+    g.append("g")
+        .attr("clip-path", d => d.clipId)
+        .selectAll("use")
+        .data(d => new Array(overlap).fill(d))
+        .join("use")
+        .attr("fill", (d, i) => color(i))
+        .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
+        .attr("xlink:href", d => d.pathId.href);
+
+    g.append("text")
+        .attr("x", 4)
+        .attr("y", step / 2)
+        .attr("dy", "0.35em")
+        .text(d => d.name);
+
+    svg.append("g")
+        .call(xAxis);
+
+    return svg.node();
 }
 
+function draw_rate_chart(pred_data, model='mlp') {
 
-let bubble_data;
+    let countries = Object.keys(pred_data)
+    let num_dates = 0;
+    let start_date;
+    countries.forEach(country => {
+        if (pred_data[country][model].y_pred.length > num_dates) {
+            num_dates = pred_data[country][model].y_pred.length;
+        }
+        const date = new Date(pred_data[country][model].start_timestamp);
+        if (start_date) {
+            if (start_date.getTime() < date.getTime()) {
+                start_date = date;
+            }
+        } else {
+            start_date = date;
+        }
+    });
+
+    const dates = [];
+    for (let i = 0; i < num_dates; i++) {
+        const date = moment(start_date).add('days', i).date(); //.format('ll');
+        dates.push(date);
+    }
+
+    
+    const actual_values = [];
+    const diff_values = [];
+    countries.forEach(country => {
+        const actuals = [];
+        const predictions = [];
+        const diffs = [];
+        for (let i = 0; i < num_dates; i++) {
+            const actual = pred_data[country][model].y && pred_data[country][model].y[i] || 0;
+            const pred = pred_data[country][model].y_pred[i] && pred_data[country][model].y_pred[i][0] || 0;
+            const diff = Math.abs(actual - pred);
+            actuals.push(actual);
+            diffs.push(diff)
+        }
+        actual_values.push(actuals);
+        diff_values.push(diffs);
+    });
+    const mid = parseInt(dates.length/2);
+    const year = dates[mid];
+    
+    const deviations = diff_values.map(diffs => {
+        const max_diff = _.max(diffs);
+        const devs = diffs.map(diff => {
+            return diff * 7 / max_diff;
+        });
+        return devs;
+    })
+    
+    data = {
+        deviations,
+        values: actual_values,
+        names:countries,
+        years: dates,
+        year
+    };
+    
+
+    const margin = {top: 20, right: 1, bottom: 40, left: 60};
+    const height = 16;
+    const width = 1200;
+    const innerHeight = height * data.names.length;
+    const date = (i) => {
+        return moment(start_date).add('days', i).format('ll');
+    };
+    const format = (d) => {
+        const f = d3.format(",d");
+        return `${f(d)}`;
+    }
+    
+    const yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .attr("font-size", 15)
+    .call(d3.axisLeft(y).tickSize(0))
+    .call(g => g.select(".domain").remove());
+    
+    const xAxis = g => g
+    .call(g => g.append("g")
+      .attr("transform", `translate(0,${margin.top})`)
+      .call(d3.axisTop(x).ticks(null, "d"))
+      .call(g => g.select(".domain").remove()))
+    .call(g => g.append("g")
+      .attr("transform", `translate(0,${innerHeight + margin.top + 4})`)
+      .call(d3.axisBottom(x)
+          .tickValues([data.year])
+          .tickFormat(x => x)
+          .tickSize(-innerHeight - 10))
+      .call(g => g.select(".tick text")
+          .clone()
+          .attr("dy", "2em")
+          .style("font-weight", "bold")
+          .text("Measles vaccine introduced"))
+      .call(g => g.select(".domain").remove()));
+
+    const color = d3.scaleSequentialSqrt([0, d3.max(data.values, d => d3.max(d))], d3.interpolatePuRd);
+    const y = d3.scaleBand()
+      .domain(data.names)
+      .rangeRound([margin.top, margin.top + innerHeight]);
+
+    const x = d3.scaleLinear()
+    .domain([d3.min(data.years), d3.max(data.years) + 1])
+    .rangeRound([margin.left, width - margin.right]);
+
+    d3.selectAll('.left-chart-container svg.rate-svg').remove();
+    d3.selectAll('.container-box').classed('whole-width', true);
+    d3.selectAll('.left-chart-container').classed('rate-svg-container', true);
+
+    // set svg shape/size
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'rate-svg')
+        .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 15);
+    
+    svg.append("g")
+        .call(xAxis);
+    
+    for (let k=0; k<2; k++) {
+        svg.append("g")
+            .call(yAxis);
+            svg.append("g")
+            .selectAll("g")
+            .data(data.values)
+            .join("g")
+            .attr("transform", (d, i) => `translate(0,${y(data.names[i])})`)
+            .selectAll("rect")
+            .data(d => d)
+            .join("rect")
+            .attr("x", (d, i) => x(data.years[i]) + 1)
+            .attr("width", (d, i) => {
+                let width = x(data.years[i] + 1) - x(data.years[i]) - 1;
+                if (k===1) {
+                    width -= 10;
+                }
+                return width;
+            })
+            .attr("height", y.bandwidth() - 1)
+            .attr("fill", d => {
+                if (k === 0) {
+                    return '#fff';
+                } else {
+                    return isNaN(d) ? "#eee" : d === 0 ? "#fff" : color(d);
+                }
+            })
+            .append("title")
+            .text((d, i) => `${date(i)}`);
+    }
+        
+    svg.append("g")
+        .selectAll("g")
+        .data(deviations)
+        .join("g")
+        .attr("transform", (d, i) => `translate(0,${y(data.names[i])})`)
+        .selectAll("rect")
+        .data(d => d)
+        .join("rect")
+        .attr("x", function(d, i) {
+            let width = x(data.years[i] + 1) - x(data.years[i]) - 1;
+            const xx = x(data.years[i]) + 1;
+            return xx + width - 10;
+        })
+        .attr("width", (d, i) => {
+            return d;
+        })
+        .attr("height", y.bandwidth() - 1)
+        .attr("fill", (d, i) => "#0000ff25");
+
+
+    
+    return svg.node();
+
+
+}
+
 
 function draw_bubble_chart(data, model='mlp') {
     data = prepare_bubble_data(data, model);
@@ -894,6 +1011,168 @@ function draw_bubble_chart(data, model='mlp') {
         }
     }
 }
+
+function prepare_bubble_data(data, model) {
+    let num_dates = 0;
+    countries.forEach(country => {
+        if (data[country][model].y_pred.length > num_dates) {
+            num_dates = data[country][model].y_pred.length;
+        } 
+    });
+    let bubble_data = countries.map(country => {
+        let count = 0;
+        let actual = 0;
+        for (let i = 0; i < num_dates; i++) {
+            count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
+            actual += data[country][model].y && data[country][model].y[i] || 0;
+        }
+        const diff = Math.abs(actual - count);
+        const nameCls = get_name_cls(country);
+        return {name: country, code: data[country].code, count, actual, diff, nameCls};
+    });
+    const max_diff = _.maxBy(bubble_data, 'diff').diff;
+    bubble_data = bubble_data.map(item => {
+        item.deviation = item.diff * 7 / max_diff;
+        return item;
+    });
+    return bubble_data;
+}
+
+
+function set_cell_tooltip_position(event, tooltip, d) {
+    let x = Math.abs(event.pageX) - 50;
+    let y = Math.abs(event.pageY) + 15;
+    if (y > 620) {
+        y = 600;
+        if (x > 500) {
+            x -= 150;
+        } else {
+            x += 150;
+        }
+    }
+    tooltip.show(event, d);
+    $('.d3-tip').css({"left": (x + "px"), "top": (y + "px")});
+}
+
+function get_name_cls(key) {
+    return key.replace(/\s/g, '-') || '';
+}
+
+function add_texture_defs(svg, keys, color) {
+    keys.forEach((key, index) => {
+        const nameCls = get_name_cls(key);
+        svg
+        .append('defs')
+        .append('pattern')
+          .attr('id', 'texture-' + nameCls)
+          .attr('patternUnits', 'userSpaceOnUse')
+          .attr('width', 7)
+          .attr('height', 7)
+        .append('circle')
+          .attr('cx', 4)
+          .attr('cy', 4)
+          .attr('r', 3)
+          .attr('fill', color(key));
+
+        // For blur layers
+        for (k = 0; k <= 100; k++) {
+            const pattern = svg
+            .append('defs')
+            .append('pattern')
+            .attr('id', 'texture-' + nameCls + '-' +k)
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', 7)
+            .attr('height', 7);
+
+            const linGrad = pattern.append('linearGradient')
+                .attr('id', 'lin-grad-' + nameCls + '-' +k )
+                // .attr('patternUnits', 'userSpaceOnUse')
+                .attr('x1', '0%')
+                .attr('y1', '0%')
+                .attr('x2', '100%')
+                .attr('y2', '0%');
+
+            linGrad.append('stop')
+                .attr('offset', '0%')
+                .attr('style', () => {
+                    const c = color(key);
+                    // console.log(key, c)
+                    return 'stop-color:' + c;
+                });
+
+            linGrad.append('stop')
+                .attr('offset', k +'%')
+                .attr('style', () => {
+                    return 'stop-color:rgb(255,255,255)';
+                });
+
+            pattern.append('circle')
+                .attr('cx', 4)
+                .attr('cy', 4)
+                .attr('r', 3)
+                .attr('fill', 'url(#lin-grad-' + nameCls + '-' + k + ')');
+        }
+    });
+    
+}
+
+function get_normalized_data(data, keys) {
+    const maxs = {};
+    keys.forEach(key => {
+        const max_item = _.maxBy(data, key);
+        maxs[key] = max_item && max_item[key] || 1;
+    });
+
+    data = data.map(item => {
+        item.date = new Date(item.date);
+        keys.forEach(key => {
+            item[key] = item[key] / maxs[key];
+        });
+        return item;
+    });
+    return data;
+}
+
+function get_segment_class(ev, show_log) {
+    const boxEl = $('.container-box')[0];
+    const start_x = boxEl.offsetLeft, end_x = boxEl.offsetWidth;
+    const start_y = boxEl.offsetTop, end_y = boxEl.offsetHeight;
+    const cent_x = end_x/2;
+    const cent_y = end_y/2;
+    const x = ev.clientX - start_x;
+    const y = ev.clientY - start_y;
+    if (show_log) {
+        console.log('x', x, 'y', y, 'cx', cent_x, 'cy', cent_y)
+    }
+
+    if (x >= (cent_x - 80) && x <= (cent_x + 80)) {
+        if (y <= cent_y) {
+            cls = 'top-middle';
+        } else {
+            cls = 'bottom-middle';
+        }
+    } else if (y >= (cent_y - 70) && y <= (cent_y + 70)) {
+        if (x <= cent_x) {
+            cls = 'left-middle';
+        } else {
+            cls = 'right-middle';
+        }
+    } else if (x <= cent_x && y <= cent_y) {
+        cls = 'top-left';
+    } else if (x > cent_x && y <= cent_y) {
+        cls = 'top-right';
+    } else if (x <= cent_x && y > cent_y) {
+        cls = 'bottom-left';
+    } else {
+        cls = 'bottom-right';
+    }
+    if (show_log) {
+        // console.log(cls)
+    }
+    return cls;
+}
+
+
 
 function toggle_go() {
     const opacity = (bubble_removed.length > 0 || global_streams.length > 0) ? 1 : 0.3;
@@ -1096,17 +1375,8 @@ function get_cell_count_norm(data, d) {
 
 
 function get_angle(p1, p2) {
-    // var p1 = {
-    //     x: 20,
-    //     y: 20
-    // };
-    
-    // var p2 = {
-    //     x: 40,
-    //     y: 40
-    // };
-    
     // angle in degrees
     var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
     return angleDeg;
 }
+

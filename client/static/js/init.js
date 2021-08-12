@@ -189,8 +189,8 @@ function load_control_data() {
         refresh_container();
     });
 
-    // toggle toggle-stream-blur
-    d3.selectAll('.toggle-stream-blur')
+    // toggle apply-third-prop
+    d3.selectAll('.apply-third-prop')
     .on("click", function(ev) {
         const len = d3.selectAll('.sec-path').nodes().length;
         if (len) {
@@ -198,11 +198,10 @@ function load_control_data() {
             const display = stream_blur_on ? 'inline-block' : 'none';
             d3.selectAll('.sec-path').style("display", display);
         } else {
-            add_blur_layers(sel_property);
+            add_texture_layer(sel_property);
         }
         const base_path_display = stream_blur_on ? 'none' : 'inline-block';
         d3.selectAll('.main-stream-cell').style("display", base_path_display);
-        
     });
 
     // initial load
@@ -225,9 +224,11 @@ function refresh_container() {
         break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .toggle-stream-blur").style("display", "inline-block");
-        draw_bubble_chart(prop_pred_data);
-        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop").style("display", "inline-block");
+        // draw_bubble_chart(prop_pred_data);
+        // draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+        // draw_rate_chart(prop_pred_data);
+        draw_horizon_chart(prop_pred_data);
         break;
     }
 }
@@ -236,3 +237,28 @@ function hide_items() {
     d3.selectAll(".hideable-item").style("display", "none");
 }
 
+let clip = 1;
+let path = 1;
+const DOM = {
+    uid: function (str) {
+        let ret;
+        // const time = new Date().getTime();
+        // counter++;
+        // url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#O-clip-1)
+        if (str === 'path') {
+            ret = `O-clip-` + clip;
+            clip += 2;
+        } else {
+            // const url = 'https://d3.static.observableusercontent.com/next/worker-5551a13b.html';
+            const url = location.href;
+            ret = "url(" + url + '#0-' + str + '-' + path + ")"; // Math.random().toString().replace('.', '') + time;
+            path += 2;
+        }
+
+        return ret;
+    }
+}
+
+
+"url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#0-path-1)"
+"url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#O-clip-3)"

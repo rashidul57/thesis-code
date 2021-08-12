@@ -116,6 +116,10 @@ body.min-size .toolbar, body.min-size .container-box {
   width: 960px;
   display: inline;
 }
+.container-box.whole-width {
+  width: 1500px;
+  display: inline;
+}
 .container-box .left-chart-container {
   background: #fff;
   z-index: 9;
@@ -123,6 +127,13 @@ body.min-size .toolbar, body.min-size .container-box {
 }
 .container-box .left-chart-container .bubble-svg {
   overflow: visible;
+}
+.container-box .left-chart-container.rate-svg-container {
+  height: 100%;
+  overflow: auto;
+}
+.container-box .left-chart-container.rate-svg-container g.tick {
+  font-size: 7px;
 }
 .container-box .left-chart-container .country-stream-svg {
   overflow: visible;
@@ -158,7 +169,7 @@ body.min-size .toolbar, body.min-size .container-box {
 .main-stream-svg .main-stream-cell.focused {
   opacity: 1;
 }
-.clear-fish-graph, .toggle-stream-blur {
+.clear-fish-graph, .apply-third-prop {
   font-size: 13px;
   color: #2d88fd;
   margin-left: 15px;

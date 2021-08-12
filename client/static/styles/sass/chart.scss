@@ -133,6 +133,10 @@ body {
         width: 960px;
         display: inline;
     }
+    &.whole-width{
+        width: 1500px;
+        display: inline;
+    }
 
     .left-chart-container {
         background: #fff;
@@ -141,6 +145,13 @@ body {
         overflow: visible;
         .bubble-svg{
             overflow: visible;
+        }
+        &.rate-svg-container{
+            height: 100%;
+            overflow: auto;
+            g.tick {
+                font-size: 7px;
+            }
         }
 
         .country-stream-svg{
@@ -199,11 +210,12 @@ body {
 
 
 
-.clear-fish-graph, .toggle-stream-blur{
+.clear-fish-graph, .apply-third-prop{
     font-size: 13px;
     color: #2d88fd;
     margin-left: 15px;
 }
+
 
 .axis path, .axis line {
     fill: none;
