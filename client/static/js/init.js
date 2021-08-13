@@ -237,28 +237,26 @@ function hide_items() {
     d3.selectAll(".hideable-item").style("display", "none");
 }
 
-let clip = 1;
+let clip = 2;
 let path = 1;
 const DOM = {
     uid: function (str) {
         let ret;
-        // const time = new Date().getTime();
-        // counter++;
-        // url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#O-clip-1)
+        const url = location.href;
         if (str === 'path') {
-            ret = `O-clip-` + clip;
+            ret = {
+                id: `O-path-` + clip,
+                href: url + '#O-' + str + '-' + clip
+            };
             clip += 2;
         } else {
-            // const url = 'https://d3.static.observableusercontent.com/next/worker-5551a13b.html';
-            const url = location.href;
-            ret = "url(" + url + '#0-' + str + '-' + path + ")"; // Math.random().toString().replace('.', '') + time;
+            ret = {
+                id: `O-clip-` + path,
+                href: url + '#O-' + str + '-' + path
+            };
             path += 2;
         }
 
         return ret;
     }
 }
-
-
-"url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#0-path-1)"
-"url(https://d3.static.observableusercontent.com/next/worker-5551a13b.html#O-clip-3)"

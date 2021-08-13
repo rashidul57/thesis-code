@@ -523,10 +523,11 @@ function add_texture_layer(sel_property) {
 }
 
 function draw_horizon_chart(pred_data, model='mlp') {
-    let countries = Object.keys(pred_data)
+    let countries = Object.keys(pred_data);
+    // countries = [countries[0]]
     let num_dates = 0;
     let start_date;
-    const overlap = 0;
+    const overlap = 1;
     const width = 1000;
     countries.forEach(country => {
         if (pred_data[country][model].y_pred.length > num_dates) {
@@ -544,30 +545,38 @@ function draw_horizon_chart(pred_data, model='mlp') {
 
     const dates = [];
     for (let i = 0; i < num_dates; i++) {
+        // const date = moment(start_date).add('days', i).toDate();
         const date = moment(start_date).add('days', i).toDate();
         dates.push(date);
     }
     
     const series = [];
     countries.forEach(country => {
-        const values = [];
-        // const predictions = [];
-        // const diffs = [];
+        let actuals = [];
+        let predictions = [];
+        let diffs = [];
         for (let i = 0; i < num_dates; i++) {
             const actual = pred_data[country][model].y && pred_data[country][model].y[i] || 0;
             const pred = pred_data[country][model].y_pred[i] && pred_data[country][model].y_pred[i][0] || 0;
             const diff = Math.abs(actual - pred);
-            values.push(actual/100);
-            // diffs.push(diff)
+            actuals.push(parseInt(actual/1000));
+            predictions.push(parseInt(pred/1000));
+            diffs.push(diff)
         }
-        series.push({name: country, values});
+        let max = _.max(actuals);
+        actuals = actuals.map(val => val/max);
+        max = _.max(predictions);
+        predictions = predictions.map(val => val/max);
+        max = _.max(diffs);
+        diffs = diffs.map(val => val/max);
+        series.push({name: country, values: actuals, actuals, predictions, diffs});
         // values.push(actuals);
         // diff_values.push(diffs);
     });
     const data = {dates, series};
 
     const step = 23;
-    const margin = ({top: 30, right: 10, bottom: 0, left: 10});
+    const margin = ({top: 30, right: 10, bottom: 0, left: 50});
     const height = data.series.length * (step + 1) + margin.top + margin.bottom;
 
     const y = d3.scaleLinear()
@@ -576,7 +585,7 @@ function draw_horizon_chart(pred_data, model='mlp') {
 
     const x = d3.scaleUtc()
     .domain(d3.extent(data.dates))
-    .range([0, width]);
+    .range([60, width]);
 
     const area = d3.area()
     .curve(d3.curveBasis)
@@ -591,7 +600,7 @@ function draw_horizon_chart(pred_data, model='mlp') {
     .call(g => g.selectAll(".tick").filter(d => x(d) < margin.left || x(d) >= width - margin.right).remove())
     .call(g => g.select(".domain").remove());
 
-    const color = i => d3[d3.schemeYlGn][Math.max(3, overlap)][i + Math.max(0, 3 - overlap)];
+    const color = i => d3.schemePurples[Math.max(3, overlap)][i + Math.max(0, 3 - overlap)];
 
     d3.selectAll('.left-chart-container svg.rate-svg').remove();
     d3.selectAll('.container-box').classed('whole-width', true);
@@ -603,40 +612,63 @@ function draw_horizon_chart(pred_data, model='mlp') {
       .attr("viewBox", [0, 0, width, height])
       .style("font", "10px sans-serif");
 
-    const new_data = data.series.map(d => Object.assign({
-        clipId: DOM.uid("clip"),
-        pathId: DOM.uid("path")
-    }, d));
-    const g = svg.append("g")
-        .selectAll("g")
-        .data(new_data)
-        .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (step + 1) + margin.top})`);
+    
+    for (let k = 0; k<2; k++) {
+        data.series = data.series.map(item => {
+            item.values = k === 0 ? item.actuals : item.predictions;
+            return item;
+        });
+        const ident_data = data.series.map(d => Object.assign({
+            clipId: DOM.uid("clip"),
+            pathId: DOM.uid("path")
+        }, d));
 
-    g.append("clipPath")
-        .attr("id", d => d.clipId.id)
-        .append("rect")
-        .attr("width", width)
-        .attr("height", step);
+        const g = svg.append("g")
+            .selectAll("g")
+            .data(ident_data)
+            .join("g")
+            .attr("transform", (d, i) => `translate(0,${i * (step + 1) + margin.top})`);
 
-    g.append("defs").append("path")
-        .attr("id", d => d.pathId.id)
-        .attr("d", d => area(d.values));
+        g.append("clipPath")
+            .attr("id", d => d.clipId.id)
+            .append("rect")
+            .attr("width", width)
+            .attr("height", step);
 
-    g.append("g")
-        .attr("clip-path", d => d.clipId)
-        .selectAll("use")
-        .data(d => new Array(overlap).fill(d))
-        .join("use")
-        .attr("fill", (d, i) => color(i))
-        .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
-        .attr("xlink:href", d => d.pathId.href);
+        g.append("defs")
+            .append("path")
+            .attr("id", d => d.pathId.id)
+            .attr("d", d => area(d.values));
 
-    g.append("text")
-        .attr("x", 4)
-        .attr("y", step / 2)
-        .attr("dy", "0.35em")
-        .text(d => d.name);
+        g.append("g")
+            .attr("clip-path", d => {
+                const c_path = 'url(' + d.clipId.href + ')';
+                return c_path;
+            })
+            .selectAll("use")
+            .data(d => {
+                const ret = new Array(overlap).fill(d);
+                return ret;
+            })
+            .join("use")
+            .attr("fill", (d, i) => {
+                let c = color(i);
+                c += k === 0 ? '80' : '90';
+                return c;
+            })
+            .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
+            .attr("xlink:href", d => d.pathId.href);
+
+        if (k === 0) {
+            g.append("text")
+                .attr("x", 4)
+                .attr("y", step / 2)
+                .attr("dy", "0.35em")
+                .text(d => d.name);
+        }
+    }
+
+    
 
     svg.append("g")
         .call(xAxis);
