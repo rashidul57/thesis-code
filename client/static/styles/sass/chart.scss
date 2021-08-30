@@ -53,6 +53,7 @@ body {
     }
 }
 
+
 .toolbar{
     text-align: left;
     width: 1495px;
@@ -63,6 +64,8 @@ body {
     border-right: 1px solid #000;
     padding-left: 5px;
     position: relative;
+    display: grid;
+    grid-template-columns: calc(100% - 500px) 500px;
 
     input, select {
         border-width: 1px;
@@ -77,7 +80,7 @@ body {
         font-size: 14px;
     }
 
-    .view-controls{
+    .right-items{
         .control-container{
             position: relative;
             float: right;

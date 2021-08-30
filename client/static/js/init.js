@@ -1,4 +1,4 @@
-let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, country_stream_mode;
+let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
 let stream_blur_on = false;
@@ -17,15 +17,17 @@ async function init() {
     prop_pred_data = forecast_data[sel_property];
     countries = Object.keys(prop_pred_data);
 
+    const excl_regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America'];
     let cov_data = await $.get("/get-covid-data");
-    cov_data = JSON.parse(cov_data)
+    cov_data = JSON.parse(cov_data);
     const columns = cov_data.columns;
-    const data_arr = cov_data.data
+
+    const data_arr = cov_data.data.filter(rec => excl_regions.indexOf(rec[0]) === -1);
     const covid_data = [];
     data_arr.forEach(item => {
         const rec = {};
         for (let k = 0; k < columns.length; k++) {
-            rec[columns[k]] = item[k]
+            rec[columns[k]] = item[k];
         }
         covid_data.push(rec);
     });
@@ -38,6 +40,25 @@ async function init() {
 
 function load_control_data() {
     hide_items()
+
+    // Chart Types
+    const chart_types = ['Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
+    sel_chart_type = chart_types[0];
+    d3.select("#drp-chart-types")
+    .selectAll('chart-types')
+    .data(chart_types)
+    .enter()
+    .append('option')
+    .text((d) => { return d; })
+    .attr("value", (d) => { return d; });
+
+    d3.selectAll("#drp-chart-types")
+    .on("change", function(ev) {
+        hide_items();
+        sel_chart_type = d3.select(this).property("value");
+        refresh_container();
+    });
+
 
      // Properties
      const props = ['new_cases', 'new_deaths'];
@@ -57,27 +78,27 @@ function load_control_data() {
         refresh_container();
     });
 
-    // chart type dropdown
-    d3.select("#drp-chart-type option").remove();
+    // // chart type dropdown
+    // d3.select("#drp-chart-type option").remove();
 
-    const chart_types = ['Line', 'Stream Graphs', 'Bubble Chart'];
-    sel_chart_type = chart_types[2];
-    d3.select("#drp-chart-type")
-    .selectAll('chart-types')
-    .data(chart_types)
-    .enter()
-    .append('option')
-    .text((d) => { return d; })
-    .attr("value", (d) => { return d; })
-    .property("selected", sel_chart_type);
+    // const chart_types = ['Line', 'Stream Graphs', 'Bubble Chart'];
+    // sel_chart_type = chart_types[2];
+    // d3.select("#drp-chart-type")
+    // .selectAll('chart-types')
+    // .data(chart_types)
+    // .enter()
+    // .append('option')
+    // .text((d) => { return d; })
+    // .attr("value", (d) => { return d; })
+    // .property("selected", sel_chart_type);
 
-    d3.selectAll("#drp-chart-type")
-    .on("change", function(ev) {
-        hide_items();
+    // d3.selectAll("#drp-chart-type")
+    // .on("change", function(ev) {
+    //     hide_items();
 
-        sel_chart_type = d3.select(this).property("value");
-        refresh_container();
-    });
+    //     sel_chart_type = d3.select(this).property("value");
+    //     refresh_container();
+    // });
 
     // countries dropdown
     d3.select("#drp-countries option").remove();
@@ -148,10 +169,10 @@ function load_control_data() {
     });
 
     // view control items
-    d3.selectAll('.view-controls .control-item')
+    d3.selectAll('.right-items .control-item')
     .on("click", function(ev) {
         // remove active flag from all
-        const controls = d3.selectAll('.view-controls .control-item').nodes();
+        const controls = d3.selectAll('.right-items .control-item').nodes();
         controls.forEach(el => {
             const cls = el.className.replace(/(active)/g, '').trim();
             d3.select(el).attr('class', cls);
@@ -211,30 +232,57 @@ function load_control_data() {
 function refresh_container() {
     $('body').removeClass('min-size');
     d3.select(".left-chart-container").selectAll("svg").remove();
-    switch (sel_chart_type) {
-        case "Line":
-        d3.selectAll(".countries-item").style("display", "inline-block");
-        draw_predicted_lines(prop_pred_data, undefined);
-        $('body').addClass('min-size');
-        break;
+    change_layout();
 
-        case "Stream Graphs":
-        d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
-        draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
-        break;
+    switch (sel_chart_type) {
+        // case "Line":
+        // d3.selectAll(".countries-item").style("display", "inline-block");
+        // draw_predicted_lines(prop_pred_data, undefined);
+        // $('body').addClass('min-size');
+        // break;
+
+        // case "Stream Graphs":
+        // d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
+        // draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
+        // break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop").style("display", "inline-block");
-        // draw_bubble_chart(prop_pred_data);
-        // draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
-        // draw_rate_chart(prop_pred_data);
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .right-items").style("display", "inline-block");
+        draw_bubble_chart(prop_pred_data);
+        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+        break;
+
+        case 'Parallel Coords':
+        draw_parallel_coords();
+        break;
+
+        case 'Impact Chart':
+        draw_impact_chart(prop_pred_data);
+        break;
+
+        case 'Horizon Chart':
         draw_horizon_chart(prop_pred_data);
+        break;
+
+        case 'Usage Chart':
+        draw_usage_chart();
         break;
     }
 }
 
 function hide_items() {
     d3.selectAll(".hideable-item").style("display", "none");
+}
+
+
+function change_layout() {
+    if (sel_chart_type === 'Bubble Chart') {
+        d3.selectAll('.container-box').classed('whole-width', false);
+    } else {
+        d3.selectAll('.left-chart-container svg.rate-svg').remove();
+        d3.selectAll('.container-box').classed('whole-width', true);
+        d3.selectAll('.left-chart-container').classed('rate-svg-container', true);
+    }
 }
 
 let clip = 2;

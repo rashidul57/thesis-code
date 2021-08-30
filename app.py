@@ -25,7 +25,8 @@ def get_forcasts():
 def get_covid_data():
     df = model_service.load_all_data()
     values = df.values.tolist()
-    data = {"columns": df.columns.values.tolist(), "data": values}
+    columns = df.columns.values.tolist()
+    data = {"columns": columns, "data": values}
     return jsonify(json.dumps(data))
 
 app.run()

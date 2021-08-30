@@ -601,11 +601,6 @@ function draw_horizon_chart(pred_data, model='mlp') {
     .call(g => g.select(".domain").remove());
 
     const color = i => d3.schemePurples[Math.max(3, overlap)][i + Math.max(0, 3 - overlap)];
-
-    d3.selectAll('.left-chart-container svg.rate-svg').remove();
-    d3.selectAll('.container-box').classed('whole-width', true);
-    d3.selectAll('.left-chart-container').classed('rate-svg-container', true);
-
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg')
@@ -653,7 +648,9 @@ function draw_horizon_chart(pred_data, model='mlp') {
             .join("use")
             .attr("fill", (d, i) => {
                 let c = color(i);
-                c += k === 0 ? '80' : '90';
+                if (k === 1) {
+                    c = "#4aa59c";
+                }
                 return c;
             })
             .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
@@ -676,7 +673,198 @@ function draw_horizon_chart(pred_data, model='mlp') {
     return svg.node();
 }
 
-function draw_rate_chart(pred_data, model='mlp') {
+function draw_parallel_coords() {
+    const props = ['new_cases', 'total_cases', 'hosp_patients', 'icu_patients', 'new_deaths', 'new_tests', 'new_vaccinations'];
+    const keys = props;
+    const keyz = props[0];
+    const data = [];
+    countries.forEach(country  => {
+        const country_data = all_covid_data[country];
+        const row = {name: country};
+        country_data.forEach(datedItem => {
+            props.forEach(prop => {
+                row[prop] = (row[prop] || 0)  + (datedItem[prop] || 0);
+            });
+        });
+        data.push(row);
+    });
+
+    const width = 1000;
+    const height = keys.length * 120;
+    const margin = ({top: 20, right: 10, bottom: 30, left: 10});
+    const line = d3.line()
+    .defined(([, value]) => value != null)
+    .x(([key, value]) => x.get(key)(value))
+    .y(([key]) => y(key));
+    
+    const x = new Map(Array.from(keys, key => [key, d3.scaleLinear(d3.extent(data, d => d[key]), [margin.left, width - margin.right])]));
+    const y = d3.scalePoint(keys, [margin.top, height - margin.bottom]);
+    const z = d3.scaleSequential(x.get(keyz).domain(), t => d3.interpolateBrBG(1 - t));
+
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'rate-svg')
+        .attr("viewBox", [0, 0, width, height]);
+
+    svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-opacity", 0.4)
+    .selectAll("path")
+    .data(data.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .join("path")
+      .attr("stroke", d => z(d[keyz]))
+      .attr("d", d => {
+          const vals = d3.cross(keys, [d], (key, d) => [key, d[key]]);
+          return line(vals);
+    })
+    .append("title")
+      .text(d => d.name);
+
+    svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke-width", .5)
+      .attr("stroke-opacity", 0.4)
+    .selectAll("path")
+    .data(data.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .join("path")
+      .attr("stroke", d => z(d[keyz]))
+      .attr("d", d => {
+          const vals = d3.cross(keys, [d], (key, d) => [key, d[key]]);
+          vals.forEach(val => {
+            const rnd = Math.floor(Math.random() * 9) - 5;
+            val[1] = val[1] - (val[1]*rnd/100);
+          });
+          return line(vals);
+    })
+    .append("title")
+      .text(d => d.name);
+    
+
+    svg.append("g")
+    .selectAll("g")
+    .data(keys)
+    .join("g")
+      .attr("transform", d => `translate(0,${y(d)})`)
+      .each(function(d) { d3.select(this).call(d3.axisBottom(x.get(d))); })
+      .call(g => g.append("text")
+        .attr("x", margin.left)
+        .attr("y", -6)
+        .attr("text-anchor", "start")
+        .attr("fill", "currentColor")
+        .text(d => d))
+      .call(g => g.selectAll("text")
+        .clone(true).lower()
+        .attr("fill", "none")
+        .attr("stroke-width", 5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke", "white"));
+
+    return svg.node();
+}
+
+function draw_usage_chart() {
+    const country_count = 20;
+    let data = [];
+    countries.forEach(country => {
+        const c_data = all_covid_data[country];
+        const total = _.reduce(c_data, (sum, day_rec) => {
+            return sum += day_rec.total_cases || 0;
+        }, 0);
+        data.push({country, total, c_data});
+    });
+
+    data = _.orderBy(data, ['total'], ['desc']);
+    data = _.take(data, country_count).map(c => c.c_data);
+    const c_codes = data.map(c => c[0].iso_code);
+    const all_data = _.reduce(data, (joined, country_rec) => {
+        return joined = joined.concat(country_rec);
+    }, []);
+    data = all_data;
+
+
+    const dateExtent = d3.extent(data, d => new Date(d.date));
+
+    const margin = ({top: 30, right: 0, bottom: 0, left: 40});
+    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 10;
+    const width = 954;
+    formatCountry = (d) => {
+        return d;
+    }
+
+    formatDay = (d) => {
+        return moment(d).format('L');
+    }
+    formatDate = d3.timeFormat("%B %-d, %-I %p");
+    formatUsage = d3.format(",.0f");
+
+    const days_y = d3.timeDays(...dateExtent).map(date => moment(new Date(date)).format('L'))
+    y = d3.scaleBand(days_y, [margin.top, height - margin.bottom]).round(true);
+    x = d3.scaleBand(c_codes, [margin.left, width - margin.right]).round(true);
+    
+
+    yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).tickFormat(formatDay))
+    .call(g => g.select(".domain").remove());
+
+    xAxis = g => g
+    .attr("transform", `translate(0,${margin.top})`)
+    .call(d3.axisTop(x).tickFormat(formatCountry))
+    .call(g => g.select(".domain").remove());
+
+    color = () => {
+        let [min, max] = d3.extent(data, d => d.new_cases);
+        if (min < 0) {
+          max = Math.max(-min, max);
+          return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
+        }
+        return d3.scaleSequential([0, max], d3.interpolateReds);
+    }
+
+    const innerHeight = 5550;
+
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'rate-svg')
+        .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 15);
+    
+    svg.append("g")
+        .call(xAxis);
+  
+    svg.append("g")
+        .call(yAxis);
+
+    svg.append("g")
+    .selectAll("rect")
+    .data(data)
+    .join("rect")
+      .attr("x", d => {
+          const ret = x(d.iso_code);
+          return ret;
+      })
+      .attr("y", d => {
+          let ret = y(moment(new Date(d.date)).format('L')) || 0;
+          if (ret < 30) {
+                ret = 30;
+            }
+          return ret;
+      })
+      .attr("width", x.bandwidth() - 1)
+      .attr("height", y.bandwidth() - 1)
+      .attr("fill", d => {
+          const ret = color()(d.new_cases);
+          return ret;
+      })
+      .append("title")
+      .text(d => `New: ${formatUsage(d.new_cases)}, Total: ${formatUsage(d.total_cases)}`);
+
+    return svg.node();
+}
+
+function draw_impact_chart(pred_data, model='mlp') {
 
     let countries = Object.keys(pred_data)
     let num_dates = 0;
@@ -771,7 +959,7 @@ function draw_rate_chart(pred_data, model='mlp') {
           .clone()
           .attr("dy", "2em")
           .style("font-weight", "bold")
-          .text("Measles vaccine introduced"))
+          .text("New Cases"))
       .call(g => g.select(".domain").remove()));
 
     const color = d3.scaleSequentialSqrt([0, d3.max(data.values, d => d3.max(d))], d3.interpolatePuRd);
@@ -782,10 +970,6 @@ function draw_rate_chart(pred_data, model='mlp') {
     const x = d3.scaleLinear()
     .domain([d3.min(data.years), d3.max(data.years) + 1])
     .rangeRound([margin.left, width - margin.right]);
-
-    d3.selectAll('.left-chart-container svg.rate-svg').remove();
-    d3.selectAll('.container-box').classed('whole-width', true);
-    d3.selectAll('.left-chart-container').classed('rate-svg-container', true);
 
     // set svg shape/size
     const svg = d3.select('.left-chart-container')

@@ -50,6 +50,8 @@ body.min-size .toolbar, body.min-size .container-box {
   border-right: 1px solid #000;
   padding-left: 5px;
   position: relative;
+  display: grid;
+  grid-template-columns: calc(100% - 500px) 500px;
 }
 .toolbar input, .toolbar select {
   border-width: 1px;
@@ -63,25 +65,25 @@ body.min-size .toolbar, body.min-size .container-box {
 .toolbar .option .caption {
   font-size: 14px;
 }
-.toolbar .view-controls .control-container {
+.toolbar .right-items .control-container {
   position: relative;
   float: right;
 }
-.toolbar .view-controls .control-container .control-item {
+.toolbar .right-items .control-container .control-item {
   margin-top: 2px;
   margin-right: 10px;
   font-size: 13px;
   position: relative;
 }
-.toolbar .view-controls .control-container .control-item.bubble-remove, .toolbar .view-controls .control-container .control-item.global-streams {
+.toolbar .right-items .control-container .control-item.bubble-remove, .toolbar .right-items .control-container .control-item.global-streams {
   margin-right: 20px;
 }
-.toolbar .view-controls .control-container .control-item.active {
+.toolbar .right-items .control-container .control-item.active {
   color: blue;
   border-bottom: 2px solid blue;
   padding-bottom: 1px;
 }
-.toolbar .view-controls .control-container .control-item .cross {
+.toolbar .right-items .control-container .control-item .cross {
   position: absolute;
   border: 1px solid #ff00ea;
   line-height: 8px;
@@ -94,7 +96,7 @@ body.min-size .toolbar, body.min-size .container-box {
   display: none;
   cursor: pointer;
 }
-.toolbar .view-controls .btn-go {
+.toolbar .right-items .btn-go {
   color: blue;
   font-size: 13px;
   margin-right: 10px;
