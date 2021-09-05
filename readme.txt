@@ -28,4 +28,8 @@ http://bl.ocks.org/n1n9-jp/d12dde21cc192a86ba9a
 https://bl.ocks.org/eesur/3bf5144d37b924599383653948193d69
 
 
+Thesis formating guideline:
+https://www.dal.ca/faculty/gradstudies/currentstudents/thesesanddefences/format.html
+
+
 

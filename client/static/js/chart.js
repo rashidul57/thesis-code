@@ -1048,7 +1048,9 @@ function draw_bubble_chart(data, model='mlp') {
     });
 
     // sort data by count
-    bubble_data = data = _.orderBy(data, ['count'], ['desc']);
+    bubble_data = _.orderBy(data, ['count'], ['desc']);
+
+    // bubble_data = _.take(bubble_data, 3)
 
     // initialize configs of the chart
     const width = bubble_chart_width;
@@ -1057,20 +1059,14 @@ function draw_bubble_chart(data, model='mlp') {
     // Define color range of bubbles
     const color_range = ["#a30f15", "#dfa6ad"];
     let color_space = d3.scaleSequential()
-    .domain([data[0].count, data[data.length-1].count])
+    .domain([bubble_data[0].count, bubble_data[bubble_data.length-1].count])
     .range(color_range);
 
     // define layout of the chart
     const pack = data => d3.pack()
-    .size([width, height])(d3.hierarchy({children: data})
+    .size([width, height])(d3.hierarchy({children: bubble_data})
     .sum(d => d.count));
-    const root = pack(data);
-
-    // calculate total count
-    let total_count = 0;
-    data.forEach(item => {
-        total_count += item.count || 0;
-    });
+    const root = pack(bubble_data);
 
     // clear chart container
     d3.selectAll('.left-chart-container svg.bubble-svg').remove();
@@ -1100,9 +1096,6 @@ function draw_bubble_chart(data, model='mlp') {
         // tooltip.hide();
         // get_segment_class(ev, true);
     });
-
-    // svg.append('g')
-    //     .call(tooltip);
     
     let cur_scale = 1;
     redraw_bubbles(root, svg, cur_scale);
@@ -1118,13 +1111,13 @@ function draw_bubble_chart(data, model='mlp') {
         svg.selectAll('.country-circle').remove();
 
         // construct bubble circles
-        for (let k = 0; k < 2; k++) {
-            add_leaf(k);
+        for (let k = 0; k < 3; k++) {
+            add_circle(k);
         }
 
-        function add_leaf(k) {
+        function add_circle(k) {
             const abberation = k === 0;
-            const leaf = svg.selectAll("g")
+            const circle = svg.selectAll("g")
             .data(root.leaves())
             .join("g")
             .attr('class', (d) => {
@@ -1136,33 +1129,30 @@ function draw_bubble_chart(data, model='mlp') {
                 return `translate(${d.x + 1},${d.y + 1})`
             });
 
-            leaf.append("circle")
+            circle.append("circle")
             .attr('class', 'country-circle')
             .attr("id", d => (d.data.name + '-' + d.data.count))
             .attr("r", d => {
-                return abberation ? (d.r + d.data.deviation) : d.r;
+                return d.r;
             })
-            // .attr("cx", d => {
-            //     return abberation ? 0 : 0;
-            // })
+            .attr("cx", d => {
+                return get_coord('x', k, d);
+            })
             .attr("cy", d => {
-                return abberation ? d.data.deviation : 0;
+                return get_coord('y', k, d);
             })
             .attr('center-point', (d) => {
                 return d.x + ',' + d.y;
             })
             .attr("fill-opacity", (d) => {
-                return abberation ? 0.15 : 1;
+                return 0.33;
             })
             .attr('class', ()=> {
                 return abberation ? 'abberation' : 'actual';
             })
             .attr("fill", d => {
-                if (abberation) {
-                    return 'blue';
-                } else {
-                    return color_space(d.data.count);
-                }
+                const colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
+                return colors[k];
             })
             .on('mouseover', function (event, d) {
                 if (control_mode === 'wing-stream') {
@@ -1221,11 +1211,44 @@ function draw_bubble_chart(data, model='mlp') {
                 
             });
 
-            if (!abberation) {
-                add_country_code(leaf);
+            if (k === 2) {
+                add_country_code(circle);
             }
         }
     }
+}
+
+function get_coord(axis, rgb_val, d) {
+    let coord;
+    const r = d.data.deviation;
+    const x = 0; //d.x;
+    const y = 0; // d.y;
+    if (axis === 'x') {
+        switch (rgb_val) {
+            case 0:
+            coord = x;
+            break;
+            case 1:
+            coord = x + r * (-Math.sqrt(3)/2);
+            break;
+            case 2:
+            coord = x + r * (Math.sqrt(3)/2);
+            break;
+        }
+    } else {
+        switch (rgb_val) {
+            case 0:
+            coord = y + r;
+            break;
+            case 1:
+            coord = y + r * (-1)/2;
+            break;
+            case 2:
+            coord = y + r * (1)/2;
+            break;
+        }
+    }
+    return coord;
 }
 
 function prepare_bubble_data(data, model) {
@@ -1235,6 +1258,7 @@ function prepare_bubble_data(data, model) {
             num_dates = data[country][model].y_pred.length;
         } 
     });
+    // calculate differences between actual and prediction/count
     let bubble_data = countries.map(country => {
         let count = 0;
         let actual = 0;
@@ -1246,6 +1270,7 @@ function prepare_bubble_data(data, model) {
         const nameCls = get_name_cls(country);
         return {name: country, code: data[country].code, count, actual, diff, nameCls};
     });
+    // calculate deviation to shift centers of aberrated circles
     const max_diff = _.maxBy(bubble_data, 'diff').diff;
     bubble_data = bubble_data.map(item => {
         item.deviation = item.diff * 7 / max_diff;
@@ -1420,11 +1445,7 @@ function add_country_code(country_cell) {
             let size = 10 / bubble_chart_scale;
             return size + 'px';
         })
-        .attr("fill", (d) => {
-            const perc = get_cell_count_norm(bubble_data, d);
-            const color = perc <= 0.5 ? 'black' : 'white';
-            return color;
-        });
+        .attr("fill", 'white');
 }
 
 function add_zoom_listener(svg, width, height, selector) {
@@ -1529,8 +1550,8 @@ function toggle_focus(nameCls, _event) {
 
 function reorder_bubbles(country_node, leaves) {
     const parent_node = country_node.parentNode; // 
-    leaves.forEach(leaf => {
-        const node = d3.select('.circle-container-' + leaf.data.nameCls);
+    leaves.forEach(circle => {
+        const node = d3.select('.circle-container-' + circle.data.nameCls);
         if (node._groups[0][0] !== country_node) {
             parent_node.appendChild(node._groups[0][0]);
         }
@@ -1578,17 +1599,6 @@ function get_cell_label(cur_scale, d) {
     // }
     return text;
 }
-
-function get_cell_count_norm(data, d) {
-    const total = _.reduce(data, (sum, item) => {
-        return sum += Number(item.count || 0);
-    }, 0);
-    count = Number(d.data.count || 0);
-    let perc = count * 10 / Number(total);
-    perc = perc > 1 ? 1 : perc;
-    return perc;
-}
-
 
 function get_angle(p1, p2) {
     // angle in degrees
