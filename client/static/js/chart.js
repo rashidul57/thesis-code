@@ -6,6 +6,7 @@ const bubble_chart_height = 750;
 let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
+let bubble_selected = [];
 // let global_streams = ['Turkey', 'Bangladesh'];
 let global_streams = [];
 let bubble_data;
@@ -649,7 +650,9 @@ function draw_horizon_chart(pred_data, model='mlp') {
             .attr("fill", (d, i) => {
                 let c = color(i);
                 if (k === 1) {
-                    c = "#4aa59c";
+                    c = "#4aa59c70";
+                } else {
+                    c = c + '70';
                 }
                 return c;
             })
@@ -664,8 +667,6 @@ function draw_horizon_chart(pred_data, model='mlp') {
                 .text(d => d.name);
         }
     }
-
-    
 
     svg.append("g")
         .call(xAxis);
@@ -785,7 +786,7 @@ function draw_usage_chart() {
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
 
-    const margin = ({top: 30, right: 0, bottom: 0, left: 40});
+    const margin = ({top: 30, right: 20, bottom: 0, left: 50});
     const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 10;
     const width = 954;
     formatCountry = (d) => {
@@ -802,7 +803,6 @@ function draw_usage_chart() {
     y = d3.scaleBand(days_y, [margin.top, height - margin.bottom]).round(true);
     x = d3.scaleBand(c_codes, [margin.left, width - margin.right]).round(true);
     
-
     yAxis = g => g
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).tickFormat(formatDay))
@@ -924,7 +924,6 @@ function draw_impact_chart(pred_data, model='mlp') {
         years: dates,
         year
     };
-    
 
     const margin = {top: 20, right: 1, bottom: 40, left: 60};
     const height = 16;
@@ -1032,10 +1031,7 @@ function draw_impact_chart(pred_data, model='mlp') {
         .attr("height", y.bandwidth() - 1)
         .attr("fill", (d, i) => "#0000ff25");
 
-
-    
     return svg.node();
-
 
 }
 
@@ -1043,9 +1039,15 @@ function draw_impact_chart(pred_data, model='mlp') {
 function draw_bubble_chart(data, model='mlp') {
     data = prepare_bubble_data(data, model);
     
-    data = data.filter(item => {
-        return bubble_removed.indexOf(item.name) === -1;
-    });
+    if (control_mode === 'bubble-select') {
+        data = data.filter(item => {
+            return bubble_selected.indexOf(item.name) > -1;
+        });
+    } else if (control_mode === 'bubble-remove') {
+        data = data.filter(item => {
+            return bubble_removed.indexOf(item.name) === -1;
+        });
+    }
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
@@ -1168,6 +1170,9 @@ function draw_bubble_chart(data, model='mlp') {
             .on("mousemove", function(event, d){
                 // set_cell_tooltip_position(event, tooltip, d);
             })
+            .on("doubleclick", () => {
+                console.log('yes....')
+            })
             .on('mousedown', function (ev, d) {
                 let nameCls = d.data.nameCls;
                 switch (control_mode) {
@@ -1176,6 +1181,21 @@ function draw_bubble_chart(data, model='mlp') {
                             d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
                             draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
                         }
+                        break;
+                    case 'bubble-select':
+                        d3.selectAll('.circle-container').style("opacity", 0.1);
+                        if (bubble_selected.indexOf(d.data.name) > -1) {
+                            bubble_selected = bubble_selected.filter(item => item !== d.data.name);
+                        } else {
+                            bubble_selected.push(d.data.name);
+                        }
+                        bubble_selected.forEach(name => {
+                            nameCls = get_name_cls(name);
+                            d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                        });
+
+                        toggle_go();
+                        toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
                         break;
                     case 'bubble-remove':
                         d3.select('.circle-container-' + nameCls).style("opacity", 0.1);
@@ -1270,12 +1290,24 @@ function prepare_bubble_data(data, model) {
         const nameCls = get_name_cls(country);
         return {name: country, code: data[country].code, count, actual, diff, nameCls};
     });
-    // calculate deviation to shift centers of aberrated circles
+
+    // Calculate deviation to shift centers of aberrated circles
     const max_diff = _.maxBy(bubble_data, 'diff').diff;
     bubble_data = bubble_data.map(item => {
         item.deviation = item.diff * 7 / max_diff;
         return item;
     });
+    let dd = _.orderBy(bubble_data, ['deviation'], ['desc']);
+    for (let k = 0; k<10; k++) {
+        console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
+    }
+
+    console.log('Bottom');
+    dd = _.orderBy(bubble_data, ['deviation', 'actual'], ['asc', 'desc']);
+    for (let k = 0; k<10; k++) {
+        console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
+    }
+
     return bubble_data;
 }
 
@@ -1416,7 +1448,7 @@ function get_segment_class(ev, show_log) {
 
 
 function toggle_go() {
-    const opacity = (bubble_removed.length > 0 || global_streams.length > 0) ? 1 : 0.3;
+    const opacity = (bubble_selected.length > 0 || bubble_removed.length > 0 || global_streams.length > 0) ? 1 : 0.3;
     d3.select('.btn-go').style("opacity", opacity);
 }
 

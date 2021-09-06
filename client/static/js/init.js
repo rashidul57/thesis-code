@@ -183,12 +183,20 @@ function load_control_data() {
         control_mode = cur_cls.split(' ')[1].trim();
         cur_cls = cur_cls + ' active';
         el.attr('class', cur_cls);
+
+        if (control_mode === 'bubble-remove') {
+            toggle_cross('.' + 'bubble-select' + ' .cross', 0);
+            bubble_selected = [];
+        } else if (control_mode === 'bubble-select') {
+            toggle_cross('.' + 'bubble-remove' + ' .cross', 0);
+            bubble_removed = [];
+        }
     });
 
     // refresh chart by clearing selection
     d3.selectAll('.btn-go')
     .on("click", function(ev) {
-        if (bubble_removed.length || global_streams.length) {
+        if (bubble_removed.length || bubble_selected.length || global_streams.length) {
             refresh_container();
         }
     });
@@ -197,6 +205,10 @@ function load_control_data() {
     d3.selectAll('.control-item .cross')
     .on("click", function(ev) {
         switch (control_mode) {
+            case 'bubble-select':
+                bubble_selected = [];
+                toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
+                break;
             case 'bubble-remove':
                 bubble_removed = [];
                 toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
