@@ -1297,16 +1297,16 @@ function prepare_bubble_data(data, model) {
         item.deviation = item.diff * 7 / max_diff;
         return item;
     });
-    let dd = _.orderBy(bubble_data, ['deviation'], ['desc']);
-    for (let k = 0; k<10; k++) {
-        console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
-    }
+    // let dd = _.orderBy(bubble_data, ['deviation'], ['desc']);
+    // for (let k = 0; k<10; k++) {
+    //     console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
+    // }
 
-    console.log('Bottom');
-    dd = _.orderBy(bubble_data, ['deviation', 'actual'], ['asc', 'desc']);
-    for (let k = 0; k<10; k++) {
-        console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
-    }
+    // console.log('Bottom');
+    // dd = _.orderBy(bubble_data, ['deviation', 'actual'], ['asc', 'desc']);
+    // for (let k = 0; k<10; k++) {
+    //     console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
+    // }
 
     return bubble_data;
 }
