@@ -1052,7 +1052,7 @@ function draw_bubble_chart(data, model='mlp') {
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    // bubble_data = _.take(bubble_data, 3)
+    bubble_data = _.take(bubble_data, 15)
 
     // initialize configs of the chart
     const width = bubble_chart_width;
@@ -1107,14 +1107,16 @@ function draw_bubble_chart(data, model='mlp') {
 
     // reset bubble label(country code) on change scale of the svg
     function redraw_bubbles(root, svg, cur_scale) {
+        draw_circles();
+        
+        function draw_circles() {
+            // clear container
+            svg.selectAll(".country-code").remove();
+            svg.selectAll('.country-circle, .circle-container').remove();
 
-        // clear container
-        svg.selectAll(".country-code").remove();
-        svg.selectAll('.country-circle').remove();
-
-        // construct bubble circles
-        for (let k = 0; k < 3; k++) {
-            add_circle(k);
+            for (let k = 0; k < 3; k++) {
+                add_circle(k);
+            }
         }
 
         function add_circle(k) {
@@ -1131,18 +1133,11 @@ function draw_bubble_chart(data, model='mlp') {
                 return `translate(${d.x + 1},${d.y + 1})`
             });
 
-            circle.append("circle")
+        const new_circle = circle
+            .append("circle")
             .attr('class', 'country-circle')
             .attr("id", d => (d.data.name + '-' + d.data.count))
-            .attr("r", d => {
-                return d.r;
-            })
-            .attr("cx", d => {
-                return get_coord('x', k, d);
-            })
-            .attr("cy", d => {
-                return get_coord('y', k, d);
-            })
+            .attr("r", d => d.r)
             .attr('center-point', (d) => {
                 return d.x + ',' + d.y;
             })
@@ -1166,12 +1161,6 @@ function draw_bubble_chart(data, model='mlp') {
                 if (control_mode === 'wing-stream') {
                     toggle_focus(d.data.nameCls, 'mouseout');
                 }
-            })
-            .on("mousemove", function(event, d){
-                // set_cell_tooltip_position(event, tooltip, d);
-            })
-            .on("doubleclick", () => {
-                console.log('yes....')
             })
             .on('mousedown', function (ev, d) {
                 let nameCls = d.data.nameCls;
@@ -1228,19 +1217,53 @@ function draw_bubble_chart(data, model='mlp') {
 
                         break;
                 }
-                
-            });
+            })
+            ;
 
             if (k === 2) {
                 add_country_code(circle);
             }
+
+            repeat();
+
+            function repeat() {
+                new_circle
+                .attr("cx", d => {
+                    return get_coord('x', k, d, false);
+                })
+                .attr("cy", d => {
+                    return get_coord('y', k, d, false);
+                })
+                .transition()             // apply a transition
+                .ease(d3.easeBack)           // control the speed of the transition
+                .duration(2000)    
+                .attr("cx", d => {
+                    return get_coord('x', k, d, true);
+                })
+                .attr("cy", d => {
+                    return get_coord('y', k, d, true);
+                })
+                .transition()             
+                .ease(d3.easeBack)           
+                .duration(2000)    
+                .attr("cx", d => {
+                    return get_coord('x', k, d, false);
+                })
+                .attr("cy", d => {
+                    return get_coord('y', k, d, false);
+                })
+                .on("end", function() {
+                    repeat();
+                }); 
+            }
+            
         }
     }
 }
 
-function get_coord(axis, rgb_val, d) {
+function get_coord(axis, rgb_val, d, show_aber) {
     let coord;
-    const r = d.data.deviation;
+    let r = show_aber ? d.data.deviation : 0;
     const x = 0; //d.x;
     const y = 0; // d.y;
     if (axis === 'x') {
@@ -1457,15 +1480,15 @@ function toggle_cross(selector, len) {
     d3.select(selector).style("display", opacity);
 }
 
-function add_country_code(country_cell) {
+function add_country_code(country_cell, show_aber) {
     country_cell.append("text")
         .attr('class', 'country-code')
         .attr("y", 5)
         .attr("x", (d, i, nodes) => {
-            const shift = -d.data.code.length * 3/bubble_chart_scale;
-            // if (d.data.code === 'EGY') {
-            //     console.log(d.r, bubble_chart_scale, shift);
-            // }
+            let shift = -d.data.code.length * 3/bubble_chart_scale;
+            if (show_aber) {
+                shift = 0;
+            }
             return shift + 'px';
         })
         .text(function(d){
@@ -1494,7 +1517,7 @@ function add_zoom_listener(svg, width, height, selector) {
                 bubble_chart_scale = event.transform.k;
                 d3.selectAll('.circle-container text').remove();
                 const circles = d3.selectAll('.circle-container');
-                add_country_code(circles)
+                add_country_code(circles, undefined)
             }
             // console.log(event.sourceEvent.type, event.transform);
             if (!event.sourceEvent || event.sourceEvent.type === 'wheel') {
