@@ -1052,7 +1052,8 @@ function draw_bubble_chart(data, model='mlp') {
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    bubble_data = _.take(bubble_data, 15)
+    bubble_data = _.take(bubble_data, 15);
+    // bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
     const width = bubble_chart_width;
@@ -1142,6 +1143,12 @@ function draw_bubble_chart(data, model='mlp') {
                 return d.x + ',' + d.y;
             })
             .attr("fill-opacity", (d) => {
+                let opac = 0.17;
+                if (k === 0) {
+                    opac = 0.17;
+                } else if (k === 1) {
+                    opac = 0.17;
+                }
                 return 0.33;
             })
             .attr('class', ()=> {
@@ -1149,6 +1156,7 @@ function draw_bubble_chart(data, model='mlp') {
             })
             .attr("fill", d => {
                 const colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
+                // const colors = {0: '#808080', 1: '#808080', 2: '#808080'};
                 return colors[k];
             })
             .on('mouseover', function (event, d) {
@@ -1227,6 +1235,7 @@ function draw_bubble_chart(data, model='mlp') {
             repeat();
 
             function repeat() {
+                const ease = d3.easeLinear;
                 new_circle
                 .attr("cx", d => {
                     return get_coord('x', k, d, false);
@@ -1235,7 +1244,7 @@ function draw_bubble_chart(data, model='mlp') {
                     return get_coord('y', k, d, false);
                 })
                 .transition()             // apply a transition
-                .ease(d3.easeBack)           // control the speed of the transition
+                .ease(ease)           // control the speed of the transition
                 .duration(2000)    
                 .attr("cx", d => {
                     return get_coord('x', k, d, true);
@@ -1244,7 +1253,7 @@ function draw_bubble_chart(data, model='mlp') {
                     return get_coord('y', k, d, true);
                 })
                 .transition()             
-                .ease(d3.easeBack)           
+                .ease(ease)           
                 .duration(2000)    
                 .attr("cx", d => {
                     return get_coord('x', k, d, false);
@@ -1287,7 +1296,7 @@ function get_coord(axis, rgb_val, d, show_aber) {
             coord = y + r * (-1)/2;
             break;
             case 2:
-            coord = y + r * (1)/2;
+            coord = y + r * (-1)/2;
             break;
         }
     }
