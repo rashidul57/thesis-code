@@ -144,7 +144,7 @@ body.min-size .toolbar, body.min-size .container-box {
   opacity: 1;
 }
 .container-box .left-chart-container .country-stream-svg.dimmed {
-  opacity: 0.3;
+  opacity: 0.7;
 }
 .container-box .left-chart-container .country-stream {
   position: absolute;
@@ -171,7 +171,7 @@ body.min-size .toolbar, body.min-size .container-box {
 .main-stream-svg .main-stream-cell.focused {
   opacity: 1;
 }
-.clear-fish-graph, .apply-third-prop {
+.clear-fish-graph, .apply-third-prop, .toggle-texture {
   font-size: 13px;
   color: #2d88fd;
   margin-left: 15px;

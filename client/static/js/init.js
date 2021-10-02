@@ -137,7 +137,7 @@ function load_control_data() {
         if (sel_chart_type === "Stream Graphs") {
             draw_stream_graph(prop_pred_data, model, 'left-chart-container', undefined, undefined, undefined);
         } else {
-            draw_bubble_chart(prop_pred_data, model);
+            draw_bubble_chart(prop_pred_data, model, true);
         }
     });
 
@@ -237,6 +237,22 @@ function load_control_data() {
         d3.selectAll('.main-stream-cell').style("display", base_path_display);
     });
 
+    // toggle apply-toggle-texture
+    d3.selectAll('.toggle-texture')
+    .on("click", function(ev) {
+        const elem = d3.select(this);
+        let mode = elem.attr('mode');
+        if (!mode || mode === 'color') {
+            mode = 'texture';
+            elem.html('Color Stream');
+        } else {
+            mode = 'color';
+            elem.html('Texture Stream');
+        }
+        elem.attr('mode', mode);
+        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
+    });
+
     // initial load
     refresh_container();
 }
@@ -259,8 +275,8 @@ function refresh_container() {
         // break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .right-items").style("display", "inline-block");
-        draw_bubble_chart(prop_pred_data);
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
+        draw_bubble_chart(prop_pred_data, undefined);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         break;
 
