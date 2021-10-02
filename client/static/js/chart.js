@@ -206,7 +206,7 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
 }
 
 
-function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel_country_cls='', ev) {
+function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel_country_cls='', ev, mode='color') {
     stream_blur_on = true;
     if (container) {
         d3.select("." + container).selectAll("svg").remove();
@@ -396,15 +396,18 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         add_texture_defs(svg, keys, color)
     }
 
-    svg.append("g")
+    const stream = svg.append("g")
         .attr('class', () => {
             return sel_country ? '' : 'main-stream-g';
         })
         .selectAll("path")
         .data(series)
-        .join("path")
-        // .attr("fill", ({key}) => color(key))
-        .attr("fill", (d) => {
+        .join("path");
+
+    if (mode === 'color') {
+        stream.attr("fill", ({key}) => color(key));
+    } else {
+        stream.attr("fill", (d) => {
             const key = d.key;
             let fill_code = color(key);
             if (!sel_country) {
@@ -412,17 +415,21 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 fill_code = 'url(#texture-' + nameCls + ')';
             }
             return fill_code;
-        })
-        .attr("d", area)
-        .attr('class', ({key}) =>{
-            const nameCls = get_name_cls(key);
-            const cls = 'main-stream-cell stream-cell-' + nameCls;
-            return sel_country ? '' : cls;
-        })
-        .append("title")
-        .text(({key}) => {
-            return key;
         });
+    }
+    console.log(mode);
+
+    stream
+    .attr("d", area)
+    .attr('class', ({key}) =>{
+        const nameCls = get_name_cls(key);
+        const cls = 'main-stream-cell stream-cell-' + nameCls;
+        return sel_country ? '' : cls;
+    })
+    .append("title")
+    .text(({key}) => {
+        return key;
+    });
 
     if (sel_country) {
         const country_center = d3.select('.circle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
@@ -1036,23 +1043,24 @@ function draw_impact_chart(pred_data, model='mlp') {
 }
 
 
-function draw_bubble_chart(data, model='mlp') {
+function draw_bubble_chart(data, model='mlp', ev) {
     data = prepare_bubble_data(data, model);
     
-    if (control_mode === 'bubble-select') {
-        data = data.filter(item => {
-            return bubble_selected.indexOf(item.name) > -1;
-        });
-    } else if (control_mode === 'bubble-remove') {
-        data = data.filter(item => {
-            return bubble_removed.indexOf(item.name) === -1;
-        });
-    }
+    
+        if (control_mode === 'bubble-select' && bubble_selected.length) {
+            data = data.filter(item => {
+                return bubble_selected.indexOf(item.name) > -1;
+            });
+        } else if (control_mode === 'bubble-remove' && bubble_removed.length) {
+            data = data.filter(item => {
+                return bubble_removed.indexOf(item.name) === -1;
+            });
+        }
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    bubble_data = _.take(bubble_data, 15);
+    // bubble_data = _.take(bubble_data, 50);
     // bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
@@ -1143,12 +1151,12 @@ function draw_bubble_chart(data, model='mlp') {
                 return d.x + ',' + d.y;
             })
             .attr("fill-opacity", (d) => {
-                let opac = 0.17;
-                if (k === 0) {
-                    opac = 0.17;
-                } else if (k === 1) {
-                    opac = 0.17;
-                }
+                // let opac = 0.17;
+                // if (k === 0) {
+                //     opac = 0.17;
+                // } else if (k === 1) {
+                //     opac = 0.17;
+                // }
                 return 0.33;
             })
             .attr('class', ()=> {
@@ -1180,7 +1188,7 @@ function draw_bubble_chart(data, model='mlp') {
                         }
                         break;
                     case 'bubble-select':
-                        d3.selectAll('.circle-container').style("opacity", 0.1);
+                        d3.selectAll('.circle-container').style("opacity", 0.7);
                         if (bubble_selected.indexOf(d.data.name) > -1) {
                             bubble_selected = bubble_selected.filter(item => item !== d.data.name);
                         } else {
@@ -1195,13 +1203,13 @@ function draw_bubble_chart(data, model='mlp') {
                         toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
                         break;
                     case 'bubble-remove':
-                        d3.select('.circle-container-' + nameCls).style("opacity", 0.1);
+                        d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
                         if (bubble_removed.indexOf(d.data.name) > -1) {
                             d3.select('.circle-container-' + nameCls).style("opacity", 1);
                             bubble_removed = bubble_removed.filter(item => item !== d.data.name);
                         } else {
                             bubble_removed.push(d.data.name);
-                            d3.select('.circle-container-' + nameCls).style("opacity", 0.1);
+                            d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
                         }
                         toggle_go();
                         toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
@@ -1262,7 +1270,7 @@ function draw_bubble_chart(data, model='mlp') {
                     return get_coord('y', k, d, false);
                 })
                 .on("end", function() {
-                    repeat();
+                    // repeat();
                 }); 
             }
             
