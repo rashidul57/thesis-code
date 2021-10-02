@@ -417,7 +417,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             return fill_code;
         });
     }
-    console.log(mode);
+    // console.log(mode);
 
     stream
     .attr("d", area)
@@ -1060,7 +1060,7 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    // bubble_data = _.take(bubble_data, 15);
+    // bubble_data = _.take(bubble_data, 10);
     // bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
