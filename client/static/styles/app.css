@@ -157,6 +157,18 @@ body.min-size .toolbar, body.min-size .container-box {
 .container-box .left-chart-container .country-stream.dimmed {
   opacity: 0.1;
 }
+.container-box .left-chart-container .inner-container {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 65px calc(100% - 65px);
+}
+.container-box .left-chart-container .inner-container .percent-row, .container-box .left-chart-container .inner-container .percent-row svg {
+  height: 100%;
+  width: 100%;
+}
+.container-box .left-chart-container .inner-container .percent-row .perc-label, .container-box .left-chart-container .inner-container .percent-row svg .perc-label {
+  color: white;
+}
 
 .bubble-svg g circle.abberation {
   z-index: 1;

@@ -179,6 +179,20 @@ body {
                 opacity: 0.1;
             }
         }
+
+        .inner-container{
+            display: grid;
+            grid-template-columns: 100%;
+            grid-template-rows: 65px calc(100% - 65px);
+
+            .percent-row, .percent-row svg{
+                height: 100%;
+                width: 100%;
+                .perc-label{
+                    color: white;
+                }
+            }
+        }
     }
 }
 

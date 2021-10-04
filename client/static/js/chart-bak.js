@@ -2,7 +2,7 @@
 const date_format = 'YYYY-MM-DD';
 const drag_start = {};
 const bubble_chart_width = 780;
-const bubble_chart_height = 750;
+const left_panel_height = 750;
 let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
@@ -429,7 +429,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         const c_cx = Number(country_center[0]);
         const c_cy = Number(country_center[1]);
         const ty = start_path_y;
-        const p1 = {x: bubble_chart_width/2, y: bubble_chart_height/2};
+        const p1 = {x: bubble_chart_width/2, y: left_panel_height/2};
         const p2 = {x: c_cx, y: c_cy};
         const angle = get_angle(p1, p2);
         const country_g = svg.select('g');
@@ -1057,7 +1057,7 @@ function draw_bubble_chart(data, model='mlp') {
 
     // initialize configs of the chart
     const width = bubble_chart_width;
-    const height = bubble_chart_height;
+    const height = left_panel_height;
 
     // Define color range of bubbles
     const color_range = ["#a30f15", "#dfa6ad"];

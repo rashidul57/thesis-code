@@ -2,7 +2,7 @@
 const date_format = 'YYYY-MM-DD';
 const drag_start = {};
 const bubble_chart_width = 780;
-const bubble_chart_height = 750;
+const left_panel_height = 750;
 let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
@@ -10,6 +10,7 @@ let bubble_selected = [];
 // let global_streams = ['Turkey', 'Bangladesh'];
 let global_streams = [];
 let bubble_data;
+const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -333,50 +334,50 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     .y1(d => y(d[1]));
 
     // draw legend
-    if (!sel_country) {
-        const c_svg = d3.select(".left-chart-container")
-        .append("svg")
-        .attr('width', 1500)
-        .attr('height', 50);
+    // if (!sel_country) {
+    //     const c_svg = d3.select(".left-chart-container")
+    //     .append("svg")
+    //     .attr('width', 1500)
+    //     .attr('height', 50);
 
-        const country_g = c_svg.selectAll(".country")
-        .data(keys)
-        .enter()
-        .append("g");
+    //     const country_g = c_svg.selectAll(".country")
+    //     .data(keys)
+    //     .enter()
+    //     .append("g");
 
-        country_g
-        .append("rect")
-        .attr('class', 'rect')
-        .attr("x", (d, i) => {
-                let space = 80;
-                keys.forEach((key, indx) => {
-                    if (indx < i) {
-                        space += key.length * 8 + 25;
-                    }
-                });
-                return space;
-        })
-        .attr('y', 10)
-        .attr('width', 15)
-        .attr('height', 15)
-        .attr("fill", (key) => color(key));
+    //     country_g
+    //     .append("rect")
+    //     .attr('class', 'rect')
+    //     .attr("x", (d, i) => {
+    //             let space = 80;
+    //             keys.forEach((key, indx) => {
+    //                 if (indx < i) {
+    //                     space += key.length * 8 + 25;
+    //                 }
+    //             });
+    //             return space;
+    //     })
+    //     .attr('y', 10)
+    //     .attr('width', 15)
+    //     .attr('height', 15)
+    //     .attr("fill", (key) => color(key));
 
-        country_g
-        .append("text")
-        .attr("x", (d, i) => {
-            let space = 100;
-            keys.forEach((key, indx) => {
-                if (indx < i) {
-                    space += key.length * 8 + 25;
-                }
-            });
-            return space;
-        })
-        .attr('y', 23)
-        .attr('width', 15)
-        .attr('height', 15)
-        .text(d => d);
-    }
+    //     country_g
+    //     .append("text")
+    //     .attr("x", (d, i) => {
+    //         let space = 100;
+    //         keys.forEach((key, indx) => {
+    //             if (indx < i) {
+    //                 space += key.length * 8 + 25;
+    //             }
+    //         });
+    //         return space;
+    //     })
+    //     .attr('y', 23)
+    //     .attr('width', 15)
+    //     .attr('height', 15)
+    //     .text(d => d);
+    // }
 
     let svg;
     if (sel_country) {
@@ -436,7 +437,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         const c_cx = Number(country_center[0]);
         const c_cy = Number(country_center[1]);
         const ty = start_path_y;
-        const p1 = {x: bubble_chart_width/2, y: bubble_chart_height/2};
+        const p1 = {x: bubble_chart_width/2, y: left_panel_height/2};
         const p2 = {x: c_cx, y: c_cy};
         const angle = get_angle(p1, p2);
         const country_g = svg.select('g');
@@ -1045,27 +1046,25 @@ function draw_impact_chart(pred_data, model='mlp') {
 
 function draw_bubble_chart(data, model='mlp', ev) {
     data = prepare_bubble_data(data, model);
-    
-    
-        if (control_mode === 'bubble-select' && bubble_selected.length) {
-            data = data.filter(item => {
-                return bubble_selected.indexOf(item.name) > -1;
-            });
-        } else if (control_mode === 'bubble-remove' && bubble_removed.length) {
-            data = data.filter(item => {
-                return bubble_removed.indexOf(item.name) === -1;
-            });
-        }
+    if (control_mode === 'bubble-select' && bubble_selected.length) {
+        data = data.filter(item => {
+            return bubble_selected.indexOf(item.name) > -1;
+        });
+    } else if (control_mode === 'bubble-remove' && bubble_removed.length) {
+        data = data.filter(item => {
+            return bubble_removed.indexOf(item.name) === -1;
+        });
+    }
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    // bubble_data = _.take(bubble_data, 10);
+    bubble_data = _.take(bubble_data, 20);
     // bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
     const width = bubble_chart_width;
-    const height = bubble_chart_height;
+    const height = left_panel_height - 65;
 
     // Define color range of bubbles
     const color_range = ["#a30f15", "#dfa6ad"];
@@ -1080,9 +1079,21 @@ function draw_bubble_chart(data, model='mlp', ev) {
     const root = pack(bubble_data);
 
     // clear chart container
-    d3.selectAll('.left-chart-container svg.bubble-svg').remove();
+    d3.selectAll('.left-chart-container .inner-container').remove();
+    d3.select('.left-chart-container')
+    .append('div')
+    .attr('class', 'inner-container');
+
+    d3.select('.inner-container')
+    .append('div')
+    .attr('class', 'percent-row');
+
+    d3.select('.inner-container')
+    .append('div')
+    .attr('class', 'bubble-chart');
+
     // set svg shape/size
-    const svg = d3.select('.left-chart-container')
+    const svg = d3.select('.bubble-chart')
         .append("svg")
         .attr('class', 'bubble-svg')
         .attr("width", width)
@@ -1117,6 +1128,7 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // reset bubble label(country code) on change scale of the svg
     function redraw_bubbles(root, svg, cur_scale) {
         draw_circles();
+        draw_percentages(root.leaves());
         
         function draw_circles() {
             // clear container
@@ -1151,21 +1163,13 @@ function draw_bubble_chart(data, model='mlp', ev) {
                 return d.x + ',' + d.y;
             })
             .attr("fill-opacity", (d) => {
-                // let opac = 0.17;
-                // if (k === 0) {
-                //     opac = 0.17;
-                // } else if (k === 1) {
-                //     opac = 0.17;
-                // }
                 return 0.33;
             })
             .attr('class', ()=> {
                 return abberation ? 'abberation' : 'actual';
             })
             .attr("fill", d => {
-                const colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
-                // const colors = {0: '#808080', 1: '#808080', 2: '#808080'};
-                return colors[k];
+                return bubble_colors[k];
             })
             .on('mouseover', function (event, d) {
                 if (control_mode === 'wing-stream') {
@@ -1246,28 +1250,28 @@ function draw_bubble_chart(data, model='mlp', ev) {
                 const ease = d3.easeLinear;
                 new_circle
                 .attr("cx", d => {
-                    return get_coord('x', k, d, false);
+                    return get_coord('x', k, d.data.deviation, 0, false);
                 })
                 .attr("cy", d => {
-                    return get_coord('y', k, d, false);
+                    return get_coord('y', k, d.data.deviation, 0, false);
                 })
-                .transition()             // apply a transition
-                .ease(ease)           // control the speed of the transition
+                .transition()             
+                .ease(ease)
                 .duration(2000)    
                 .attr("cx", d => {
-                    return get_coord('x', k, d, true);
+                    return get_coord('x', k, d.data.deviation, 0, true);
                 })
                 .attr("cy", d => {
-                    return get_coord('y', k, d, true);
+                    return get_coord('y', k, d.data.deviation, 0, true);
                 })
                 .transition()             
                 .ease(ease)           
                 .duration(2000)    
                 .attr("cx", d => {
-                    return get_coord('x', k, d, false);
+                    return get_coord('x', k, d.data.deviation, 0, false);
                 })
                 .attr("cy", d => {
-                    return get_coord('y', k, d, false);
+                    return get_coord('y', k, d.data.deviation, 0, false);
                 })
                 .on("end", function() {
                     repeat();
@@ -1278,33 +1282,125 @@ function draw_bubble_chart(data, model='mlp', ev) {
     }
 }
 
-function get_coord(axis, rgb_val, d, show_aber) {
+function draw_percentages(leaves) {
+    const data = leaves.map(item => item.data);
+    if (data.length) {
+        const percent_circles = [];
+        const perc_count = 5;
+        const max_deviation = _.max(data, 'deviation').deviation;
+        const dev_factor = max_deviation/perc_count;
+        const svg = d3.select('.percent-row').append('svg');
+
+        svg.append('rect')
+        .attr('x', 10)
+        .attr('y', 5)
+        .attr('width', 400)
+        .attr('height', 58)
+        .attr('stroke', '#7678A9')
+        .attr('fill', 'white');
+
+        // draw circles
+        for(let i = 0; i < perc_count; i++) {
+            const cur_dev = i === 0 ? 0 : ((i+1) * dev_factor);
+            for(let k = 0; k < 3; k++) {
+                const circle = svg
+                .append('circle')
+                .attr('r', 25)
+                .attr("fill", d => {
+                    return bubble_colors[k];
+                })
+                .attr("fill-opacity", (d) => {
+                    return 0.33;
+                });
+
+                // percentage label
+                const label = (i*25) + '%';
+                svg.append('text')
+                .attr('dx', () => {
+                    return 50 + i * 80 - label.length * 4;
+                })
+                .attr('dy', () => {
+                    return 37;
+                })
+                .attr("font-size", 13)
+                .attr("fill", 'white')
+                .html(label);
+
+                // store circle
+                percent_circles.push({circle, i, k, cur_dev})
+            }
+        }
+
+        // animate with transition
+        repeat();
+
+        function repeat() {
+            const ease = d3.easeLinear;
+            let y = 34;
+            percent_circles.forEach((item) => {
+                const {circle, i, k, cur_dev} = item;
+                circle
+                .attr('cx', () => {
+                    let x = 50 + i * 80;
+                    return get_coord('x', k, cur_dev, x, false);
+                })
+                .attr('cy', () => {
+                    return get_coord('y', k, cur_dev, y, false);
+                })
+                .transition()             
+                .ease(ease)
+                .duration(2000)    
+                .attr('cx', () => {
+                    let x = 50 + i * 80;
+                    return get_coord('x', k, cur_dev, x, true);
+                })
+                .attr('cy', () => {
+                    return get_coord('y', k, cur_dev, y, true);
+                })
+                .transition()             
+                .ease(ease)           
+                .duration(2000)    
+                .attr('cx', () => {
+                    let x = 50 + i * 80;
+                    return get_coord('x', k, cur_dev, x, false);
+                })
+                .attr('cy', () => {
+                    return get_coord('y', k, cur_dev, y, false);
+                })
+                .on("end", function() {
+                    repeat();
+                });
+            })
+        }
+
+    }
+}
+
+function get_coord(axis, rgb_val, deviation, init_val, show_aber) {
     let coord;
-    let r = show_aber ? d.data.deviation : 0;
-    const x = 0; //d.x;
-    const y = 0; // d.y;
+    let r = show_aber ? deviation : 0;
     if (axis === 'x') {
         switch (rgb_val) {
             case 0:
-            coord = x;
+            coord = init_val;
             break;
             case 1:
-            coord = x + r * (-Math.sqrt(3)/2);
+            coord = init_val + r * (-Math.sqrt(3)/2);
             break;
             case 2:
-            coord = x + r * (Math.sqrt(3)/2);
+            coord = init_val + r * (Math.sqrt(3)/2);
             break;
         }
     } else {
         switch (rgb_val) {
             case 0:
-            coord = y + r;
+            coord = init_val + r;
             break;
             case 1:
-            coord = y + r * (-1)/2;
+            coord = init_val + r * (-1)/2;
             break;
             case 2:
-            coord = y + r * (-1)/2;
+            coord = init_val + r * (-1)/2;
             break;
         }
     }
