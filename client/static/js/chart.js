@@ -1059,7 +1059,17 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
-    bubble_data = _.take(bubble_data, 20);
+    // Aberration test of two circles
+    // bubble_data = _.take(bubble_data, 2);
+    // bubble_data[0].deviation = 5;
+    // bubble_data[0].count = 1000;
+    // bubble_data[1].deviation = 0;
+    // bubble_data[1].count = 1000;
+
+    bubble_data = _.take(bubble_data, 1);
+    bubble_data[0].deviation = 1;
+    bubble_data[0].count = 100;
+    
     // bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
@@ -1158,7 +1168,7 @@ function draw_bubble_chart(data, model='mlp', ev) {
             .append("circle")
             .attr('class', 'country-circle')
             .attr("id", d => (d.data.name + '-' + d.data.count))
-            .attr("r", d => d.r)
+            .attr("r", d => d.r*.4)
             .attr('center-point', (d) => {
                 return d.x + ',' + d.y;
             })
@@ -1433,16 +1443,6 @@ function prepare_bubble_data(data, model) {
         item.deviation = item.diff * 7 / max_diff;
         return item;
     });
-    // let dd = _.orderBy(bubble_data, ['deviation'], ['desc']);
-    // for (let k = 0; k<10; k++) {
-    //     console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
-    // }
-
-    // console.log('Bottom');
-    // dd = _.orderBy(bubble_data, ['deviation', 'actual'], ['asc', 'desc']);
-    // for (let k = 0; k<10; k++) {
-    //     console.log(dd[k].name, ', ', parseInt(dd[k].actual), ', ', parseInt(dd[k].count), ', ', dd[k].deviation.toFixed(2))
-    // }
 
     return bubble_data;
 }
