@@ -33,3 +33,6 @@ https://www.dal.ca/faculty/gradstudies/currentstudents/thesesanddefences/format.
 
 
 
+Display size effect:
+https://www.researchgate.net/publication/221514666_Sizing_up_visualizations_Effects_of_display_size_in_focusContext_overviewDetail_and_zooming_interfaces
+https://www.researchgate.net/publication/256837262_Interactive_Visualizations_on_Large_and_Small_Displays_The_Interrelation_of_Display_Size_Information_Space_and_Scale
