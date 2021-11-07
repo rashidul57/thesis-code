@@ -27,6 +27,12 @@ def get_covid_data():
     values = df.values.tolist()
     columns = df.columns.values.tolist()
     data = {"columns": columns, "data": values}
-    return jsonify(json.dumps(data))
+    json_data = jsonify(json.dumps(data))
+
+    # with open('covid-raw.json', 'w+') as outfile:
+    #     json.dump(json.dumps(data), outfile)
+    
+    return json_data;
+
 
 app.run()

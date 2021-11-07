@@ -170,6 +170,13 @@ body.min-size .toolbar, body.min-size .container-box {
   color: white;
 }
 
+.ca-options {
+  position: absolute;
+  top: 50px;
+  left: 440px;
+  z-index: 9999;
+}
+
 .bubble-svg g circle.abberation {
   z-index: 1;
 }

@@ -11,6 +11,7 @@ let bubble_selected = [];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
+let aberration_mode = 'ca';
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -1059,6 +1060,8 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
 
+    // bubble_data = _.take(bubble_data, 1);
+
     // Aberration test of two circles
     // bubble_data = _.take(bubble_data, 2);
     // bubble_data[0].deviation = 5;
@@ -1066,11 +1069,11 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // bubble_data[1].deviation = 0;
     // bubble_data[1].count = 1000;
 
-    bubble_data = _.take(bubble_data, 1);
-    bubble_data[0].deviation = 1;
-    bubble_data[0].count = 100;
+    // bubble_data = _.take(bubble_data, 1);
+    // bubble_data[0].deviation = 1;
+    // bubble_data[0].count = 100;
     
-    // bubble_data = [bubble_data[1]];
+    bubble_data = [bubble_data[1]];
 
     // initialize configs of the chart
     const width = bubble_chart_width;
@@ -1135,6 +1138,10 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // set zoom functon on to the svg
     add_zoom_listener(svg, width, height, 'bubble-svg');
 
+    if (['blur', 'ca-blur'].indexOf(aberration_mode) > -1) {
+        add_circle_blur(svg, bubble_data[0].deviation);
+    }
+
     // reset bubble label(country code) on change scale of the svg
     function redraw_bubbles(root, svg, cur_scale) {
         draw_circles();
@@ -1151,145 +1158,232 @@ function draw_bubble_chart(data, model='mlp', ev) {
         }
 
         function add_circle(k) {
-            const abberation = k === 0;
-            const circle = svg.selectAll("g")
-            .data(root.leaves())
-            .join("g")
-            .attr('class', (d) => {
-                const nameCls = d && d.data.nameCls || '';
-                let cls = 'circle-container circle-container-' + nameCls;
-                return cls;
-            })
-            .attr("transform", d => {
-                return `translate(${d.x + 1},${d.y + 1})`
-            });
+            if (aberration_mode === 'noise') {
+                const radius = 100;
+                var data = d3.range(2000).map(() => {
+                    return {
+                        cx: Math.cos(Math.random() * Math.PI * 2) * (Math.sqrt(~~(Math.random() * radius * radius))),
+                        cy: Math.sin(Math.random() * Math.PI * 2) * (Math.sqrt(~~(Math.random() * radius * radius))),
+                        r: 1
+                    };
+                });
+                
+                const circle = svg.selectAll("g")
+                .data(root.leaves())
+                .join("g")
+                .attr('class', (d) => {
+                    const nameCls = d && d.data.nameCls || '';
+                    let cls = 'circle-container circle-container-' + nameCls;
+                    return cls;
+                })
+                .attr("transform", d => {
+                    return `translate(${d.x + 1},${d.y + 1})`
+                });
 
-        const new_circle = circle
-            .append("circle")
-            .attr('class', 'country-circle')
-            .attr("id", d => (d.data.name + '-' + d.data.count))
-            .attr("r", d => d.r*.4)
-            .attr('center-point', (d) => {
-                return d.x + ',' + d.y;
-            })
-            .attr("fill-opacity", (d) => {
-                return 0.33;
-            })
-            .attr('class', ()=> {
-                return abberation ? 'abberation' : 'actual';
-            })
-            .attr("fill", d => {
-                return bubble_colors[k];
-            })
-            .on('mouseover', function (event, d) {
-                if (control_mode === 'wing-stream') {
-                    reorder_bubbles(this.parentNode, root.leaves());
-                    toggle_focus(d.data.nameCls, 'mouseover');
-                }
-            })
-            .on('mouseout', function (event, d) {
-                if (control_mode === 'wing-stream') {
-                    toggle_focus(d.data.nameCls, 'mouseout');
-                }
-            })
-            .on('mousedown', function (ev, d) {
-                let nameCls = d.data.nameCls;
-                switch (control_mode) {
-                    case 'wing-stream':
-                        if (!abberation) {
-                            d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
-                            draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
-                        }
-                        break;
-                    case 'bubble-select':
-                        d3.selectAll('.circle-container').style("opacity", 0.7);
-                        if (bubble_selected.indexOf(d.data.name) > -1) {
-                            bubble_selected = bubble_selected.filter(item => item !== d.data.name);
-                        } else {
-                            bubble_selected.push(d.data.name);
-                        }
-                        bubble_selected.forEach(name => {
-                            nameCls = get_name_cls(name);
-                            d3.select('.circle-container-' + nameCls).style("opacity", 1);
-                        });
+                for ( let i = 0; i < 5000; i++) {
+                    var rad = Math.sqrt(~~(Math.random() * 100 * 100)),
+                        angle = Math.random() * Math.PI * 2,
+                        posx = Math.cos(angle),
+                        posy = Math.sin(angle);
+                
+                    var c2 = circle
+                        .append('circle')
+                        .attr('id', 'cir')
+                        .attr('cx', posx * rad)
+                        .attr('cy', posy * rad)
+                        .attr('r', 1)
+                        .style('fill', () => {
+                            let color = bubble_colors[k];
+                            return color;
+                        })
+                        .style('opacity', .1 * bubble_data[0].deviation);
+                 }
 
-                        toggle_go();
-                        toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
-                        break;
-                    case 'bubble-remove':
-                        d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
-                        if (bubble_removed.indexOf(d.data.name) > -1) {
-                            d3.select('.circle-container-' + nameCls).style("opacity", 1);
-                            bubble_removed = bubble_removed.filter(item => item !== d.data.name);
-                        } else {
-                            bubble_removed.push(d.data.name);
+                 if (k === 2) {
+                    add_country_code(circle);
+                }
+                
+
+            } else {
+                const abberation = k === 0;
+                const circle = svg.selectAll("g")
+                .data(root.leaves())
+                .join("g")
+                .attr('class', (d) => {
+                    const nameCls = d && d.data.nameCls || '';
+                    let cls = 'circle-container circle-container-' + nameCls;
+                    return cls;
+                })
+                .attr("transform", d => {
+                    return `translate(${d.x + 1},${d.y + 1})`
+                });
+
+            const new_circle = circle
+                .append("circle")
+                // .attr('class', 'country-circle')
+                .attr("id", d => (d.data.name + '-' + d.data.count))
+                .attr("r", d => d.r*.3)
+                .attr('center-point', (d) => {
+                    return d.x + ',' + d.y;
+                })
+                .attr("fill-opacity", (d) => {
+                    return 0.33;
+                })
+                .attr('class', ()=> {
+                    return abberation ? 'abberation' : 'actual';
+                })
+                .attr("fill", (d) => {
+                    let color = bubble_colors[k];
+                    if (aberration_mode === 'trans') {
+                        color = color + '80';
+                    }
+                    if (aberration_mode === 'noise') {
+                        color = add_noise(color);
+                    }
+                    return color;
+                })
+                .on('mouseover', function (event, d) {
+                    if (control_mode === 'wing-stream') {
+                        reorder_bubbles(this.parentNode, root.leaves());
+                        toggle_focus(d.data.nameCls, 'mouseover');
+                    }
+                })
+                .on('mouseout', function (event, d) {
+                    if (control_mode === 'wing-stream') {
+                        toggle_focus(d.data.nameCls, 'mouseout');
+                    }
+                })
+                .on('mousedown', function (ev, d) {
+                    let nameCls = d.data.nameCls;
+                    switch (control_mode) {
+                        case 'wing-stream':
+                            if (!abberation) {
+                                d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
+                                draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
+                            }
+                            break;
+                        case 'bubble-select':
+                            d3.selectAll('.circle-container').style("opacity", 0.7);
+                            if (bubble_selected.indexOf(d.data.name) > -1) {
+                                bubble_selected = bubble_selected.filter(item => item !== d.data.name);
+                            } else {
+                                bubble_selected.push(d.data.name);
+                            }
+                            bubble_selected.forEach(name => {
+                                nameCls = get_name_cls(name);
+                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                            });
+
+                            toggle_go();
+                            toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
+                            break;
+                        case 'bubble-remove':
                             d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
-                        }
-                        toggle_go();
-                        toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
-                        break;
+                            if (bubble_removed.indexOf(d.data.name) > -1) {
+                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                bubble_removed = bubble_removed.filter(item => item !== d.data.name);
+                            } else {
+                                bubble_removed.push(d.data.name);
+                                d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
+                            }
+                            toggle_go();
+                            toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
+                            break;
 
-                    case 'global-streams':
-                        if (global_streams.indexOf(d.data.name) > -1) {
-                            global_streams = global_streams.filter(item => item !== d.data.name);
-                        } else {
-                            global_streams.push(d.data.name);
-                        }
-                        const opacity = global_streams.length ? 0.1 : 0.8;
-                        d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
-                        global_streams.forEach(name => {
-                            nameCls = get_name_cls(name);
-                            d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
-                        });
+                        case 'global-streams':
+                            if (global_streams.indexOf(d.data.name) > -1) {
+                                global_streams = global_streams.filter(item => item !== d.data.name);
+                            } else {
+                                global_streams.push(d.data.name);
+                            }
+                            const opacity = global_streams.length ? 0.1 : 0.8;
+                            d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
+                            global_streams.forEach(name => {
+                                nameCls = get_name_cls(name);
+                                d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
+                            });
 
-                        toggle_go();
-                        toggle_cross('.' + control_mode + ' .cross', global_streams.length);
+                            toggle_go();
+                            toggle_cross('.' + control_mode + ' .cross', global_streams.length);
 
-                        break;
+                            break;
+                    }
+                })
+                ;
+
+                if (k === 2) {
+                    add_country_code(circle);
                 }
-            })
-            ;
 
-            if (k === 2) {
-                add_country_code(circle);
+                if (aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
+                    do_transition();
+                }
+
+                function do_transition() {
+                    if (aberration_mode === 'ca-static') {
+                        new_circle
+                        .attr("cx", d => {
+                            return get_coord('x', k, d.data.deviation, 0, true);
+                        })
+                        .attr("cy", d => {
+                            return get_coord('y', k, d.data.deviation, 0, true);
+                        });
+                    } else {
+                        const ease = d3.easeLinear;
+                        new_circle
+                        .attr("cx", d => {
+                            return get_coord('x', k, d.data.deviation, 0, false);
+                        })
+                        .attr("cy", d => {
+                            return get_coord('y', k, d.data.deviation, 0, false);
+                        })
+                        .transition()             
+                        .ease(ease)
+                        .duration(2000)    
+                        .attr("cx", d => {
+                            return get_coord('x', k, d.data.deviation, 0, true);
+                        })
+                        .attr("cy", d => {
+                            return get_coord('y', k, d.data.deviation, 0, true);
+                        })
+                        .transition()             
+                        .ease(ease)           
+                        .duration(2000)    
+                        .attr("cx", d => {
+                            return get_coord('x', k, d.data.deviation, 0, false);
+                        })
+                        .attr("cy", d => {
+                            return get_coord('y', k, d.data.deviation, 0, false);
+                        })
+                        .on("end", function() {
+                            do_transition();
+                        });
+                    }
+                }
             }
-
-            repeat();
-
-            function repeat() {
-                const ease = d3.easeLinear;
-                new_circle
-                .attr("cx", d => {
-                    return get_coord('x', k, d.data.deviation, 0, false);
-                })
-                .attr("cy", d => {
-                    return get_coord('y', k, d.data.deviation, 0, false);
-                })
-                .transition()             
-                .ease(ease)
-                .duration(2000)    
-                .attr("cx", d => {
-                    return get_coord('x', k, d.data.deviation, 0, true);
-                })
-                .attr("cy", d => {
-                    return get_coord('y', k, d.data.deviation, 0, true);
-                })
-                .transition()             
-                .ease(ease)           
-                .duration(2000)    
-                .attr("cx", d => {
-                    return get_coord('x', k, d.data.deviation, 0, false);
-                })
-                .attr("cy", d => {
-                    return get_coord('y', k, d.data.deviation, 0, false);
-                })
-                .on("end", function() {
-                    repeat();
-                }); 
-            }
-            
         }
     }
+}
+
+function add_circle_blur(svg, deviation) {
+    var defs = svg.append("defs");
+    //Initialize the filter
+    defs.append("filter")
+        .attr("id", "motionFilter") //Give it a unique ID
+        //Increase the width of the filter region to remove blur "boundary"
+        .attr("width", "300%")
+        //Put center of the "width" back in the middle of the element
+        .attr("x", "-100%")
+        .attr("height", "300%")
+        .attr("y", "-100%")
+        .append("feGaussianBlur") //Append a filter technique
+        .attr("class", "blurValues") //Needed to select later on
+        .attr("in", "SourceGraphic") //Apply blur on the applied element
+        //Do a blur of 8 standard deviations in the horizontal
+        //direction and 0 in vertical
+        .attr("stdDeviation", deviation + " " + deviation);
+
+    d3.selectAll(".circle-container circle").style("filter", "url(#motionFilter)");
 }
 
 function draw_percentages(leaves) {
