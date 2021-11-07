@@ -12,6 +12,7 @@ window.onload = init;
  * Excecutes on page load(start of the application)
  */
 async function init() {
+
     const forecasts = await $.get("/get-forcasts");
     forecast_data = JSON.parse(forecasts);
     prop_pred_data = forecast_data[sel_property];
@@ -253,6 +254,13 @@ function load_control_data() {
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
     });
 
+    d3.selectAll('.ca-options')
+    .on("change", function(ev) {
+        d3.select(".left-chart-container").selectAll("svg").remove();
+        aberration_mode = d3.select(this).property("value");
+        draw_bubble_chart(prop_pred_data, undefined);
+    });
+
     // initial load
     refresh_container();
 }
@@ -275,7 +283,7 @@ function refresh_container() {
         // break;
 
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items, .ca-options").style("display", "inline-block");
         draw_bubble_chart(prop_pred_data, undefined);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         break;
