@@ -11,7 +11,7 @@ let bubble_selected = [];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
-let aberration_mode = 'ca';
+// let aberration_mode = 'ca';
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -1045,7 +1045,7 @@ function draw_impact_chart(pred_data, model='mlp') {
 }
 
 
-function draw_bubble_chart(data, model='mlp', ev) {
+function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
     data = prepare_bubble_data(data, model);
     if (control_mode === 'bubble-select' && bubble_selected.length) {
         data = data.filter(item => {
@@ -1073,11 +1073,19 @@ function draw_bubble_chart(data, model='mlp', ev) {
     // bubble_data[0].deviation = 1;
     // bubble_data[0].count = 100;
     
-    bubble_data = [bubble_data[1]];
+    if (aberration_mode) {
+        bubble_data = [bubble_data[1]];
+    }
 
     // initialize configs of the chart
-    const width = bubble_chart_width;
-    const height = left_panel_height - 65;
+    let width, height;
+    if (!aberration_mode) {
+        width = bubble_chart_width;
+        height = left_panel_height - 65;
+    } else {
+        width = 170;
+        height = 170;
+    }
 
     // Define color range of bubbles
     const color_range = ["#a30f15", "#dfa6ad"];
@@ -1092,21 +1100,26 @@ function draw_bubble_chart(data, model='mlp', ev) {
     const root = pack(bubble_data);
 
     // clear chart container
-    d3.selectAll('.left-chart-container .inner-container').remove();
-    d3.select('.left-chart-container')
-    .append('div')
-    .attr('class', 'inner-container');
+    if (!aberration_mode || (aberration_mode && indx === 0)) {
+        d3.selectAll('.left-chart-container .inner-container').remove();
+        d3.select('.left-chart-container')
+        .append('div')
+        .attr('class', 'inner-container');
+    }
 
-    d3.select('.inner-container')
-    .append('div')
-    .attr('class', 'percent-row');
+    if (!aberration_mode) {
+        d3.select('.inner-container')
+        .append('div')
+        .attr('class', 'percent-row');
+    }
 
-    d3.select('.inner-container')
-    .append('div')
-    .attr('class', 'bubble-chart');
+    if (!aberration_mode || (aberration_mode && indx === 0)) {
+        d3.select('.inner-container')
+        .append('div')
+        .attr('class', 'bubble-chart');
+    }
 
-    // set svg shape/size
-    const svg = d3.select('.bubble-chart')
+    let svg = d3.select('.bubble-chart')
         .append("svg")
         .attr('class', 'bubble-svg')
         .attr("width", width)
@@ -1115,6 +1128,9 @@ function draw_bubble_chart(data, model='mlp', ev) {
         //     "translate(" + margin_w/2 + "," + margin_h/2 + ")"
         // )
         .attr("viewBox", [0, 0, width, height]);
+    // } else {
+    //     svg = d3.select('.bubble-svg');
+    // }
 
     // tooltip construction piece 
     const tooltip = d3.tip().attr('class', 'd3-tip')
@@ -1132,20 +1148,25 @@ function draw_bubble_chart(data, model='mlp', ev) {
         // get_segment_class(ev, true);
     });
     
-    let cur_scale = 1;
-    redraw_bubbles(root, svg, cur_scale);
+    redraw_bubbles(root, svg);
 
     // set zoom functon on to the svg
-    add_zoom_listener(svg, width, height, 'bubble-svg');
+    if (!aberration_mode) {
+        add_zoom_listener(svg, width, height, 'bubble-svg');
+    }
 
     if (['blur', 'ca-blur'].indexOf(aberration_mode) > -1) {
         add_circle_blur(svg, bubble_data[0].deviation);
     }
 
     // reset bubble label(country code) on change scale of the svg
-    function redraw_bubbles(root, svg, cur_scale) {
+    function redraw_bubbles(root, svg) {
+        
         draw_circles();
-        draw_percentages(root.leaves());
+
+        if (!aberration_mode) {
+            draw_percentages(root.leaves());
+        }
         
         function draw_circles() {
             // clear container
@@ -1177,11 +1198,11 @@ function draw_bubble_chart(data, model='mlp', ev) {
                     return cls;
                 })
                 .attr("transform", d => {
-                    return `translate(${d.x + 1},${d.y + 1})`
+                    return `translate(${d.x + 1 + 303},${d.y + 1 + 60})`
                 });
 
                 for ( let i = 0; i < 5000; i++) {
-                    var rad = Math.sqrt(~~(Math.random() * 100 * 100)),
+                    var rad = Math.sqrt((Math.random() * 84 * 84)),
                         angle = Math.random() * Math.PI * 2,
                         posx = Math.cos(angle),
                         posy = Math.sin(angle);
@@ -1196,13 +1217,13 @@ function draw_bubble_chart(data, model='mlp', ev) {
                             let color = bubble_colors[k];
                             return color;
                         })
-                        .style('opacity', .1 * bubble_data[0].deviation);
+                        .style('opacity', .02 * bubble_data[0].deviation);
                  }
 
-                 if (k === 2) {
+                if (k === 2) {
+                    add_alt_mode(circle, indx, aberration_mode);
                     add_country_code(circle);
                 }
-                
 
             } else {
                 const abberation = k === 0;
@@ -1215,14 +1236,16 @@ function draw_bubble_chart(data, model='mlp', ev) {
                     return cls;
                 })
                 .attr("transform", d => {
-                    return `translate(${d.x + 1},${d.y + 1})`
+                    const xx = aberration_mode ? ((indx+1)*50) : 0;
+                    const yy = aberration_mode ? 50 : 0;
+                    return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
                 });
 
             const new_circle = circle
                 .append("circle")
                 // .attr('class', 'country-circle')
                 .attr("id", d => (d.data.name + '-' + d.data.count))
-                .attr("r", d => d.r*.3)
+                .attr("r", d => d.r)
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
@@ -1243,17 +1266,20 @@ function draw_bubble_chart(data, model='mlp', ev) {
                     return color;
                 })
                 .on('mouseover', function (event, d) {
-                    if (control_mode === 'wing-stream') {
+                    if (control_mode === 'wing-stream' && !aberration_mode) {
                         reorder_bubbles(this.parentNode, root.leaves());
                         toggle_focus(d.data.nameCls, 'mouseover');
                     }
                 })
                 .on('mouseout', function (event, d) {
-                    if (control_mode === 'wing-stream') {
+                    if (control_mode === 'wing-stream' && !aberration_mode) {
                         toggle_focus(d.data.nameCls, 'mouseout');
                     }
                 })
                 .on('mousedown', function (ev, d) {
+                    if (aberration_mode) {
+                        return;
+                    }
                     let nameCls = d.data.nameCls;
                     switch (control_mode) {
                         case 'wing-stream':
@@ -1312,7 +1338,12 @@ function draw_bubble_chart(data, model='mlp', ev) {
                 ;
 
                 if (k === 2) {
+                    if (aberration_mode) {
+                        add_alt_mode(circle, indx, aberration_mode);
+                    }
+                    
                     add_country_code(circle);
+                    
                 }
 
                 if (aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
@@ -1363,6 +1394,18 @@ function draw_bubble_chart(data, model='mlp', ev) {
             }
         }
     }
+}
+
+function add_alt_mode(country_cell, indx, mode) {
+    country_cell.append("text")
+        .attr('class', 'country-code')
+        .attr("y", 107)
+        .attr("x", -10)
+        .text(mode)
+        .attr("font-size", (d) => {
+            return 12 + 'px';
+        })
+        .attr("fill", 'black');
 }
 
 function add_circle_blur(svg, deviation) {

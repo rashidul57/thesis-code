@@ -43,7 +43,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    const chart_types = ['Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
+    const chart_types = ['Alternatives', 'Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
     sel_chart_type = chart_types[0];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
@@ -254,12 +254,12 @@ function load_control_data() {
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
     });
 
-    d3.selectAll('.ca-options')
-    .on("change", function(ev) {
-        d3.select(".left-chart-container").selectAll("svg").remove();
-        aberration_mode = d3.select(this).property("value");
-        draw_bubble_chart(prop_pred_data, undefined);
-    });
+    // d3.selectAll('.ca-options')
+    // .on("change", function(ev) {
+    //     d3.select(".left-chart-container").selectAll("svg").remove();
+    //     aberration_mode = d3.select(this).property("value");
+    //     draw_bubble_chart(prop_pred_data, undefined);
+    // });
 
     // initial load
     refresh_container();
@@ -282,8 +282,16 @@ function refresh_container() {
         // draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
         // break;
 
+        case 'Alternatives':
+        d3.selectAll(".ca-options").style("display", "inline-block");
+        const modes = ['ca', 'ca-static', 'blur', 'ca-blur', 'trans', 'noise'];
+        modes.forEach((mode, indx) => {
+            draw_bubble_chart(prop_pred_data, undefined, mode, indx);
+        });
+        break;
+
         case 'Bubble Chart':
-        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items, .ca-options").style("display", "inline-block");
+        d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
         draw_bubble_chart(prop_pred_data, undefined);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         break;
@@ -303,6 +311,7 @@ function refresh_container() {
         case 'Usage Chart':
         draw_usage_chart();
         break;
+
     }
 }
 
