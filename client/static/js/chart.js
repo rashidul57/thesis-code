@@ -1045,7 +1045,9 @@ function draw_impact_chart(pred_data, model='mlp') {
 }
 
 
-function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
+function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
+    const {indx, percents} = params;
+    const given_dev = percents[indx];
     data = prepare_bubble_data(data, model);
     if (control_mode === 'bubble-select' && bubble_selected.length) {
         data = data.filter(item => {
@@ -1059,6 +1061,9 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
+    if (given_dev) {
+        bubble_data[0].deviation = given_dev;
+    }
 
     // bubble_data = _.take(bubble_data, 1);
 
@@ -1074,7 +1079,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
     // bubble_data[0].count = 100;
     
     if (aberration_mode) {
-        bubble_data = [bubble_data[1]];
+        bubble_data = [bubble_data[0]];
     }
 
     // initialize configs of the chart
@@ -1083,8 +1088,8 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
         width = bubble_chart_width;
         height = left_panel_height - 65;
     } else {
-        width = 170;
-        height = 170;
+        width = 100;
+        height = 100;
     }
 
     // Define color range of bubbles
@@ -1179,73 +1184,25 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
         }
 
         function add_circle(k) {
-            if (aberration_mode === 'noise') {
-                const radius = 100;
-                var data = d3.range(2000).map(() => {
-                    return {
-                        cx: Math.cos(Math.random() * Math.PI * 2) * (Math.sqrt(~~(Math.random() * radius * radius))),
-                        cy: Math.sin(Math.random() * Math.PI * 2) * (Math.sqrt(~~(Math.random() * radius * radius))),
-                        r: 1
-                    };
-                });
-                
-                const circle = svg.selectAll("g")
-                .data(root.leaves())
-                .join("g")
-                .attr('class', (d) => {
-                    const nameCls = d && d.data.nameCls || '';
-                    let cls = 'circle-container circle-container-' + nameCls;
-                    return cls;
-                })
-                .attr("transform", d => {
-                    return `translate(${d.x + 1 + 303},${d.y + 1 + 60})`
-                });
-
-                for ( let i = 0; i < 5000; i++) {
-                    var rad = Math.sqrt((Math.random() * 84 * 84)),
-                        angle = Math.random() * Math.PI * 2,
-                        posx = Math.cos(angle),
-                        posy = Math.sin(angle);
-                
-                    var c2 = circle
-                        .append('circle')
-                        .attr('id', 'cir')
-                        .attr('cx', posx * rad)
-                        .attr('cy', posy * rad)
-                        .attr('r', 1)
-                        .style('fill', () => {
-                            let color = bubble_colors[k];
-                            return color;
-                        })
-                        .style('opacity', .02 * bubble_data[0].deviation);
-                 }
-
-                if (k === 2) {
-                    add_alt_mode(circle, indx, aberration_mode);
-                    add_country_code(circle);
-                }
-
-            } else {
-                const abberation = k === 0;
-                const circle = svg.selectAll("g")
-                .data(root.leaves())
-                .join("g")
-                .attr('class', (d) => {
-                    const nameCls = d && d.data.nameCls || '';
-                    let cls = 'circle-container circle-container-' + nameCls;
-                    return cls;
-                })
-                .attr("transform", d => {
-                    const xx = aberration_mode ? ((indx+1)*50) : 0;
-                    const yy = aberration_mode ? 50 : 0;
-                    return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
-                });
+            const abberation = k === 0;
+            const circle = svg.selectAll("g")
+            .data(root.leaves())
+            .join("g")
+            .attr('class', (d) => {
+                const nameCls = d && d.data.nameCls || '';
+                let cls = 'circle-container circle-container-' + nameCls;
+                return cls;
+            })
+            .attr("transform", d => {
+                const xx = aberration_mode ? ((indx+1)*170) : 0;
+                const yy = aberration_mode ? 120 : 0;
+                return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
+            });
 
             const new_circle = circle
                 .append("circle")
-                // .attr('class', 'country-circle')
                 .attr("id", d => (d.data.name + '-' + d.data.count))
-                .attr("r", d => d.r)
+                .attr("r", d => d.r*.8)
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
@@ -1253,15 +1210,19 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
                     return 0.33;
                 })
                 .attr('class', ()=> {
-                    return abberation ? 'abberation' : 'actual';
+                    let cls;
+                    if (aberration_mode) {
+                        const dev_cls = bubble_data[0].deviation.toString().replace('.', '');
+                        cls = aberration_mode && aberration_mode.indexOf('blur') > -1 ? 'abberation-blur-' + dev_cls : 'abberation';
+                    } else {
+                        cls = 'actual';
+                    }
+                    return cls;
                 })
                 .attr("fill", (d) => {
                     let color = bubble_colors[k];
                     if (aberration_mode === 'trans') {
                         color = color + '80';
-                    }
-                    if (aberration_mode === 'noise') {
-                        color = add_noise(color);
                     }
                     return color;
                 })
@@ -1339,15 +1300,19 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
 
                 if (k === 2) {
                     if (aberration_mode) {
-                        add_alt_mode(circle, indx, aberration_mode);
+                        add_alt_mode(circle, bubble_data[0].deviation, aberration_mode);
                     }
-                    
                     add_country_code(circle);
-                    
                 }
 
                 if (aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
                     do_transition();
+                }
+
+                if (k == 2 && aberration_mode === 'noise') {
+                    // for (let i = 0; i < 3; i++) {
+                        add_noise_layer(circle, k);
+                    // }
                 }
 
                 function do_transition() {
@@ -1391,33 +1356,76 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, indx) {
                         });
                     }
                 }
+
+                function add_noise_layer(circle, k) {
+                    let z=0, o=0, t=0;
+                    for ( let i = 0; i < 5000; i++) {
+                        var rad = Math.sqrt((Math.random() * 40 * 40)),
+                            angle = Math.random() * Math.PI * 2,
+                            posx = Math.cos(angle),
+                            posy = Math.sin(angle);
+                        let opacity = bubble_data[0].deviation/100;
+
+                        var c2 = circle
+                            .append('circle')
+                            .attr('id', 'cir')
+                            .attr('cx', posx * rad)
+                            .attr('cy', posy * rad)
+                            .attr('r', 1)
+                            .style('fill', () => {
+                                let indx;
+                                if (i%3 === 0) {
+                                    indx = 0;
+                                    z++;
+                                } else if (i%3 === 1) {
+                                    indx = 1;
+                                    o++;
+                                } else {
+                                    indx = 2;
+                                    t++;
+                                }
+                                let color = bubble_colors[indx];
+                                return color;
+                            })
+                            .style('opacity', opacity);
+                        }
+                    console.log(z, o, t);
+            
+                    if (k === 2) {
+                        add_alt_mode(circle, bubble_data[0].deviation, aberration_mode);
+                        add_country_code(circle);
+                    }
             }
         }
     }
 }
 
-function add_alt_mode(country_cell, indx, mode) {
+function add_alt_mode(country_cell, given_dev, mode) {
+    // if (mode.indexOf('ca') > -1) {
+        given_dev *= 10;
+    // }
     country_cell.append("text")
         .attr('class', 'country-code')
-        .attr("y", 107)
+        .attr("y", 75)
         .attr("x", -10)
-        .text(mode)
+        .text(given_dev +'%')
         .attr("font-size", (d) => {
-            return 12 + 'px';
+            return 25 + 'px';
         })
         .attr("fill", 'black');
 }
 
 function add_circle_blur(svg, deviation) {
     var defs = svg.append("defs");
+    const dev_cls = deviation.toString().replace('.', '');
     //Initialize the filter
     defs.append("filter")
-        .attr("id", "motionFilter") //Give it a unique ID
+        .attr("id", "motionFilter-" + deviation) //Give it a unique ID
         //Increase the width of the filter region to remove blur "boundary"
         .attr("width", "300%")
+        .attr("height", "300%")
         //Put center of the "width" back in the middle of the element
         .attr("x", "-100%")
-        .attr("height", "300%")
         .attr("y", "-100%")
         .append("feGaussianBlur") //Append a filter technique
         .attr("class", "blurValues") //Needed to select later on
@@ -1426,7 +1434,7 @@ function add_circle_blur(svg, deviation) {
         //direction and 0 in vertical
         .attr("stdDeviation", deviation + " " + deviation);
 
-    d3.selectAll(".circle-container circle").style("filter", "url(#motionFilter)");
+    d3.selectAll(".circle-container circle.abberation-blur-" + dev_cls).style("filter", "url(#motionFilter-" + deviation + ")");
 }
 
 function draw_percentages(leaves) {
