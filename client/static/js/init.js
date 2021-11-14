@@ -284,9 +284,30 @@ function refresh_container() {
 
         case 'Alternatives':
         d3.selectAll(".ca-options").style("display", "inline-block");
-        const modes = ['ca', 'ca-static', 'blur', 'ca-blur', 'trans', 'noise'];
+        // const modes = ['ca', 'ca-static', 'blur', 'ca-blur', 'trans', 'noise'];
+        // const modes = ['ca', 'ca-static', 'blur', 'noise'];
+        const modes = ['noise', 'noise', 'noise', 'noise', 'noise'];
+        // let percents = [10, 20, 30, 40, 50];
+        let percents = [60, 70, 80, 90, 100];
+
+        //For questions 
+        // ca-static: 72, 15, 45, 25, 87
+        // const modes = ['ca'];
+
+        // ca-static: 25, 15, 72, 45, 87
+        // const modes = ['ca-static'];
+
+        // blur: 87, 25, 45, 72, 15
+        // const modes = ['blur'];
+
+        // noise: 45, 25, 72, 87, 15
+        // const modes = ['noise'];
+        
+        // let percents = [15];
+
         modes.forEach((mode, indx) => {
-            draw_bubble_chart(prop_pred_data, undefined, mode, indx);
+            percents[indx] /= 10;
+            draw_bubble_chart(prop_pred_data, undefined, mode, {indx, percents});
         });
         break;
 
