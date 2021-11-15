@@ -286,9 +286,10 @@ function refresh_container() {
         d3.selectAll(".ca-options").style("display", "inline-block");
         // const modes = ['ca', 'ca-static', 'blur', 'ca-blur', 'trans', 'noise'];
         // const modes = ['ca', 'ca-static', 'blur', 'noise'];
-        const modes = ['noise', 'noise', 'noise', 'noise', 'noise'];
+        const modes = ['ca', 'ca', 'ca', 'ca', 'ca'];
         // let percents = [10, 20, 30, 40, 50];
-        let percents = [60, 70, 80, 90, 100];
+        // let percents = [60, 70, 80, 90, 100];
+        let percents = [0, 25, 50, 75, 100];
 
         //For questions 
         // ca-static: 72, 15, 45, 25, 87

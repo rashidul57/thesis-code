@@ -1046,8 +1046,8 @@ function draw_impact_chart(pred_data, model='mlp') {
 
 
 function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
-    const {indx, percents} = params;
-    const given_dev = percents[indx];
+    const {indx, percents} = params || {};
+    const given_dev = percents ? percents[indx] : undefined;
     data = prepare_bubble_data(data, model);
     if (control_mode === 'bubble-select' && bubble_selected.length) {
         data = data.filter(item => {
@@ -1061,7 +1061,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
-    if (given_dev) {
+    if (!isNaN(given_dev)) {
         bubble_data[0].deviation = given_dev;
     }
 
@@ -1202,7 +1202,9 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
             const new_circle = circle
                 .append("circle")
                 .attr("id", d => (d.data.name + '-' + d.data.count))
-                .attr("r", d => d.r*.8)
+                .attr("r", d => {
+                    return aberration_mode ? d.r * 0.8 : d.r;
+                })
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
