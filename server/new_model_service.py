@@ -57,6 +57,7 @@ def series_to_supervised(data, n_in=1, n_out=1):
 
 # root mean squared error or rmse
 def measure_rmse(actual, predicted):
+	# print(actual, predicted)
 	return sqrt(mean_squared_error(actual, predicted))
 
 # fit a model
@@ -151,6 +152,9 @@ def model_predict(model, history, config, alg_name):
 # walk-forward validation for univariate data
 def train_n_forecast(data, n_test, config, alg_name):
 	predictions = list()
+	errors = list()
+	test_cur = list()
+
 	# split dataset
 	train, test = train_test_split(data, n_test)
 
@@ -173,6 +177,10 @@ def train_n_forecast(data, n_test, config, alg_name):
 		predictions.append(yhat)
 		# add actual observation to history for the next loop
 		history.append(test[i])
+		test_cur.append(test[i])
+		# print(test_cur, predictions)
+		error = measure_rmse(test_cur, predictions)
+		errors.append(error)
 
 		# print(test[i], yhat)
 
@@ -180,7 +188,7 @@ def train_n_forecast(data, n_test, config, alg_name):
 	# estimate prediction error
 	# error = measure_rmse(test, predictions)
 	# print(' > %.3f' % error)
-	return test, predictions
+	return test, predictions, errors
 
 def load_all_data():
     df = pandas.read_csv('server/data/owid.csv', 
@@ -197,6 +205,7 @@ def load_data_by_prop(prop):
         header=0
     )
     prop_df = df[['location', 'iso_code', 'date', prop]]
+    prop_df = prop_df.replace(np.nan, 0)
     return prop_df
 
 def get_grouped_data(df):

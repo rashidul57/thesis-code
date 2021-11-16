@@ -233,7 +233,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            data = get_normalized_data(data, model_types);
+            // data = get_normalized_data(data, model_types);
             keys = model_types;
         } else {
             let country_data = all_covid_data[sel_country];
@@ -246,7 +246,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 return found;
             });
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
-            data = get_normalized_data(country_data, keys);
+            // data = get_normalized_data(country_data, keys);
         }
 
     } else {
@@ -259,7 +259,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            data = get_normalized_data(data, keys);
+            // data = get_normalized_data(data, keys);
         } else {
             const usa_data = all_covid_data['United States'];
             max = usa_data.length;
@@ -275,9 +275,10 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            data = get_normalized_data(data, keys);
+            // data = get_normalized_data(data, keys);
         }
     }
+
 
     // apply the selected filter only
     if (global_streams.length) {
@@ -300,7 +301,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     width = 500;
 
     color = d3.scaleOrdinal()
-    .domain(keys.slice(1))
+    .domain(keys)
     .range(d3.schemeCategory10);
 
     xAxis = g => g
@@ -1673,16 +1674,25 @@ function add_texture_defs(svg, keys, color) {
 }
 
 function get_normalized_data(data, keys) {
-    const maxs = {};
+    let max_item, prop;
     keys.forEach(key => {
-        const max_item = _.maxBy(data, key);
-        maxs[key] = max_item && max_item[key] || 1;
+        const max_itm = _.maxBy(data, key);
+        if (max_item) {
+            if (max_itm[key] > max_item[prop]) {
+                max_item = max_itm;
+                prop = key;
+            }
+        } else {
+            max_item = max_itm;
+            prop = key;
+        }
+        // maxs[key] = max_item && max_item[key];
     });
 
     data = data.map(item => {
         item.date = new Date(item.date);
         keys.forEach(key => {
-            item[key] = item[key] / maxs[key];
+            item[key] = item[key] / max_item[prop];
         });
         return item;
     });
