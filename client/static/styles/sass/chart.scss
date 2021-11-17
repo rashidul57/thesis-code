@@ -216,6 +216,14 @@ body {
     }
 }
 
+.solid-line{
+    stroke:solid;
+ }
+ 
+ .dashed-line{
+    stroke-dasharray: 5,5; 
+ }
+
 
 .main-stream-svg{
     .main-stream-cell{

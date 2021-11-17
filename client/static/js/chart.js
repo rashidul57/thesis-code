@@ -233,7 +233,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            // data = get_normalized_data(data, model_types);
+            data = get_normalized_data(data, model_types);
             keys = model_types;
         } else {
             let country_data = all_covid_data[sel_country];
@@ -259,7 +259,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            // data = get_normalized_data(data, keys);
+            data = get_normalized_data(data, keys);
         } else {
             const usa_data = all_covid_data['United States'];
             max = usa_data.length;
@@ -472,7 +472,6 @@ function add_texture_layer(sel_property) {
         const side1 = _.take(parts, size/2);
         const side2 = _.takeRight(parts, size/2);
         const side_len = side1.length;
-        let log = false;
         const country_data = all_covid_data[country];
         
         side1.forEach((item, index) => {
@@ -685,19 +684,39 @@ function draw_horizon_chart(pred_data, model='mlp') {
 }
 
 function draw_parallel_coords() {
-    const props = ['new_cases', 'total_cases', 'hosp_patients', 'icu_patients', 'new_deaths', 'new_tests', 'new_vaccinations'];
+    const props = ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations'];
     const keys = props;
     const keyz = props[0];
-    const data = [];
-    countries.forEach(country  => {
-        const country_data = all_covid_data[country];
+
+    const data_pred = [];
+    const countries_ = Object.keys(forecast_data["new_cases"]);
+    countries_.forEach(country  => {
         const row = {name: country};
-        country_data.forEach(datedItem => {
-            props.forEach(prop => {
-                row[prop] = (row[prop] || 0)  + (datedItem[prop] || 0);
+        props.forEach(prop => {
+            if (!forecast_data[prop][country]) {
+                return;
+            }
+            const dated_preds = forecast_data[prop][country]['mlp']['y_pred'];
+            dated_preds.forEach(value => {
+                row[prop] = (row[prop] || 0)  + Number(value || 0);
             });
         });
-        data.push(row);
+        data_pred.push(row);
+    });
+
+    const data_uncertainty = [];
+    countries_.forEach(country  => {
+        const row = {name: country};
+        props.forEach(prop => {
+            if (!forecast_data[prop][country]) {
+                return;
+            }
+            const dated_preds = forecast_data[prop][country]['mlp']['y'];
+            dated_preds.forEach(value => {
+                row[prop] = (row[prop] || 0)  + Number(value || 0);
+            });
+        });
+        data_uncertainty.push(row);
     });
 
     const width = 1000;
@@ -708,7 +727,7 @@ function draw_parallel_coords() {
     .x(([key, value]) => x.get(key)(value))
     .y(([key]) => y(key));
     
-    const x = new Map(Array.from(keys, key => [key, d3.scaleLinear(d3.extent(data, d => d[key]), [margin.left, width - margin.right])]));
+    const x = new Map(Array.from(keys, key => [key, d3.scaleLinear(d3.extent(data_pred, d => d[key]), [margin.left, width - margin.right])]));
     const y = d3.scalePoint(keys, [margin.top, height - margin.bottom]);
     const z = d3.scaleSequential(x.get(keyz).domain(), t => d3.interpolateBrBG(1 - t));
 
@@ -721,12 +740,13 @@ function draw_parallel_coords() {
       .attr("fill", "none")
       .attr("stroke-width", 1.5)
       .attr("stroke-opacity", 0.4)
+      .attr('class', 'solid-line')
     .selectAll("path")
-    .data(data.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .data(data_pred.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
     .join("path")
       .attr("stroke", d => z(d[keyz]))
       .attr("d", d => {
-          const vals = d3.cross(keys, [d], (key, d) => [key, d[key]]);
+          const vals = d3.cross(keys, [d], (key, d) => [key, d[key] || 0]);
           return line(vals);
     })
     .append("title")
@@ -734,18 +754,15 @@ function draw_parallel_coords() {
 
     svg.append("g")
       .attr("fill", "none")
-      .attr("stroke-width", .5)
+      .attr("stroke-width", 1.5)
       .attr("stroke-opacity", 0.4)
+      .attr('class', 'dashed-line')
     .selectAll("path")
-    .data(data.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .data(data_uncertainty.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
     .join("path")
       .attr("stroke", d => z(d[keyz]))
       .attr("d", d => {
-          const vals = d3.cross(keys, [d], (key, d) => [key, d[key]]);
-          vals.forEach(val => {
-            const rnd = Math.floor(Math.random() * 9) - 5;
-            val[1] = val[1] - (val[1]*rnd/100);
-          });
+          const vals = d3.cross(keys, [d], (key, d) => [key, d[key] || 0]);
           return line(vals);
     })
     .append("title")
