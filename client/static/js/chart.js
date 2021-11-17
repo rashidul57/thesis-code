@@ -696,7 +696,7 @@ function draw_parallel_coords() {
             if (!forecast_data[prop][country]) {
                 return;
             }
-            const dated_preds = forecast_data[prop][country]['mlp']['y_pred'];
+            const dated_preds = forecast_data[prop][country][sel_model]['y_pred'];
             dated_preds.forEach(value => {
                 row[prop] = (row[prop] || 0)  + Number(value || 0);
             });
@@ -711,7 +711,7 @@ function draw_parallel_coords() {
             if (!forecast_data[prop][country]) {
                 return;
             }
-            const dated_preds = forecast_data[prop][country]['mlp']['y'];
+            const dated_preds = forecast_data[prop][country][sel_model]['y'];
             dated_preds.forEach(value => {
                 row[prop] = (row[prop] || 0)  + Number(value || 0);
             });

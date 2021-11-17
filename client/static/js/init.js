@@ -2,6 +2,7 @@ let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, to
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
 let stream_blur_on = false;
+let sel_model;
 
 
 window.onload = init;
@@ -130,15 +131,19 @@ function load_control_data() {
     .append('option')
     .text((d) => { return d; })
     .attr("value", (d) => { return d; });
+    sel_model = models[0];
 
     d3.selectAll("#drp-models")
     .on("change", function(ev) {
         d3.select(".left-chart-container").selectAll("svg").remove();
+        sel_model = d3.select(this).property("value");
         const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
             draw_stream_graph(prop_pred_data, model, 'left-chart-container', undefined, undefined, undefined);
-        } else {
+        } else if (sel_chart_type === "Bubble Chart") {
             draw_bubble_chart(prop_pred_data, model, true);
+        } else if (sel_chart_type === "Parallel Coords") {
+            draw_parallel_coords();
         }
     });
 
@@ -319,6 +324,7 @@ function refresh_container() {
         break;
 
         case 'Parallel Coords':
+        d3.selectAll(".models-item").style("display", "inline-block");
         draw_parallel_coords();
         break;
 
