@@ -275,7 +275,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            data = get_normalized_data(data, keys);
+            // data = get_normalized_data(data, keys);
         }
     }
 
@@ -1691,25 +1691,16 @@ function add_texture_defs(svg, keys, color) {
 }
 
 function get_normalized_data(data, keys) {
-    let max_item, prop;
+    const maxs = {};
     keys.forEach(key => {
-        const max_itm = _.maxBy(data, key);
-        if (max_item) {
-            if (max_itm[key] > max_item[prop]) {
-                max_item = max_itm;
-                prop = key;
-            }
-        } else {
-            max_item = max_itm;
-            prop = key;
-        }
-        // maxs[key] = max_item && max_item[key];
+        const max_item = _.maxBy(data, key);
+        maxs[key] = max_item && max_item[key] || 1;
     });
 
     data = data.map(item => {
         item.date = new Date(item.date);
         keys.forEach(key => {
-            item[key] = item[key] / max_item[prop];
+            item[key] = item[key] / maxs[key];
         });
         return item;
     });
