@@ -8,8 +8,7 @@ n_test = 200
 
 # props = ['new_cases', 'new_deaths', 'icu_patients', 'hosp_patients', 'new_tests', 'new_vaccinations']
 resp = {}
-# props = ['new_cases', 'new_deaths']
-props = ['new_cases']
+props = ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations']
 for k in range(len(props)):
 	prop = props[k]
 	all_data_df = model_service.load_data_by_prop(prop)
