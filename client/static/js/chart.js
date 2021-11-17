@@ -246,7 +246,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 return found;
             });
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
-            // data = get_normalized_data(country_data, keys);
+            data = get_normalized_data(country_data, keys);
         }
 
     } else {
@@ -275,7 +275,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 });
                 data.push(record);
             }
-            // data = get_normalized_data(data, keys);
+            data = get_normalized_data(data, keys);
         }
     }
 
