@@ -272,7 +272,7 @@ function load_control_data() {
 
 function refresh_container() {
     $('body').removeClass('min-size');
-    d3.select(".left-chart-container").selectAll("svg").remove();
+    d3.select(".left-chart-container").selectAll(".inner-container, svg").remove();
     change_layout();
 
     switch (sel_chart_type) {

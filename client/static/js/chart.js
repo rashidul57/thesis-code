@@ -335,52 +335,6 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     })
     .y1(d => y(d[1]));
 
-    // draw legend
-    // if (!sel_country) {
-    //     const c_svg = d3.select(".left-chart-container")
-    //     .append("svg")
-    //     .attr('width', 1500)
-    //     .attr('height', 50);
-
-    //     const country_g = c_svg.selectAll(".country")
-    //     .data(keys)
-    //     .enter()
-    //     .append("g");
-
-    //     country_g
-    //     .append("rect")
-    //     .attr('class', 'rect')
-    //     .attr("x", (d, i) => {
-    //             let space = 80;
-    //             keys.forEach((key, indx) => {
-    //                 if (indx < i) {
-    //                     space += key.length * 8 + 25;
-    //                 }
-    //             });
-    //             return space;
-    //     })
-    //     .attr('y', 10)
-    //     .attr('width', 15)
-    //     .attr('height', 15)
-    //     .attr("fill", (key) => color(key));
-
-    //     country_g
-    //     .append("text")
-    //     .attr("x", (d, i) => {
-    //         let space = 100;
-    //         keys.forEach((key, indx) => {
-    //             if (indx < i) {
-    //                 space += key.length * 8 + 25;
-    //             }
-    //         });
-    //         return space;
-    //     })
-    //     .attr('y', 23)
-    //     .attr('width', 15)
-    //     .attr('height', 15)
-    //     .text(d => d);
-    // }
-
     let svg;
     if (sel_country) {
         if (ev.target) {
@@ -792,27 +746,32 @@ function draw_parallel_coords() {
 }
 
 function draw_usage_chart() {
-    const country_count = 20;
     let data = [];
-    countries.forEach(country => {
-        const c_data = all_covid_data[country];
-        const total = _.reduce(c_data, (sum, day_rec) => {
-            return sum += day_rec.total_cases || 0;
-        }, 0);
-        data.push({country, total, c_data});
+    const prop = 'new_cases';
+    const top_countries = _.take(countries, 20);
+    let date_count;
+    top_countries.forEach(country  => {
+        const c_base = all_covid_data[country];
+        const c_data = {name: country, iso_code: c_base[0].iso_code};
+
+        const dated_preds = forecast_data[prop][country][sel_model]['y_pred'];
+        const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
+        if (date_count) {
+            date_count = dated_preds.length;
+        }
+        dated_preds.forEach((value, i) => {
+            const date = moment(start_date).add('days', i).toDate();
+            const error = forecast_data[prop][country][sel_model]['errors'][i];
+            const uncertainty = Math.abs(error)*100/value;
+            const row = Object.assign({date, uncertainty}, c_data);
+            row[prop] = Number(value || 0);
+            data.push(row);
+        });
     });
-
-    data = _.orderBy(data, ['total'], ['desc']);
-    data = _.take(data, country_count).map(c => c.c_data);
-    const c_codes = data.map(c => c[0].iso_code);
-    const all_data = _.reduce(data, (joined, country_rec) => {
-        return joined = joined.concat(country_rec);
-    }, []);
-    data = all_data;
-
+    const c_codes = _.uniq(data.map(c => c.iso_code));
+    data = _.orderBy(data, [(item) => item.date], ['asc']);
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
-
     const margin = ({top: 30, right: 20, bottom: 0, left: 50});
     const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 10;
     const width = 954;
@@ -821,7 +780,7 @@ function draw_usage_chart() {
     }
 
     formatDay = (d) => {
-        return moment(d).format('L');
+        return moment(new Date(d)).format('L');
     }
     formatDate = d3.timeFormat("%B %-d, %-I %p");
     formatUsage = d3.format(",.0f");
@@ -841,15 +800,16 @@ function draw_usage_chart() {
     .call(g => g.select(".domain").remove());
 
     color = () => {
-        let [min, max] = d3.extent(data, d => d.new_cases);
-        if (min < 0) {
-          max = Math.max(-min, max);
-          return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
-        }
-        return d3.scaleSequential([0, max], d3.interpolateReds);
+        // let [min, max] = d3.extent(data, d => d.uncertainty);
+        // if (min < 0) {
+        //   max = Math.max(-min, max);
+        //   return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
+        // }
+        // uncertainty in percentage
+        return d3.scaleSequential([0, 100], d3.interpolateReds);
     }
 
-    const innerHeight = 5550;
+    const innerHeight = 1600;
 
     const svg = d3.select('.left-chart-container')
         .append("svg")
@@ -882,11 +842,11 @@ function draw_usage_chart() {
       .attr("width", x.bandwidth() - 1)
       .attr("height", y.bandwidth() - 1)
       .attr("fill", d => {
-          const ret = color()(d.new_cases);
+          const ret = color()(d.uncertainty);
           return ret;
       })
       .append("title")
-      .text(d => `New: ${formatUsage(d.new_cases)}, Total: ${formatUsage(d.total_cases)}`);
+      .text(d => `New: ${formatUsage(d.new_cases)}`);
 
     return svg.node();
 }
@@ -1083,8 +1043,6 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
         bubble_data[0].deviation = given_dev;
     }
 
-    // bubble_data = _.take(bubble_data, 1);
-
     // Aberration test of two circles
     // bubble_data = _.take(bubble_data, 2);
     // bubble_data[0].deviation = 5;
@@ -1098,6 +1056,8 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
     
     if (aberration_mode) {
         bubble_data = [bubble_data[0]];
+    } else {
+        bubble_data = _.take(bubble_data, 20);
     }
 
     // initialize configs of the chart
@@ -1325,7 +1285,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                     add_country_code(circle);
                 }
 
-                if (aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
+                if (!aberration_mode || aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
                     do_transition();
                 }
 

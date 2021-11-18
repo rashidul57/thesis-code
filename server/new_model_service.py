@@ -176,7 +176,7 @@ def train_n_forecast(data, n_test, config, alg_name):
 		# store forecast in list of predictions
 		predictions.append(yhat)
 		# add actual observation to history for the next loop
-		history.append(test[i])
+		# history.append(test[i])
 		test_cur.append(test[i])
 		# print(test_cur, predictions)
 		error = measure_rmse(test_cur, predictions)
