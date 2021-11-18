@@ -17,7 +17,7 @@ def index():
 
 @app.route('/get-forcasts', methods=['GET'])
 def get_forcasts():
-    with open('resp.json') as json_file:
+    with open('resp1.json') as json_file:
         data = json.load(json_file)
         return jsonify(data)
 
