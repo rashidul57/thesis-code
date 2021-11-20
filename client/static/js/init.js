@@ -362,18 +362,6 @@ function show_question(question_num) {
     const ques_perc = [ques_percents[question_num-1]/10];
     draw_bubble_chart(prop_pred_data, {question_circle_mode: sel_quest_circle_mode, circle_for: 'question', percents: ques_perc, question_num});
 
-    // For questions 
-    // ca: 72, 15, 45, 25, 87
-    // const modes = ['ca'];
-
-    // ca-static: 25, 15, 72, 45, 87
-    // const modes = ['ca-static'];
-
-    // blur: 87, 25, 45, 72, 15
-    // const modes = ['blur'];
-
-    // noise: 45, 25, 72, 87, 15
-    // const modes = ['noise'];
 }
 
 function hide_items() {
