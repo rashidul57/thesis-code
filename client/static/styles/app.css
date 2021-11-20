@@ -40,6 +40,10 @@ body.min-size .toolbar, body.min-size .container-box {
   width: calc(960px - 5px);
 }
 
+.hideable-item {
+  display: none;
+}
+
 .toolbar {
   text-align: left;
   width: 1495px;

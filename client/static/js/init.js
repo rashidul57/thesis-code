@@ -2,7 +2,7 @@ let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, to
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
 let stream_blur_on = false;
-let sel_model;
+let sel_model, sel_quest_circle_mode, question_num;
 
 
 window.onload = init;
@@ -44,7 +44,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    const chart_types = ['Alternatives', 'Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
+    const chart_types = ['Questionnaire', 'Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
     sel_chart_type = chart_types[0];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
@@ -137,11 +137,10 @@ function load_control_data() {
     .on("change", function(ev) {
         d3.select(".left-chart-container").selectAll("svg").remove();
         sel_model = d3.select(this).property("value");
-        const model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(prop_pred_data, model, 'left-chart-container', undefined, undefined, undefined);
+            draw_stream_graph(prop_pred_data, sel_model, 'left-chart-container', undefined, undefined, undefined);
         } else if (sel_chart_type === "Bubble Chart") {
-            draw_bubble_chart(prop_pred_data, model, true);
+            draw_bubble_chart(prop_pred_data, {model: sel_model});
         } else if (sel_chart_type === "Parallel Coords") {
             draw_parallel_coords();
         }
@@ -259,12 +258,22 @@ function load_control_data() {
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
     });
 
-    // d3.selectAll('.ca-options')
-    // .on("change", function(ev) {
-    //     d3.select(".left-chart-container").selectAll("svg").remove();
-    //     aberration_mode = d3.select(this).property("value");
-    //     draw_bubble_chart(prop_pred_data, undefined);
-    // });
+    const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
+    sel_quest_circle_mode = sel_questions[0];
+    d3.select("#drp-question-options")
+    .selectAll('question-list')
+    .data(sel_questions)
+    .enter()
+    .append('option')
+    .text((d) => { return d; })
+    .attr("value", (d) => { return d; })
+    .property("selected", (d) => d===sel_quest_circle_mode);
+
+    d3.selectAll('#drp-question-options')
+    .on("change", function(ev) {
+        sel_quest_circle_mode = d3.select(this).property("value");
+        show_question(1);
+    });
 
     // initial load
     refresh_container();
@@ -287,39 +296,14 @@ function refresh_container() {
         // draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
         // break;
 
-        case 'Alternatives':
-        d3.selectAll(".ca-options").style("display", "inline-block");
-        // const modes = ['ca', 'ca-static', 'blur', 'ca-blur', 'trans', 'noise'];
-        // const modes = ['ca', 'ca-static', 'blur', 'noise'];
-        const modes = ['ca', 'ca', 'ca', 'ca', 'ca'];
-        // let percents = [10, 20, 30, 40, 50];
-        // let percents = [60, 70, 80, 90, 100];
-        let percents = [0, 25, 50, 75, 100];
-
-        //For questions 
-        // ca-static: 72, 15, 45, 25, 87
-        // const modes = ['ca'];
-
-        // ca-static: 25, 15, 72, 45, 87
-        // const modes = ['ca-static'];
-
-        // blur: 87, 25, 45, 72, 15
-        // const modes = ['blur'];
-
-        // noise: 45, 25, 72, 87, 15
-        // const modes = ['noise'];
-        
-        // let percents = [15];
-
-        modes.forEach((mode, indx) => {
-            percents[indx] /= 10;
-            draw_bubble_chart(prop_pred_data, undefined, mode, {indx, percents});
-        });
+        case 'Questionnaire':
+        d3.selectAll(".ca-options, .questions-item").style("display", "inline-block");
+        show_question(1);
         break;
 
         case 'Bubble Chart':
         d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
-        draw_bubble_chart(prop_pred_data, undefined);
+        draw_bubble_chart(prop_pred_data, {model: sel_model});
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         break;
 
@@ -341,6 +325,55 @@ function refresh_container() {
         break;
 
     }
+}
+
+
+function show_question(question_num) {
+    let ex_percents = [0, 25, 50, 75, 100];
+    let ques_percents;
+    let modes;
+    switch (sel_quest_circle_mode) {
+        case 'ca':
+        modes = ['ca', 'ca', 'ca', 'ca', 'ca'];
+        ques_percents = [72, 15, 45, 25, 87];
+        break;
+        
+        case 'ca-static':
+        modes = ['ca-static', 'ca-static', 'ca-static', 'ca-static', 'ca-static'];
+        ques_percents = [25, 15, 72, 45, 87];
+        break;
+        
+        case 'blur':
+        modes = ['blur', 'blur', 'blur', 'blur', 'blur'];
+        ques_percents = [87, 25, 45, 72, 15];
+        break;
+        
+        case 'noise':
+        modes = ['noise', 'noise', 'noise', 'noise', 'noise'];
+        ques_percents = [45, 25, 72, 87, 15];
+        break;
+    }
+
+    modes.forEach((mode, indx) => {
+        ex_percents[indx] /= 10;
+        draw_bubble_chart(prop_pred_data, {ex_indx: indx, question_circle_mode: mode, type: 'example', percents: ex_percents});
+    });
+
+    const ques_perc = [ques_percents[question_num-1]/10];
+    draw_bubble_chart(prop_pred_data, {question_circle_mode: sel_quest_circle_mode, circle_for: 'question', percents: ques_perc, question_num});
+
+    // For questions 
+    // ca: 72, 15, 45, 25, 87
+    // const modes = ['ca'];
+
+    // ca-static: 25, 15, 72, 45, 87
+    // const modes = ['ca-static'];
+
+    // blur: 87, 25, 45, 72, 15
+    // const modes = ['blur'];
+
+    // noise: 45, 25, 72, 87, 15
+    // const modes = ['noise'];
 }
 
 function hide_items() {
