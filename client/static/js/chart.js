@@ -11,7 +11,7 @@ let bubble_selected = [];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
-// let aberration_mode = 'ca';
+// let question_circle_mode = 'ca';
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -1023,9 +1023,10 @@ function draw_impact_chart(pred_data, model='mlp') {
 }
 
 
-function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
-    const {indx, percents} = params || {};
-    const given_dev = percents ? percents[indx] : undefined;
+function draw_bubble_chart(data, params) {
+    const {ex_indx, question_circle_mode, model='mlp', percents, circle_for, question_num} = params || {};
+    const perc_indx = isNaN(ex_indx) ? 0 : ex_indx;
+    const given_dev = percents ? percents[perc_indx] : undefined;
     data = prepare_bubble_data(data, model);
     if (control_mode === 'bubble-select' && bubble_selected.length) {
         data = data.filter(item => {
@@ -1039,30 +1040,21 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
-    if (!isNaN(given_dev)) {
-        bubble_data[0].deviation = given_dev;
-    }
 
-    // Aberration test of two circles
-    // bubble_data = _.take(bubble_data, 2);
-    // bubble_data[0].deviation = 5;
-    // bubble_data[0].count = 1000;
-    // bubble_data[1].deviation = 0;
-    // bubble_data[1].count = 1000;
-
-    // bubble_data = _.take(bubble_data, 1);
-    // bubble_data[0].deviation = 1;
-    // bubble_data[0].count = 100;
     
-    if (aberration_mode) {
+    if (question_circle_mode) {
         bubble_data = [bubble_data[0]];
     } else {
         bubble_data = _.take(bubble_data, 20);
     }
 
+    if (!isNaN(given_dev)) {
+        bubble_data[0].deviation = given_dev;
+    }
+
     // initialize configs of the chart
     let width, height;
-    if (!aberration_mode) {
+    if (!question_circle_mode) {
         width = bubble_chart_width;
         height = left_panel_height - 65;
     } else {
@@ -1083,20 +1075,20 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
     const root = pack(bubble_data);
 
     // clear chart container
-    if (!aberration_mode || (aberration_mode && indx === 0)) {
+    if (!question_circle_mode || (question_circle_mode && ex_indx === 0)) {
         d3.selectAll('.left-chart-container .inner-container').remove();
         d3.select('.left-chart-container')
         .append('div')
         .attr('class', 'inner-container');
     }
 
-    if (!aberration_mode) {
+    if (!question_circle_mode) {
         d3.select('.inner-container')
         .append('div')
         .attr('class', 'percent-row');
     }
 
-    if (!aberration_mode || (aberration_mode && indx === 0)) {
+    if (!question_circle_mode || (question_circle_mode && ex_indx === 0)) {
         d3.select('.inner-container')
         .append('div')
         .attr('class', 'bubble-chart');
@@ -1107,13 +1099,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
         .attr('class', 'bubble-svg')
         .attr("width", width)
         .attr("height", height)
-        // .attr("transform", 
-        //     "translate(" + margin_w/2 + "," + margin_h/2 + ")"
-        // )
         .attr("viewBox", [0, 0, width, height]);
-    // } else {
-    //     svg = d3.select('.bubble-svg');
-    // }
 
     // tooltip construction piece 
     const tooltip = d3.tip().attr('class', 'd3-tip')
@@ -1134,11 +1120,11 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
     redraw_bubbles(root, svg);
 
     // set zoom functon on to the svg
-    if (!aberration_mode) {
+    if (!question_circle_mode) {
         add_zoom_listener(svg, width, height, 'bubble-svg');
     }
 
-    if (['blur', 'ca-blur'].indexOf(aberration_mode) > -1) {
+    if (['blur', 'ca-blur'].indexOf(question_circle_mode) > -1) {
         add_circle_blur(svg, bubble_data[0].deviation);
     }
 
@@ -1147,7 +1133,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
         
         draw_circles();
 
-        if (!aberration_mode) {
+        if (!question_circle_mode) {
             draw_percentages(root.leaves());
         }
         
@@ -1172,8 +1158,14 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                 return cls;
             })
             .attr("transform", d => {
-                const xx = aberration_mode ? ((indx+1)*170) : 0;
-                const yy = aberration_mode ? 120 : 0;
+                let xx, yy;
+                if (circle_for === 'question') {
+                    xx = 200;
+                    yy = 370;
+                } else {
+                    xx = question_circle_mode ? ((ex_indx+1)*170) : 0;
+                    yy = question_circle_mode ? 80 : 0;
+                }
                 return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
             });
 
@@ -1181,7 +1173,7 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                 .append("circle")
                 .attr("id", d => (d.data.name + '-' + d.data.count))
                 .attr("r", d => {
-                    return aberration_mode ? d.r * 0.8 : d.r;
+                    return question_circle_mode ? d.r * 0.8 : d.r;
                 })
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
@@ -1191,9 +1183,9 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                 })
                 .attr('class', ()=> {
                     let cls;
-                    if (aberration_mode) {
+                    if (question_circle_mode) {
                         const dev_cls = bubble_data[0].deviation.toString().replace('.', '');
-                        cls = aberration_mode && aberration_mode.indexOf('blur') > -1 ? 'abberation-blur-' + dev_cls : 'abberation';
+                        cls = question_circle_mode && question_circle_mode.indexOf('blur') > -1 ? 'abberation-blur-' + dev_cls : 'abberation';
                     } else {
                         cls = 'actual';
                     }
@@ -1201,24 +1193,26 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                 })
                 .attr("fill", (d) => {
                     let color = bubble_colors[k];
-                    if (aberration_mode === 'trans') {
+                    if (question_circle_mode === 'trans') {
                         color = color + '80';
                     }
                     return color;
-                })
-                .on('mouseover', function (event, d) {
-                    if (control_mode === 'wing-stream' && !aberration_mode) {
+                });
+
+            if (!question_circle_mode) {
+                new_circle.on('mouseover', function (event, d) {
+                    if (control_mode === 'wing-stream' && !question_circle_mode) {
                         reorder_bubbles(this.parentNode, root.leaves());
                         toggle_focus(d.data.nameCls, 'mouseover');
                     }
                 })
                 .on('mouseout', function (event, d) {
-                    if (control_mode === 'wing-stream' && !aberration_mode) {
+                    if (control_mode === 'wing-stream' && !question_circle_mode) {
                         toggle_focus(d.data.nameCls, 'mouseout');
                     }
                 })
                 .on('mousedown', function (ev, d) {
-                    if (aberration_mode) {
+                    if (question_circle_mode) {
                         return;
                     }
                     let nameCls = d.data.nameCls;
@@ -1277,118 +1271,168 @@ function draw_bubble_chart(data, model='mlp', aberration_mode, params) {
                     }
                 })
                 ;
+            }
 
-                if (k === 2) {
-                    if (aberration_mode) {
-                        add_alt_mode(circle, bubble_data[0].deviation, aberration_mode);
+            if (k === 2) {
+                if (question_circle_mode) {
+                    add_alt_mode(circle, bubble_data[0].deviation, circle_for);
+                }
+                if (circle_for === 'question') {
+                    add_question_n_labels();
+                }
+                add_country_code(circle);
+            }
+
+            if (!question_circle_mode || question_circle_mode === 'ca' || question_circle_mode === 'ca-static' || question_circle_mode === 'ca-blur') {
+                do_transition();
+            }
+
+            if (k === 2 && question_circle_mode === 'noise') {
+                add_noise_layer(circle, k);
+            }
+
+            function do_transition() {
+                if (question_circle_mode === 'ca-static') {
+                    new_circle
+                    .attr("cx", d => {
+                        return get_coord('x', k, d.data.deviation, 0, true);
+                    })
+                    .attr("cy", d => {
+                        return get_coord('y', k, d.data.deviation, 0, true);
+                    });
+                } else {
+                    const ease = d3.easeLinear;
+                    new_circle
+                    .attr("cx", d => {
+                        return get_coord('x', k, d.data.deviation, 0, false);
+                    })
+                    .attr("cy", d => {
+                        return get_coord('y', k, d.data.deviation, 0, false);
+                    })
+                    .transition()             
+                    .ease(ease)
+                    .duration(2000)    
+                    .attr("cx", d => {
+                        return get_coord('x', k, d.data.deviation, 0, true);
+                    })
+                    .attr("cy", d => {
+                        return get_coord('y', k, d.data.deviation, 0, true);
+                    })
+                    .transition()             
+                    .ease(ease)           
+                    .duration(2000)    
+                    .attr("cx", d => {
+                        return get_coord('x', k, d.data.deviation, 0, false);
+                    })
+                    .attr("cy", d => {
+                        return get_coord('y', k, d.data.deviation, 0, false);
+                    })
+                    .on("end", function() {
+                        do_transition();
+                    });
+                }
+            }
+
+            function add_noise_layer(circle, k) {
+                for ( let i = 0; i < 1000; i++) {
+                    var rad = Math.sqrt((Math.random() * 40 * 40)),
+                        angle = Math.random() * Math.PI * 2,
+                        posx = Math.cos(angle),
+                        posy = Math.sin(angle);
+                    let opacity = bubble_data[0].deviation/100;
+
+                    var c2 = circle
+                        .append('circle')
+                        .attr('id', 'cir')
+                        .attr('cx', posx * rad)
+                        .attr('cy', posy * rad)
+                        .attr('r', 1)
+                        .style('fill', () => {
+                            let indx;
+                            if (i%3 === 0) {
+                                indx = 0;
+                            } else if (i%3 === 1) {
+                                indx = 1;
+                            } else {
+                                indx = 2;
+                            }
+                            let color = bubble_colors[indx];
+                            return color;
+                        })
+                        .style('opacity', opacity);
                     }
+        
+                if (k === 2) {
+                    add_alt_mode(circle, bubble_data[0].deviation, circle_for);
                     add_country_code(circle);
                 }
+            }
 
-                if (!aberration_mode || aberration_mode === 'ca' || aberration_mode === 'ca-static' || aberration_mode === 'ca-blur') {
-                    do_transition();
-                }
+            function add_question_n_labels() {
+                svg
+                .append("text")
+                .text('Examples in % for user perception:')
+                .attr("y", 50)
+                .attr("x", -300)
+                .attr("font-size", 25);
 
-                if (k == 2 && aberration_mode === 'noise') {
-                    // for (let i = 0; i < 3; i++) {
-                        add_noise_layer(circle, k);
-                    // }
-                }
+                svg
+                .append("text")
+                .attr("y", 350)
+                .attr("x", -600)
+                .transition()             
+                .ease(d3.easeLinear)           
+                .duration(500)
+                .attr("x", -300)
+                .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 0% to 100%')
+                
+                .attr("font-size", 25)
+                ;
 
-                function do_transition() {
-                    if (aberration_mode === 'ca-static') {
-                        new_circle
-                        .attr("cx", d => {
-                            return get_coord('x', k, d.data.deviation, 0, true);
-                        })
-                        .attr("cy", d => {
-                            return get_coord('y', k, d.data.deviation, 0, true);
-                        });
-                    } else {
-                        const ease = d3.easeLinear;
-                        new_circle
-                        .attr("cx", d => {
-                            return get_coord('x', k, d.data.deviation, 0, false);
-                        })
-                        .attr("cy", d => {
-                            return get_coord('y', k, d.data.deviation, 0, false);
-                        })
-                        .transition()             
-                        .ease(ease)
-                        .duration(2000)    
-                        .attr("cx", d => {
-                            return get_coord('x', k, d.data.deviation, 0, true);
-                        })
-                        .attr("cy", d => {
-                            return get_coord('y', k, d.data.deviation, 0, true);
-                        })
-                        .transition()             
-                        .ease(ease)           
-                        .duration(2000)    
-                        .attr("cx", d => {
-                            return get_coord('x', k, d.data.deviation, 0, false);
-                        })
-                        .attr("cy", d => {
-                            return get_coord('y', k, d.data.deviation, 0, false);
-                        })
-                        .on("end", function() {
-                            do_transition();
-                        });
+                svg
+                .append("text")
+                .text('Back')
+                .attr("y", 550)
+                .attr("x", 200)
+                .attr("font-size", 25)
+                .attr("fill", (d) => {
+                    return question_num > 1 ? 'black' : 'gray';
+                })
+                .on('mousedown', function (ev) {
+                    if (question_num > 1) {
+                        show_question(question_num-1);
                     }
-                }
+                });
 
-                function add_noise_layer(circle, k) {
-                    let z=0, o=0, t=0;
-                    for ( let i = 0; i < 5000; i++) {
-                        var rad = Math.sqrt((Math.random() * 40 * 40)),
-                            angle = Math.random() * Math.PI * 2,
-                            posx = Math.cos(angle),
-                            posy = Math.sin(angle);
-                        let opacity = bubble_data[0].deviation/100;
-
-                        var c2 = circle
-                            .append('circle')
-                            .attr('id', 'cir')
-                            .attr('cx', posx * rad)
-                            .attr('cy', posy * rad)
-                            .attr('r', 1)
-                            .style('fill', () => {
-                                let indx;
-                                if (i%3 === 0) {
-                                    indx = 0;
-                                    z++;
-                                } else if (i%3 === 1) {
-                                    indx = 1;
-                                    o++;
-                                } else {
-                                    indx = 2;
-                                    t++;
-                                }
-                                let color = bubble_colors[indx];
-                                return color;
-                            })
-                            .style('opacity', opacity);
-                        }
-                    console.log(z, o, t);
-            
-                    if (k === 2) {
-                        add_alt_mode(circle, bubble_data[0].deviation, aberration_mode);
-                        add_country_code(circle);
+                svg
+                .append("text")
+                .text('Next')
+                .attr("y", 550)
+                .attr("x", 300)
+                .attr("font-size", 25)
+                .attr("fill", (d) => {
+                    return question_num < 5 ? 'black' : 'gray';
+                })
+                .on('mousedown', function (ev) {
+                    if (question_num < 5) {
+                        show_question(question_num+1);
                     }
+                });
+
+
             }
         }
     }
 }
 
-function add_alt_mode(country_cell, given_dev, mode) {
-    // if (mode.indexOf('ca') > -1) {
-        given_dev *= 10;
-    // }
+function add_alt_mode(country_cell, given_dev, circle_for) {
+    given_dev *= 10;
+    const text = circle_for === 'question' ? '' : (given_dev +'%');
     country_cell.append("text")
         .attr('class', 'country-code')
         .attr("y", 75)
         .attr("x", -10)
-        .text(given_dev +'%')
+        .text(text)
         .attr("font-size", (d) => {
             return 25 + 'px';
         })
