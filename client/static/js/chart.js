@@ -1373,7 +1373,7 @@ function draw_bubble_chart(data, params) {
                 .append("text")
                 .text('Examples in % for user perception:')
                 .attr("y", 50)
-                .attr("x", -300)
+                .attr("x", -350)
                 .attr("font-size", 25);
 
                 svg
@@ -1383,7 +1383,7 @@ function draw_bubble_chart(data, params) {
                 .transition()             
                 .ease(d3.easeLinear)           
                 .duration(500)
-                .attr("x", -300)
+                .attr("x", -350)
                 .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 0% to 100%')
                 
                 .attr("font-size", 25)
