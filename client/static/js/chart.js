@@ -643,8 +643,11 @@ function draw_parallel_coords() {
     const keyz = props[0];
 
     const data_pred = [];
-    const countries_ = Object.keys(forecast_data["new_cases"]);
-    countries_.forEach(country  => {
+    let top_countries = Object.keys(forecast_data["new_cases"]);
+    if (sel_country_num !== 'all') {
+        top_countries = _.take(countries, sel_country_num);
+    }
+    top_countries.forEach(country  => {
         const row = {name: country};
         props.forEach(prop => {
             if (!forecast_data[prop][country]) {
@@ -659,7 +662,7 @@ function draw_parallel_coords() {
     });
 
     const data_uncertainty = [];
-    countries_.forEach(country  => {
+    top_countries.forEach(country  => {
         const row = {name: country};
         props.forEach(prop => {
             if (!forecast_data[prop][country]) {
@@ -1040,7 +1043,6 @@ function draw_bubble_chart(data, params) {
 
     // sort data by count
     bubble_data = _.orderBy(data, ['count'], ['desc']);
-
     
     if (question_circle_mode) {
         bubble_data = [bubble_data[0]];
@@ -1601,18 +1603,17 @@ function prepare_bubble_data(data, model) {
             count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
             actual += data[country][model].y && data[country][model].y[i] || 0;
         }
-        const diff = Math.abs(actual - count);
+        // const diff = Math.abs(actual - count);
         const nameCls = get_name_cls(country);
         const errors = data[country][model].errors;
         const avg_error = _.sum(errors)/errors.length;
-        return {name: country, code: data[country].code, count, actual, diff, nameCls, avg_error};
+        return {name: country, code: data[country].code, count, actual, nameCls, avg_error};
     });
 
     // Calculate deviation to shift centers of aberrated circles
     const max_error = _.maxBy(bubble_data, 'avg_error').avg_error;
     bubble_data = bubble_data.map((item) => {
         item.deviation = item.avg_error * 7 / max_error;
-        // item.avg_error = _.sum(errors)/errors.length;
         return item;
     });
 

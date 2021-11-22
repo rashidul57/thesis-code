@@ -49,5 +49,6 @@ for k in range(len(props)):
 		# print(test, array(predictions))
 		resp[prop][location] = {"code": code, "mlp": mlp, "cnn": cnn, "lstm": lstm}
 
-with open('resp.json', 'w+') as outfile:
+with open('resp2.json', 'w+') as outfile:
     json.dump(json.dumps(resp, cls=model_service.NumpyArrayEncoder), outfile)
+	

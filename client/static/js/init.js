@@ -2,7 +2,7 @@ let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, to
 let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
 let stream_blur_on = false;
-let sel_model, sel_quest_circle_mode, question_num;
+let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
 
 
 window.onload = init;
@@ -275,6 +275,29 @@ function load_control_data() {
         show_question(1);
     });
 
+    const num_of_countries = [
+        {label: 'Top Five', value: 5},
+        {label: 'Top Seven', value: 7},
+        {label: 'Top Ten', value: 10},
+        {label: 'Top Tweenty', value: 20},
+        {label: 'All', value: 'all'}
+    ];
+    sel_country_num = num_of_countries[0].value;
+    d3.select("#drp-num-country")
+    .selectAll('num-countries')
+    .data(num_of_countries)
+    .enter()
+    .append('option')
+    .text((d) => { return d.label; })
+    .attr("value", (d) => { return d.value; })
+    .property("selected", (d) => d.value===sel_country_num);
+
+    d3.selectAll('#drp-num-country')
+    .on("change", function(ev) {
+        sel_country_num = d3.select(this).property("value");
+        refresh_container();
+    });
+
     // initial load
     refresh_container();
 }
@@ -308,7 +331,7 @@ function refresh_container() {
         break;
 
         case 'Parallel Coords':
-        d3.selectAll(".models-item").style("display", "inline-block");
+        d3.selectAll(".models-item, .number-of-country").style("display", "inline-block");
         draw_parallel_coords();
         break;
 
