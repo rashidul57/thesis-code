@@ -1603,13 +1603,16 @@ function prepare_bubble_data(data, model) {
         }
         const diff = Math.abs(actual - count);
         const nameCls = get_name_cls(country);
-        return {name: country, code: data[country].code, count, actual, diff, nameCls};
+        const errors = data[country][model].errors;
+        const avg_error = _.sum(errors)/errors.length;
+        return {name: country, code: data[country].code, count, actual, diff, nameCls, avg_error};
     });
 
     // Calculate deviation to shift centers of aberrated circles
-    const max_diff = _.maxBy(bubble_data, 'diff').diff;
-    bubble_data = bubble_data.map(item => {
-        item.deviation = item.diff * 7 / max_diff;
+    const max_error = _.maxBy(bubble_data, 'avg_error').avg_error;
+    bubble_data = bubble_data.map((item) => {
+        item.deviation = item.avg_error * 7 / max_error;
+        // item.avg_error = _.sum(errors)/errors.length;
         return item;
     });
 
