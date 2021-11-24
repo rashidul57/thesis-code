@@ -247,6 +247,17 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             });
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
             data = get_normalized_data(country_data, keys);
+            
+            // const errors = pred_data[sel_country][algo].errors;
+            // const start_date = new Date(pred_data[sel_country][algo].start_timestamp);
+            // let country_data_raw = all_covid_data[sel_country][0];
+            // data = errors.map((error, indx) => {
+            //     const date = moment(start_date).add('days', indx).toDate();
+            //     const data_item = Object.assign({}, country_data_raw, {date, new_cases: error});
+            //     return data_item;
+            // });
+            // data = get_normalized_data(data, ['new_cases']);
+            
         }
 
     } else {
@@ -488,7 +499,6 @@ function add_texture_layer(sel_property) {
 
 function draw_horizon_chart(pred_data, model='mlp') {
     let countries = Object.keys(pred_data);
-    // countries = [countries[0]]
     let num_dates = 0;
     let start_date;
     const overlap = 1;
@@ -509,7 +519,6 @@ function draw_horizon_chart(pred_data, model='mlp') {
 
     const dates = [];
     for (let i = 0; i < num_dates; i++) {
-        // const date = moment(start_date).add('days', i).toDate();
         const date = moment(start_date).add('days', i).toDate();
         dates.push(date);
     }
@@ -525,7 +534,7 @@ function draw_horizon_chart(pred_data, model='mlp') {
             const diff = Math.abs(actual - pred);
             actuals.push(parseInt(actual/1000));
             predictions.push(parseInt(pred/1000));
-            diffs.push(diff)
+            diffs.push(diff);
         }
         let max = _.max(actuals);
         actuals = actuals.map(val => val/max);
@@ -1047,7 +1056,17 @@ function draw_bubble_chart(data, params) {
     if (question_circle_mode) {
         bubble_data = [bubble_data[0]];
     } else {
-        bubble_data = _.take(bubble_data, 20);
+        bubble_data = _.take(bubble_data, 50);
+    }
+
+    // scale deviation by a factor so that in every case something might be visible
+    const max_dev = _.maxBy(bubble_data, 'deviation');
+    if (max_dev.deviation < 10) {
+        const factor = 1*10/max_dev.deviation;
+        bubble_data = bubble_data.map(item => {
+            item.deviation = item.deviation * factor;
+            return item;
+        });
     }
 
     if (!isNaN(given_dev)) {
@@ -1616,7 +1635,7 @@ function prepare_bubble_data(data, model) {
         item.deviation = item.avg_error * 7 / max_error;
         return item;
     });
-
+    
     return bubble_data;
 }
 
