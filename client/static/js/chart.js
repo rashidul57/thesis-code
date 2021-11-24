@@ -462,7 +462,9 @@ function add_texture_layer(sel_property) {
         for (let prop in poly_data) {
             const start = poly_data[prop].start.join('L');
             const end = poly_data[prop].end.join('L');
-            
+            if (!start || !end) {
+                continue;
+            }
             const d_str = 'M' + start + 'L' + end + ' Z';
             cont_g.append('path')
                 .attr('class', 'sec-path')
