@@ -248,16 +248,6 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
             data = get_normalized_data(country_data, keys);
             
-            // const errors = pred_data[sel_country][algo].errors;
-            // const start_date = new Date(pred_data[sel_country][algo].start_timestamp);
-            // let country_data_raw = all_covid_data[sel_country][0];
-            // data = errors.map((error, indx) => {
-            //     const date = moment(start_date).add('days', indx).toDate();
-            //     const data_item = Object.assign({}, country_data_raw, {date, new_cases: error});
-            //     return data_item;
-            // });
-            // data = get_normalized_data(data, ['new_cases']);
-            
         }
 
     } else {
@@ -426,7 +416,8 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 function add_texture_layer(sel_property) {
     const texture_prop = sel_property === 'new_cases' ? 'new_deaths' : 'new_cases';
     const paths = d3.selectAll('.main-stream-g path').nodes();
-    const num_of_days = 30;
+    // prediction is done for 200 days, so that has to be divisible by num_of_days
+    const num_of_days = country_stream_mode === 'Prediction' ? 25 : 30;
     paths.forEach((path_item, index) => {
         const country = path_item.textContent;
         const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
