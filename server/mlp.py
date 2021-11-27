@@ -32,17 +32,43 @@ in_seq2 = in_seq2.reshape((len(in_seq2), 1))
 out_seq = out_seq.reshape((len(out_seq), 1))
 # horizontally stack columns
 dataset = hstack((in_seq1, in_seq2, out_seq))
+# print(dataset)
+
 # choose a number of time steps
 n_steps = 3
 
 # convert into input/output
 X, y = split_sequences(dataset, n_steps)
+# print('X', X)
+# print('y', y)
 
 # flatten input
 n_input = X.shape[1] * X.shape[2]
 X = X.reshape((X.shape[0], n_input))
-# print(X)
-# print(y)
+
+
+# X = [[10,15,20,25,30,35],
+#  [20,25,30,35,40,45],
+#  [30,35,40,45,50,55],
+#  [40,45,50,55,60,65],
+#  [50,55,60,65,70,75],
+#  [60,65,70,75,80,85],
+#  [70,75,80,85,90,95]
+# ]
+
+X = [[20211102],
+ [20211103],
+ [20211104],
+ [20211105],
+ [20211106],
+ [20211107],
+ [20211108]
+]
+y = [65,85,105,125,145,165,185]
+
+# print(n_input)
+n_input = 1
+
 # define model
 model = Sequential()
 model.add(Dense(100, activation='relu', input_dim=n_input))
@@ -50,9 +76,15 @@ model.add(Dense(1))
 model.compile(optimizer='adam', loss='mse')
 # fit model
 model.fit(X, y, epochs=2000, verbose=0)
+
 # demonstrate prediction
-x_input = array([[80, 85], [90, 95], [100, 105]])
-x_input = x_input.reshape((1, n_input))
-print(x_input)
+# x_input = array([[80, 85], [90, 95], [100, 105]])
+# x_input = x_input.reshape((1, n_input))
+x_input = array([20211112])
 yhat = model.predict(x_input, verbose=0)
-print(yhat)
+print(x_input, yhat)
+
+x_input = array([20211123])
+yhat = model.predict(x_input, verbose=0)
+print(x_input, yhat)
+
