@@ -35,6 +35,10 @@ class NumpyArrayEncoder(JSONEncoder):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
 
+def get_next(given_date):
+	new_date = datetime.datetime.strptime(given_date, "%Y-%m-%d") + datetime.timedelta(days=1)
+	return new_date
+
 # split a univariate dataset into train/test sets
 def train_test_split(data, n_test):
 	return data[:-n_test], data[-n_test:]
@@ -152,19 +156,24 @@ def model_predict(model, history, config, alg_name):
 # walk-forward validation for univariate data
 def train_n_forecast(data, n_test, config, alg_name):
 	predictions = list()
-	errors = list()
-	test_cur = list()
+	ranges = list()
 
 	# split dataset
 	train, test = train_test_split(data, n_test)
 
 	# fit model
 	if (alg_name == 'mlp'):
-		model = mlp_model_fit(train, config)
+		model1 = mlp_model_fit(train, config)
+		model2 = mlp_model_fit(train, config)
+		model3 = mlp_model_fit(train, config)
 	if (alg_name == 'cnn'):
-		model = cnn_model_fit(train, config)
+		model1 = cnn_model_fit(train, config)
+		model2 = cnn_model_fit(train, config)
+		model3 = cnn_model_fit(train, config)
 	if (alg_name == 'lstm'):
-		model = lstm_model_fit(train, config)
+		model1 = lstm_model_fit(train, config)
+		model2 = lstm_model_fit(train, config)
+		model3 = lstm_model_fit(train, config)
 
 	# seed history with training dataset
 	history = [x for x in train]
@@ -172,23 +181,35 @@ def train_n_forecast(data, n_test, config, alg_name):
 	# step over each time-step in the test set
 	for i in range(len(test)):
 		# fit model and make forecast for history
-		yhat = model_predict(model, history, config, alg_name)
-		# store forecast in list of predictions
-		predictions.append(yhat)
-		# add actual observation to history for the next loop
-		# history.append(test[i])
-		test_cur.append(test[i])
-		# print(test_cur, predictions)
-		error = measure_rmse(test_cur, predictions)
-		errors.append(error)
+		yhat1 = model_predict(model1, history, config, alg_name)
+		yhat2 = model_predict(model2, history, config, alg_name)
+		yhat3 = model_predict(model2, history, config, alg_name)
+		yhat = np.array([yhat1, yhat2, yhat3])
+		lower, yhat, upper = get_uncertainty(yhat)
 
-		# print(test[i], yhat)
+		# store forecast in list of predictions
+		predictions.append(str(yhat))
+		
+		# add actual observation to history for the next loop
+		history.append(test[i])
+		# test_cur.append(test[i])
+		# error = measure_rmse(test_cur, predictions)
+		ranges.append([str(lower), str(upper)])
 
 	# print(array(predictions))
 	# estimate prediction error
 	# error = measure_rmse(test, predictions)
 	# print(' > %.3f' % error)
-	return test, predictions, errors
+	return test, predictions, ranges
+
+# make predictions with the ensemble and calculate a prediction interval
+def get_uncertainty(yhats):
+	# calculate 95% gaussian prediction interval
+	# https://en.wikipedia.org/wiki/1.96
+	interval = 1.96 * yhats.std()
+	yhat = yhats.mean()
+	lower, upper = yhat - interval, yhat + interval
+	return lower, yhat, upper
 
 def load_all_data():
     df = pandas.read_csv('server/data/owid.csv', 

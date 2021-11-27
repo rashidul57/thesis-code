@@ -6,7 +6,8 @@ https://www.machinelearningplus.com/time-series/arima-model-time-series-forecast
 https://machinelearningmastery.com/time-series-forecasting-supervised-learning/
 https://machinelearningmastery.com/how-to-develop-deep-learning-models-for-univariate-time-series-forecasting/
 https://machinelearningmastery.com/convert-time-series-supervised-learning-problem-python/
-
+https://machinelearningmastery.com/prediction-intervals-for-deep-learning-neural-networks/
+https://machinelearningmastery.com/time-series-forecasting-with-prophet-in-python/
 
 Setup:
 1. npm install -g sass

@@ -908,6 +908,8 @@ function draw_impact_chart(pred_data, model='mlp') {
         });
         return devs;
     })
+
+    countries = _.take(countries, 37)
     
     data = {
         deviations,
@@ -1004,7 +1006,7 @@ function draw_impact_chart(pred_data, model='mlp') {
             .text((d, i) => `${date(i)}`);
     }
         
-    svg.append("g")
+    const uncertainty_bar = svg.append("g")
         .selectAll("g")
         .data(deviations)
         .join("g")
@@ -1017,11 +1019,37 @@ function draw_impact_chart(pred_data, model='mlp') {
             const xx = x(data.years[i]) + 1;
             return xx + width - 10;
         })
-        .attr("width", (d, i) => {
-            return d;
-        })
+        // .attr("width", (d, i) => {
+        //     return d;
+        // })
         .attr("height", y.bandwidth() - 1)
         .attr("fill", (d, i) => "#0000ff25");
+
+        impact_transition();
+
+        function impact_transition() {
+                const ease = d3.easeLinear;
+                uncertainty_bar
+                .attr("width", (d, i) => {
+                    return 0;
+                })
+                .transition()             
+                .ease(ease)
+                .duration(5000)    
+                .attr("width", (d, i) => {
+                    return d;
+                })
+                // .transition()             
+                // .ease(ease)           
+                // .duration(2000)    
+                // .attr("width", (d, i) => {
+                //     return 0;
+                // })
+                .on("end", function() {
+                    console.log('end')
+                    // impact_transition();
+                });
+        }
 
     return svg.node();
 
