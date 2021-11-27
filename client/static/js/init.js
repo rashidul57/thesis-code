@@ -16,8 +16,31 @@ async function init() {
 
     const forecasts = await $.get("/get-forcasts");
     forecast_data = JSON.parse(forecasts);
+    
     prop_pred_data = forecast_data[sel_property];
     countries = Object.keys(prop_pred_data);
+
+    ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations'].forEach(prop => {
+        countries.forEach(country => {
+            ['mlp', 'cnn', 'lstm'].forEach(model => {
+                if (!forecast_data[prop][country]) {
+                    return;
+                }
+                const model_data = forecast_data[prop][country][model];
+                model_data['ranges'].forEach(item => {
+                    [0, 1].forEach(indx => {
+                        item[indx] = Number(item[indx]);
+                    });
+                });
+                model_data['y'].forEach((val, indx) => {
+                    model_data['y'][indx] = Number(val);
+                });
+                model_data['y_pred'].forEach((val, indx) => {
+                    model_data['y_pred'][indx] = Number(val);
+                });
+            });
+        });
+    });
 
     const excl_regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America', 'High income', 'Upper middle income', 'Lower middle income'];
     let cov_data = await $.get("/get-covid-data");
