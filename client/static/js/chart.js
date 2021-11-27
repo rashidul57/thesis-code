@@ -7,11 +7,9 @@ let bubble_chart_scale = 1;
 let stream_chart_scale = 1;
 let bubble_removed = [];
 let bubble_selected = [];
-// let global_streams = ['Turkey', 'Bangladesh'];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
-// let question_circle_mode = 'ca';
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -1645,15 +1643,17 @@ function prepare_bubble_data(data, model) {
         }
         // const diff = Math.abs(actual - count);
         const nameCls = get_name_cls(country);
-        const errors = data[country][model].errors;
-        const avg_error = _.sum(errors)/errors.length;
-        return {name: country, code: data[country].code, count, actual, nameCls, avg_error};
+        const uncertainties = data[country][model].ranges.map(range => {
+            return range[1] - range[0];
+        });
+        const avg_uncertainty = _.sum(uncertainties)/uncertainties.length;
+        return {name: country, code: data[country].code, count, actual, nameCls, avg_uncertainty};
     });
 
     // Calculate deviation to shift centers of aberrated circles
-    const max_error = _.maxBy(bubble_data, 'avg_error').avg_error;
+    const max_uncertainty = _.maxBy(bubble_data, 'avg_uncertainty').avg_uncertainty;
     bubble_data = bubble_data.map((item) => {
-        item.deviation = item.avg_error * 7 / max_error;
+        item.deviation = item.avg_uncertainty * 7 / max_uncertainty;
         return item;
     });
     
