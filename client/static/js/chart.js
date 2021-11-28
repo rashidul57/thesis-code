@@ -27,9 +27,9 @@ function draw_predicted_lines(data, sel_country='United States') {
         const actuals = [];
         for (let i = 0; i < num_dates; i++) {
             const date = moment(new Date(data[countries[0]].mlp.start_timestamp)).add('days', i).toDate();
-            const mlp = data[country].mlp.y_pred[i] && data[country].mlp.y_pred[i][0] || 0;
-            const cnn = data[country].cnn.y_pred[i] && data[country].cnn.y_pred[i][0] || 0;
-            const lstm = data[country].lstm.y_pred[i] && data[country].lstm.y_pred[i][0] || 0;
+            const mlp = data[country].mlp.y_pred[i] || 0;
+            const cnn = data[country].cnn.y_pred[i] || 0;
+            const lstm = data[country].lstm.y_pred[i] || 0;
             const actual = data[country].cnn.y[i] && data[country].cnn.y[i] || 0;
             mlps.push({date, count: mlp});
             cnns.push({date, count: cnn});
@@ -227,7 +227,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
                 model_types.forEach(model => {
-                    record[model] = pred_data[sel_country][model].y_pred[i] && pred_data[sel_country][model].y_pred[i][0] || 0;
+                    record[model] = pred_data[sel_country][model].y_pred[i] || 0;
                 });
                 data.push(record);
             }
@@ -254,7 +254,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
                 keys.forEach(country => {
-                    record[country] = pred_data[country][algo].y_pred[i] && pred_data[country][algo].y_pred[i][0] || 0;
+                    record[country] = pred_data[country][algo].y_pred[i] || 0;
                 });
                 data.push(record);
             }
@@ -516,26 +516,27 @@ function draw_horizon_chart(pred_data, model='mlp') {
     
     const series = [];
     countries.forEach(country => {
-        let actuals = [];
+        // let actuals = [];
         let predictions = [];
-        let diffs = [];
+        let lower_ranges = [];
+        let upper_ranges = [];
         for (let i = 0; i < num_dates; i++) {
-            const actual = pred_data[country][model].y && pred_data[country][model].y[i] || 0;
-            const pred = pred_data[country][model].y_pred[i] && pred_data[country][model].y_pred[i][0] || 0;
-            const diff = Math.abs(actual - pred);
-            actuals.push(parseInt(actual/1000));
+            const pred = pred_data[country][model].y_pred[i] || 0;
+            const ranges = pred_data[country][model].ranges[i];
             predictions.push(parseInt(pred/1000));
-            diffs.push(diff);
+            lower_ranges.push(ranges[0]);
+            upper_ranges.push(ranges[1]);
         }
-        let max = _.max(actuals);
-        actuals = actuals.map(val => val/max);
         max = _.max(predictions);
         predictions = predictions.map(val => val/max);
-        max = _.max(diffs);
-        diffs = diffs.map(val => val/max);
-        series.push({name: country, values: actuals, actuals, predictions, diffs});
-        // values.push(actuals);
-        // diff_values.push(diffs);
+
+        max = _.max(lower_ranges);
+        lower_ranges = lower_ranges.map(val => val/max);
+
+        max = _.max(upper_ranges);
+        upper_ranges = upper_ranges.map(val => val/max);
+
+        series.push({name: country, '0': lower_ranges, '1': predictions, '2': upper_ranges});
     });
     const data = {dates, series};
 
@@ -544,7 +545,7 @@ function draw_horizon_chart(pred_data, model='mlp') {
     const height = data.series.length * (step + 1) + margin.top + margin.bottom;
 
     const y = d3.scaleLinear()
-    .domain([0, d3.max(data.series, d => d3.max(d.values))])
+    .domain([0, d3.max(data.series, d => d3.max(d['2']))])
     .range([0, -overlap * step]);
 
     const x = d3.scaleUtc()
@@ -572,9 +573,9 @@ function draw_horizon_chart(pred_data, model='mlp') {
       .style("font", "10px sans-serif");
 
     
-    for (let k = 0; k<2; k++) {
+    for (let k = 0; k<3; k++) {
         data.series = data.series.map(item => {
-            item.values = k === 0 ? item.actuals : item.predictions;
+            item.values = item[k];
             return item;
         });
         const ident_data = data.series.map(d => Object.assign({
@@ -610,14 +611,11 @@ function draw_horizon_chart(pred_data, model='mlp') {
                 return ret;
             })
             .join("use")
+            .attr("fill-opacity", (d) => {
+                return 0.33;
+            })
             .attr("fill", (d, i) => {
-                let c = color(i);
-                if (k === 1) {
-                    c = "#4aa59c70";
-                } else {
-                    c = c + '70';
-                }
-                return c;
+                return bubble_colors[k];
             })
             .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
             .attr("xlink:href", d => d.pathId.href);
@@ -643,37 +641,34 @@ function draw_parallel_coords() {
     const keyz = props[0];
 
     const data_pred = [];
+    const lower_range = [];
+    const upper_range = [];
     let top_countries = Object.keys(forecast_data["new_cases"]);
     if (sel_country_num !== 'all') {
         top_countries = _.take(countries, sel_country_num);
     }
+
     top_countries.forEach(country  => {
-        const row = {name: country};
+        const pred_row = {name: country};
+        const lr_row = {name: country};
+        const ur_row = {name: country};
         props.forEach(prop => {
             if (!forecast_data[prop][country]) {
                 return;
             }
             const dated_preds = forecast_data[prop][country][sel_model]['y_pred'];
             dated_preds.forEach(value => {
-                row[prop] = (row[prop] || 0)  + Number(value || 0);
+                pred_row[prop] = (pred_row[prop] || 0)  + Number(value || 0);
+            });
+            const dated_ranges = forecast_data[prop][country][sel_model]['ranges'];
+            dated_ranges.forEach(range => {
+                lr_row[prop] = (lr_row[prop] || 0)  + range[0];
+                ur_row[prop] = (ur_row[prop] || 0)  + range[1];
             });
         });
-        data_pred.push(row);
-    });
-
-    const data_uncertainty = [];
-    top_countries.forEach(country  => {
-        const row = {name: country};
-        props.forEach(prop => {
-            if (!forecast_data[prop][country]) {
-                return;
-            }
-            const dated_preds = forecast_data[prop][country][sel_model]['y'];
-            dated_preds.forEach(value => {
-                row[prop] = (row[prop] || 0)  + Number(value || 0);
-            });
-        });
-        data_uncertainty.push(row);
+        data_pred.push(pred_row);
+        lower_range.push(lr_row);
+        upper_range.push(ur_row);
     });
 
     const width = 1000;
@@ -715,7 +710,23 @@ function draw_parallel_coords() {
       .attr("stroke-opacity", 0.4)
       .attr('class', 'dashed-line')
     .selectAll("path")
-    .data(data_uncertainty.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .data(lower_range.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
+    .join("path")
+      .attr("stroke", d => z(d[keyz]))
+      .attr("d", d => {
+          const vals = d3.cross(keys, [d], (key, d) => [key, d[key] || 0]);
+          return line(vals);
+    })
+    .append("title")
+      .text(d => d.name);
+
+      svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-opacity", 0.4)
+      .attr('class', 'dashed-line')
+    .selectAll("path")
+    .data(upper_range.slice().sort((a, b) => d3.ascending(a[keyz], b[keyz])))
     .join("path")
       .attr("stroke", d => z(d[keyz]))
       .attr("d", d => {
@@ -764,8 +775,8 @@ function draw_usage_chart() {
         }
         dated_preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
-            const error = forecast_data[prop][country][sel_model]['errors'][i];
-            const uncertainty = Math.abs(error)*100/value;
+            const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
+            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/value;
             const row = Object.assign({date, uncertainty}, c_data);
             row[prop] = Number(value || 0);
             data.push(row);
@@ -875,52 +886,54 @@ function draw_impact_chart(pred_data, model='mlp') {
 
     const dates = [];
     for (let i = 0; i < num_dates; i++) {
-        const date = moment(start_date).add('days', i).date(); //.format('ll');
+        const date = moment(start_date).add('days', i).toDate();
         dates.push(date);
     }
-
     
-    const actual_values = [];
-    const diff_values = [];
+    const predictions = [];
+    const lower_values = [];
+    const upper_values = [];
+    const uncertainties = [];
     countries.forEach(country => {
-        const actuals = [];
-        const predictions = [];
-        const diffs = [];
+        const cp_values = [];
+        const cl_values = [];
+        const cu_values = [];
+        const c_uncerts = [];
         for (let i = 0; i < num_dates; i++) {
-            const actual = pred_data[country][model].y && pred_data[country][model].y[i] || 0;
-            const pred = pred_data[country][model].y_pred[i] && pred_data[country][model].y_pred[i][0] || 0;
-            const diff = Math.abs(actual - pred);
-            actuals.push(actual);
-            diffs.push(diff)
+            const pred = pred_data[country][model].y_pred[i] || 0;
+            const ranges = pred_data[country][model]['ranges'][i];
+            const lower_value = ranges[0] || 0;
+            const upper_value = ranges[1] || 0;
+            cp_values.push(pred);
+            cl_values.push(lower_value);
+            cu_values.push(upper_value);
+            c_uncerts.push(upper_value-lower_value);
         }
-        actual_values.push(actuals);
-        diff_values.push(diffs);
+        predictions.push(cp_values);
+        lower_values.push(cl_values);
+        upper_values.push(cu_values);
+        uncertainties.push(c_uncerts)
     });
     const mid = parseInt(dates.length/2);
     const year = dates[mid];
     
-    const deviations = diff_values.map(diffs => {
-        const max_diff = _.max(diffs);
-        const devs = diffs.map(diff => {
-            return diff * 7 / max_diff;
-        });
-        return devs;
-    })
 
-    countries = _.take(countries, 37)
+    // countries = _.take(countries, 37)
     
-    data = {
-        deviations,
-        values: actual_values,
+    const chart_data = {
+        lower_values,
+        predictions,
+        upper_values,
         names:countries,
-        years: dates,
+        uncertainties,
+        dates,
         year
     };
 
     const margin = {top: 20, right: 1, bottom: 40, left: 60};
-    const height = 16;
+    const height = 8;
     const width = 1200;
-    const innerHeight = height * data.names.length;
+    const innerHeight = height * chart_data.names.length;
     const date = (i) => {
         return moment(start_date).add('days', i).format('ll');
     };
@@ -938,92 +951,130 @@ function draw_impact_chart(pred_data, model='mlp') {
     const xAxis = g => g
     .call(g => g.append("g")
       .attr("transform", `translate(0,${margin.top})`)
-      .call(d3.axisTop(x).ticks(null, "d"))
+      .call(
+        d3.axisTop(x)
+        .tickFormat(x => {
+            return moment(new Date(x)).format('ll');
+        })
+      )
       .call(g => g.select(".domain").remove()))
     .call(g => g.append("g")
       .attr("transform", `translate(0,${innerHeight + margin.top + 4})`)
-      .call(d3.axisBottom(x)
-          .tickValues([data.year])
-          .tickFormat(x => x)
-          .tickSize(-innerHeight - 10))
+    //   .call(d3.axisBottom(x)
+    //     //   .tickValues([chart_data.year])
+    //     //   .tickFormat(x => x)
+    //     //   .tickSize(-innerHeight - 10)
+    //     )
       .call(g => g.select(".tick text")
           .clone()
           .attr("dy", "2em")
           .style("font-weight", "bold")
-          .text("New Cases"))
+          .style("font-size", "20")
+        //   .text("New Cases")
+      )
       .call(g => g.select(".domain").remove()));
 
-    const color = d3.scaleSequentialSqrt([0, d3.max(data.values, d => d3.max(d))], d3.interpolatePuRd);
+    const color = d3.scaleSequentialSqrt([0, d3.max(chart_data.uncertainties, d => d3.max(d))], d3.interpolatePuRd);
     const y = d3.scaleBand()
-      .domain(data.names)
+      .domain(chart_data.names)
       .rangeRound([margin.top, margin.top + innerHeight]);
 
+    const min_date = moment(d3.min(chart_data.dates));
+    const max_date = moment(d3.max(chart_data.dates)).add('days', 1);
     const x = d3.scaleLinear()
-    .domain([d3.min(data.years), d3.max(data.years) + 1])
+    .domain([min_date, max_date])
     .rangeRound([margin.left, width - margin.right]);
 
     // set svg shape/size
     const svg = d3.select('.left-chart-container')
         .append("svg")
-        .attr('class', 'rate-svg')
+        .attr('class', 'rate-svg impact-chart-svg')
         .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
     svg.append("g")
         .call(xAxis);
+
     
-    for (let k=0; k<2; k++) {
+    svg.append("g")
+        .call(yAxis);
+    for (let k = 0; k < 1; k++) {
         svg.append("g")
-            .call(yAxis);
-            svg.append("g")
-            .selectAll("g")
-            .data(data.values)
-            .join("g")
-            .attr("transform", (d, i) => `translate(0,${y(data.names[i])})`)
-            .selectAll("rect")
-            .data(d => d)
-            .join("rect")
-            .attr("x", (d, i) => x(data.years[i]) + 1)
-            .attr("width", (d, i) => {
-                let width = x(data.years[i] + 1) - x(data.years[i]) - 1;
-                if (k===1) {
-                    width -= 10;
-                }
-                return width;
-            })
-            .attr("height", y.bandwidth() - 1)
-            .attr("fill", d => {
-                if (k === 0) {
-                    return '#fff';
-                } else {
-                    return isNaN(d) ? "#eee" : d === 0 ? "#fff" : color(d);
-                }
-            })
-            .append("title")
-            .text((d, i) => `${date(i)}`);
-    }
-        
-    const uncertainty_bar = svg.append("g")
         .selectAll("g")
-        .data(deviations)
+        .data(chart_data.predictions)
         .join("g")
-        .attr("transform", (d, i) => `translate(0,${y(data.names[i])})`)
+        .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
         .selectAll("rect")
         .data(d => d)
         .join("rect")
-        .attr("x", function(d, i) {
-            let width = x(data.years[i] + 1) - x(data.years[i]) - 1;
-            const xx = x(data.years[i]) + 1;
-            return xx + width - 10;
+        .attr("x", (d, i) => {
+            return x(chart_data.dates[i]);
         })
-        // .attr("width", (d, i) => {
-        //     return d;
+        .attr("width", (d, i, j) => {
+            let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
+            return width;
+        })
+        .attr("height", y.bandwidth() - 0.3)
+        // .attr("fill-opacity", (d) => {
+        //     return 0.33;
         // })
-        .attr("height", y.bandwidth() - 1)
-        .attr("fill", (d, i) => "#0000ff25");
+        .attr("fill", (d, i) => {
+            // return bubble_colors[k] + '80';
+            return color(d);
+        })
+        .append("title")
+        .text((d, i) => `${date(i)} \n Uncertainty: ${d}`);
+    }
+//    k = 1;
+//    svg.append("g")
+//         .selectAll("g")
+//         .data(chart_data.predictions)
+//         .join("g")
+//         .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
+//         .selectAll("rect")
+//         .data(d => d)
+//         .join("rect")
+//         .attr("fill-opacity", (d) => {
+//             return 0.33;
+//         })
+//         .attr("x", (d, i) => {
+//             return x(chart_data.dates[i]);
+//         })
+//         .attr("width", (d, i) => {
+//             let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
+//             return width;
+//         })
+//         .attr("height", y.bandwidth() - 0.3)
+//         .attr("fill", d => {
+//             return bubble_colors[k] + '80';
+//         });
 
-        impact_transition();
+    // k = 2;
+    // svg.append("g")
+    //     .selectAll("g")
+    //     .data(chart_data.lower_values)
+    //     .join("g")
+    //     .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
+    //     .selectAll("rect")
+    //     .data(d => d)
+    //     .join("rect")
+    //     .attr("fill-opacity", (d) => {
+    //         return 0.33;
+    //     })
+    //     .attr("x", (d, i) => {
+    //         return x(chart_data.dates[i]);
+    //     })
+    //     .attr("width", (d, i) => {
+    //         let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
+    //         return width+5;
+    //     })
+    //     .attr("height", y.bandwidth() - 0.3)
+    //     .attr("fill", d => {
+    //         return bubble_colors[k] + '80';
+    //     });
+            
+
 
         function impact_transition() {
                 const ease = d3.easeLinear;
@@ -1044,7 +1095,7 @@ function draw_impact_chart(pred_data, model='mlp') {
                 //     return 0;
                 // })
                 .on("end", function() {
-                    console.log('end')
+                    // console.log('end')
                     // impact_transition();
                 });
         }
@@ -1638,7 +1689,7 @@ function prepare_bubble_data(data, model) {
         let count = 0;
         let actual = 0;
         for (let i = 0; i < num_dates; i++) {
-            count += data[country][model].y_pred[i] && data[country][model].y_pred[i][0] || 0;
+            count += data[country][model].y_pred[i] || 0;
             actual += data[country][model].y && data[country][model].y[i] || 0;
         }
         // const diff = Math.abs(actual - count);
