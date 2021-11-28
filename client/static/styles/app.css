@@ -141,6 +141,10 @@ body.min-size .toolbar, body.min-size .container-box {
 .container-box .left-chart-container.rate-svg-container g.tick {
   font-size: 7px;
 }
+.container-box .left-chart-container .impact-chart-svg {
+  width: 4000px;
+  overflow: auto;
+}
 .container-box .left-chart-container .country-stream-svg {
   overflow: visible;
 }
