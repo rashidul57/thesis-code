@@ -3,7 +3,8 @@ let sel_property = 'new_cases';
 let control_mode = 'wing-stream';
 let stream_blur_on = false;
 let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
-
+let country_list_show = false;
+let selected_countries = [];
 
 window.onload = init;
 
@@ -60,6 +61,7 @@ async function init() {
 
     load_control_data();
     
+    load_country_dropdown();
 
 }
 
@@ -306,6 +308,8 @@ function load_control_data() {
         {label: 'All', value: 'all'}
     ];
     sel_country_num = num_of_countries[0].value;
+    selected_countries = _.take(countries, sel_country_num);
+
     d3.select("#drp-num-country")
     .selectAll('num-countries')
     .data(num_of_countries)
@@ -319,6 +323,13 @@ function load_control_data() {
     .on("change", function(ev) {
         sel_country_num = d3.select(this).property("value");
         refresh_container();
+    });
+
+    d3.selectAll('.select-by-name')
+    .on("click", function(ev) {
+        country_list_show = !country_list_show;
+
+        d3.select('.country-list-menu').style("display", country_list_show ? "inline-block" : 'none');
     });
 
     // initial load
@@ -354,7 +365,7 @@ function refresh_container() {
         break;
 
         case 'Parallel Coords':
-        d3.selectAll(".models-item, .number-of-country").style("display", "inline-block");
+        d3.selectAll(".models-item, .number-of-country, .country-select-by-name").style("display", "inline-block");
         draw_parallel_coords();
         break;
 
@@ -408,6 +419,39 @@ function show_question(question_num) {
     const ques_perc = [ques_percents[question_num-1]/10];
     draw_bubble_chart(prop_pred_data, {question_circle_mode: sel_quest_circle_mode, circle_for: 'question', percents: ques_perc, question_num});
 
+}
+
+function load_country_dropdown() {
+    let country_str_arr = [];
+    const sorted_countries = _.sortBy(countries);
+    sorted_countries.forEach(country => {
+        const selected = selected_countries.indexOf(country) > -1 ? 'checked' : '';
+        country_str_arr.push(`<div class='row-item'>
+        <input type="checkbox" id="by-${country}" ${selected}>
+        <label for="by-${country}">${country}</label>
+        </div>`)
+    });
+
+    document.getElementsByClassName('list-body')[0].innerHTML = country_str_arr.join('');
+
+    d3.selectAll('.button-row input')
+    .on("click", function(ev) {
+        if (ev.target.defaultValue === "Apply") {
+            selected_countries = [];
+            const checkboxes = d3.selectAll('.list-body .row-item input').nodes();
+            checkboxes.forEach(checkbox => {
+                const is_checked = d3.select(checkbox).property('checked');
+                if (is_checked) {
+                    const name = checkbox.getAttribute('id').replace('by-', '');
+                    selected_countries.push(name);
+                }
+            });
+            sel_country_num = 0;
+            refresh_container();
+        }
+        d3.select('.country-list-menu').style('display', 'none');
+        country_list_show = false;
+    });
 }
 
 function hide_items() {

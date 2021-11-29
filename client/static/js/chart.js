@@ -646,9 +646,13 @@ function draw_parallel_coords() {
     const data_pred = [];
     const lower_range = [];
     const upper_range = [];
-    let top_countries = Object.keys(forecast_data["new_cases"]);
-    if (sel_country_num !== 'all') {
-        top_countries = _.take(countries, sel_country_num);
+    let top_countries = _.clone(countries);
+    if (sel_country_num === 0) {
+        top_countries = selected_countries;
+    } else {
+        if (sel_country_num !== 'all') {
+            top_countries = _.take(top_countries, sel_country_num);
+        }
     }
 
     top_countries.forEach(country  => {
@@ -759,7 +763,40 @@ function draw_parallel_coords() {
         .attr("stroke-linejoin", "round")
         .attr("stroke", "white"));
 
-    return svg.node();
+    const dashed_lines = d3.selectAll('.rate-svg g.dashed-line path').nodes();
+    const mid = dashed_lines.length/2;
+    const polygons = [];
+    const colors = [];
+    for (let k = 0; k < mid; k++) {
+        const lb_line = dashed_lines[k];
+        const ub_line = dashed_lines[mid + k];
+        const lb_line_points = lb_line.getAttribute('d').replace('M', '').replace(/L/g, ' ')
+        const ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L').reverse().join(' ');
+        polygons.push(lb_line_points + ' ' + ub_line_points);
+        colors.push(lb_line.getAttribute('stroke'))
+    }
+    svg.selectAll('polygon')
+        .data(polygons)
+        .enter()
+        .append('polygon')
+        .attr('points', d=> d)
+        .attr('fill-opacity', 0.33)
+        .attr('fill', (d, i) => {
+            return colors[i];
+        });
+
+//         vis.selectAll("polygon")
+//     .data([poly])
+//   .enter().append("polygon")
+//     .attr("points",function(d) { 
+//         return d.map(function(d) {
+//             return [scaleX(d.x),scaleY(d.y)].join(",");
+//         }).join(" ");
+//     })
+//     .attr("stroke","black")
+//     .attr("stroke-width",2);
+    // debugger
+    // return svg.node();
 }
 
 function draw_usage_chart() {
