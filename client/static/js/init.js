@@ -29,14 +29,14 @@ async function init() {
                 const model_data = forecast_data[prop][country][model];
                 model_data['ranges'].forEach(item => {
                     [0, 1].forEach(indx => {
-                        item[indx] = Number(item[indx]);
+                        item[indx] = Math.abs(Number(item[indx]));
                     });
                 });
                 model_data['y'].forEach((val, indx) => {
-                    model_data['y'][indx] = Number(val);
+                    model_data['y'][indx] = Math.abs(Number(val));
                 });
                 model_data['y_pred'].forEach((val, indx) => {
-                    model_data['y_pred'][indx] = Number(val);
+                    model_data['y_pred'][indx] = Math.abs(Number(val));
                 });
             });
         });
