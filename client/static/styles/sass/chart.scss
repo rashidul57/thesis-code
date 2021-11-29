@@ -83,6 +83,40 @@ body {
     .option .caption{
         font-size: 14px;
     }
+    .country-select-by-name{
+        .select-by-name {
+            background: #f5f5f5;
+            padding: 0px 3px;
+            cursor: pointer;
+            color: #635eed;
+            border: 1px solid #5c5757;
+            border-radius: 3px;
+        }
+        .country-list-menu{
+            display: none;
+            position: absolute;
+            height: 300px;
+            overflow: hidden;
+            z-index: 99;
+            background: #efefef;
+            margin-left: -130px;
+            margin-top: 21px;
+            border-radius: 5px;
+            .list-body{
+                overflow: auto;
+                height: calc(100% - 30px);
+            }
+            .row-item{
+                border-bottom: 1px solid #bdbdbd;
+                padding: 2px 7px 2px 7px;
+                &.button-row{
+                    display: grid;
+                    grid-template-columns: 50% 50%;
+                    border: 0;
+                }
+            }
+        }
+    }
 
     .right-items{
         .control-container{
