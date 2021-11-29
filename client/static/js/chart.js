@@ -227,7 +227,8 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
                 model_types.forEach(model => {
-                    record[model] = pred_data[sel_country][model].y_pred[i] || 0;
+                    const ranges = pred_data[sel_country][model].ranges[i];
+                    record[model] = Math.abs(ranges[0] - ranges[1]) || 0;
                 });
                 data.push(record);
             }
@@ -254,7 +255,9 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
                 keys.forEach(country => {
-                    record[country] = pred_data[country][algo].y_pred[i] || 0;
+                    // record[country] = pred_data[country][algo].y_pred[i] || 0;
+                    const ranges = pred_data[country][algo].ranges[i];
+                    record[country] = Math.abs(ranges[0] - ranges[1]) || 0;
                 });
                 data.push(record);
             }
@@ -904,10 +907,14 @@ function draw_impact_chart(pred_data, model='mlp') {
             const ranges = pred_data[country][model]['ranges'][i];
             const lower_value = ranges[0] || 0;
             const upper_value = ranges[1] || 0;
+            const uncertainty = Math.abs(upper_value - lower_value);
+            const divider = _.max([pred, upper_value, lower_value]);
+            const perc_unc = uncertainty*100/divider;
+
             cp_values.push(pred);
             cl_values.push(lower_value);
             cu_values.push(upper_value);
-            c_uncerts.push(upper_value-lower_value);
+            c_uncerts.push(perc_unc);
         }
         predictions.push(cp_values);
         lower_values.push(cl_values);
@@ -916,9 +923,6 @@ function draw_impact_chart(pred_data, model='mlp') {
     });
     const mid = parseInt(dates.length/2);
     const year = dates[mid];
-    
-
-    // countries = _.take(countries, 37)
     
     const chart_data = {
         lower_values,
@@ -931,8 +935,9 @@ function draw_impact_chart(pred_data, model='mlp') {
     };
 
     const margin = {top: 20, right: 1, bottom: 40, left: 60};
-    const height = 8;
+    const height = 5;
     const width = 1200;
+    const cell_width = 4;
     const innerHeight = height * chart_data.names.length;
     const date = (i) => {
         return moment(start_date).add('days', i).format('ll');
@@ -968,8 +973,8 @@ function draw_impact_chart(pred_data, model='mlp') {
       .call(g => g.select(".tick text")
           .clone()
           .attr("dy", "2em")
-          .style("font-weight", "bold")
-          .style("font-size", "20")
+        //   .style("font-weight", "bold")
+        //   .style("font-size", "20")
         //   .text("New Cases")
       )
       .call(g => g.select(".domain").remove()));
@@ -979,8 +984,8 @@ function draw_impact_chart(pred_data, model='mlp') {
       .domain(chart_data.names)
       .rangeRound([margin.top, margin.top + innerHeight]);
 
-    const min_date = moment(d3.min(chart_data.dates));
-    const max_date = moment(d3.max(chart_data.dates)).add('days', 1);
+    const min_date = moment(d3.min(chart_data.dates)).toDate();
+    const max_date = moment(d3.max(chart_data.dates)).add('days', 1).toDate();
     const x = d3.scaleLinear()
     .domain([min_date, max_date])
     .rangeRound([margin.left, width - margin.right]);
@@ -999,111 +1004,71 @@ function draw_impact_chart(pred_data, model='mlp') {
     
     svg.append("g")
         .call(yAxis);
-    for (let k = 0; k < 1; k++) {
+    for (let k = 0; k < 4; k++) {
         svg.append("g")
         .selectAll("g")
-        .data(chart_data.predictions)
+        .data(chart_data.uncertainties)
         .join("g")
         .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
         .selectAll("rect")
         .data(d => d)
         .join("rect")
         .attr("x", (d, i) => {
-            return x(chart_data.dates[i]);
+            let xx = x(chart_data.dates[i]);
+            if (k > 1 && i >= 0) {
+                const dev = get_dev(d);
+                if (k===2) {
+                    xx += 0;
+                } else {
+                    xx += dev/2;
+                }
+            }
+            if (xx < margin.left) {
+                xx = margin.left;
+            }
+            
+            return xx;
         })
-        .attr("width", (d, i, j) => {
-            let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
+        .attr("width", (d, i) => {
+            let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
+            if (k > 1 && i >= 0) {
+                const dev = get_dev(d);
+                width -= dev;
+                if (k===1) {
+                    width -= dev/2;
+                } else {
+                    width -= dev/2;
+                }
+            }
+            if (width < 0) {
+                width = 0;
+            }
+            
             return width;
         })
-        .attr("height", y.bandwidth() - 0.3)
-        // .attr("fill-opacity", (d) => {
-        //     return 0.33;
-        // })
+        .attr("height", y.bandwidth() - 1)
+        .attr("fill-opacity", (d) => {
+            return 0.7;
+        })
         .attr("fill", (d, i) => {
-            // return bubble_colors[k] + '80';
-            return color(d);
+            if (k === 0) {
+                return 'transparent';
+            } else {
+                return bubble_colors[k-1] + '80';
+            }
         })
         .append("title")
-        .text((d, i) => `${date(i)} \n Uncertainty: ${d}`);
+        .text((d, i) => `Uncertainty: ${format(d)}%`);
     }
-//    k = 1;
-//    svg.append("g")
-//         .selectAll("g")
-//         .data(chart_data.predictions)
-//         .join("g")
-//         .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
-//         .selectAll("rect")
-//         .data(d => d)
-//         .join("rect")
-//         .attr("fill-opacity", (d) => {
-//             return 0.33;
-//         })
-//         .attr("x", (d, i) => {
-//             return x(chart_data.dates[i]);
-//         })
-//         .attr("width", (d, i) => {
-//             let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
-//             return width;
-//         })
-//         .attr("height", y.bandwidth() - 0.3)
-//         .attr("fill", d => {
-//             return bubble_colors[k] + '80';
-//         });
 
-    // k = 2;
-    // svg.append("g")
-    //     .selectAll("g")
-    //     .data(chart_data.lower_values)
-    //     .join("g")
-    //     .attr("transform", (d, i) => `translate(0,${y(chart_data.names[i])})`)
-    //     .selectAll("rect")
-    //     .data(d => d)
-    //     .join("rect")
-    //     .attr("fill-opacity", (d) => {
-    //         return 0.33;
-    //     })
-    //     .attr("x", (d, i) => {
-    //         return x(chart_data.dates[i]);
-    //     })
-    //     .attr("width", (d, i) => {
-    //         let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 0.3;
-    //         return width+5;
-    //     })
-    //     .attr("height", y.bandwidth() - 0.3)
-    //     .attr("fill", d => {
-    //         return bubble_colors[k] + '80';
-    //     });
-            
-
-
-        function impact_transition() {
-                const ease = d3.easeLinear;
-                uncertainty_bar
-                .attr("width", (d, i) => {
-                    return 0;
-                })
-                .transition()             
-                .ease(ease)
-                .duration(5000)    
-                .attr("width", (d, i) => {
-                    return d;
-                })
-                // .transition()             
-                // .ease(ease)           
-                // .duration(2000)    
-                // .attr("width", (d, i) => {
-                //     return 0;
-                // })
-                .on("end", function() {
-                    // console.log('end')
-                    // impact_transition();
-                });
-        }
+    function get_dev(d) {
+        let dev = d*3/100;
+        return dev;
+    }
 
     return svg.node();
 
 }
-
 
 function draw_bubble_chart(data, params) {
     const {ex_indx, question_circle_mode, model='mlp', percents, circle_for, question_num} = params || {};
