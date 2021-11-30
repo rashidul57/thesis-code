@@ -5,6 +5,7 @@ let stream_blur_on = false;
 let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
 let country_list_show = false;
 let selected_countries = [];
+let show_polygon = true;
 
 window.onload = init;
 
@@ -30,14 +31,14 @@ async function init() {
                 const model_data = forecast_data[prop][country][model];
                 model_data['ranges'].forEach(item => {
                     [0, 1].forEach(indx => {
-                        item[indx] = Math.abs(Number(item[indx]));
+                        item[indx] = Math.abs(Number(item[indx])) || 0;
                     });
                 });
                 model_data['y'].forEach((val, indx) => {
-                    model_data['y'][indx] = Math.abs(Number(val));
+                    model_data['y'][indx] = Math.abs(Number(val)) || 0;
                 });
                 model_data['y_pred'].forEach((val, indx) => {
-                    model_data['y_pred'][indx] = Math.abs(Number(val));
+                    model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });
             });
         });
@@ -365,7 +366,7 @@ function refresh_container() {
         break;
 
         case 'Parallel Coords':
-        d3.selectAll(".models-item, .number-of-country, .country-select-by-name").style("display", "inline-block");
+        d3.selectAll(".models-item, .number-of-country, .country-select-by-name, .poly-show-hide").style("display", "inline-block");
         draw_parallel_coords();
         break;
 
@@ -433,6 +434,14 @@ function load_country_dropdown() {
         d3.select('.country-list-menu').style('display', 'none');
         country_list_show = false;
     });
+
+    d3.select('#chk-show-hide-poly')
+    .on("click", function(ev) {
+        show_polygon = !show_polygon;
+        show_hide_polygons();
+    });
+
+    
 }
 
 function reload_country_list() {

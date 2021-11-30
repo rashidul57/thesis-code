@@ -55,7 +55,7 @@ body.min-size .toolbar, body.min-size .container-box {
   padding-left: 5px;
   position: relative;
   display: grid;
-  grid-template-columns: calc(100% - 620px) 620px;
+  grid-template-columns: calc(100% - 594px) 594px;
 }
 .toolbar input, .toolbar select {
   border-width: 1px;
