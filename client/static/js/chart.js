@@ -682,7 +682,9 @@ function draw_parallel_coords() {
     for (let k = 0; k < upper_range.length; k++) {
         const perc_rec = {name: upper_range[k].name};
         props.forEach(prop => {
-            perc_rec[prop] = Math.abs(upper_range[k][prop] - lower_range[k][prop]) * 100/upper_range[k][prop];
+            const upper_val = upper_range[k][prop] || 0;
+            const lower_val = lower_range[k][prop] || 0;
+            perc_rec[prop] = upper_val > 0 ? (Math.abs(upper_val - lower_val) * 100/upper_val) : 0;
         });
         perc_uncerts.push(perc_rec);
     }
@@ -813,10 +815,11 @@ function draw_parallel_coords() {
         b_polygons.push(blue_lb_line_points.join(' ') + ' ' + blue_ub_line_points.reverse().join(' '));
     }
 
-    
     [r_polygons, g_polygons, b_polygons].forEach((polygon_data, k) => {
         draw_polys(polygon_data, k);
     });
+
+    show_hide_polygons();
     
 
     function draw_polys(polygon_data, k) {
@@ -835,25 +838,26 @@ function draw_parallel_coords() {
 
 }
 
+function show_hide_polygons() {
+    d3.selectAll('polygon').style('display', show_polygon ? 'inline': 'none');
+}
+
 function draw_usage_chart() {
     let data = [];
     const prop = 'new_cases';
     const top_countries = _.take(countries, 20);
-    let date_count;
     top_countries.forEach(country  => {
         const c_base = all_covid_data[country];
         const c_data = {name: country, iso_code: c_base[0].iso_code};
 
         const preds = forecast_data[prop][country][sel_model]['y_pred'];
-        const preds = forecast_data[prop][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
-        if (date_count) {
-            date_count = preds.length;
-        }
+
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
-            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/value;
+            const divider = _.max([ranges[0], ranges[1], value]);
+            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
             const row = Object.assign({date, uncertainty}, c_data);
             row[prop] = Number(value || 0);
             data.push(row);
@@ -863,8 +867,8 @@ function draw_usage_chart() {
     data = _.orderBy(data, [(item) => item.date], ['asc']);
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
-    const margin = ({top: 50, right: 20, bottom: 0, left: 50});
-    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent)) * 11;
+    const margin = ({top: 35, right: 20, bottom: 0, left: 50});
+    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
     const width = 954;
     formatCountry = (d) => {
         return d;
@@ -900,12 +904,10 @@ function draw_usage_chart() {
         return d3.scaleSequential([0, 100], d3.interpolateReds);
     }
 
-    const innerHeight = 1600;
-
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg')
-        .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
+        .attr("viewBox", [0, 10, width, height])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
@@ -916,30 +918,63 @@ function draw_usage_chart() {
         .call(yAxis);
 
     for (let k = 0; k < 3; k++) {
+        draw_layer(k);
+    }
+
+    function draw_layer(k) {
+
         svg.append("g")
         .selectAll("rect")
         .data(data)
         .join("rect")
         .attr("x", d => {
-            const ret = x(d.iso_code);
-            if (ret < margin.left) {
-                ret = margin.left;
+            let x_pos = x(d.iso_code);
+            const move = get_move(k, x.bandwidth(), d, 'x');
+            x_pos += move/2;
+            
+            if (x_pos < margin.left) {
+                x_pos = margin.left;
             }
-            return ret;
+            if (x_pos < 0) {
+                x_pos = 0;
+            }
+            return x_pos;
         })
         .attr("y", d => {
-            let ret = y(moment(new Date(d.date)).format('L')) || 0;
-            if (ret < margin.top) {
-                ret = margin.top;
+            let yy = y(moment(new Date(d.date)).format('L')) || 0;
+            if (yy < 0) {
+                yy = 0;
             }
-            return ret;
+            return yy;
         })
-        .attr("width", x.bandwidth() - 2)
-        .attr("height", y.bandwidth() - 2)
+        .attr("width", (d) => {
+            let width = x.bandwidth() - 2;
+            const move = get_move(k, x.bandwidth(), d, 'width');
+            width -= move/2;
+            if (width < 0) {
+                width = 0;
+            }
+            return width;
+        })
+        .attr("height", () => {
+            let h = y.bandwidth() - 2;
+            if (h < 0) {
+                h = 0;
+            }
+            return h;
+        })
         .attr('fill-opacity', 0.33)
         .attr("fill", bubble_colors[k])
         .append("title")
-        .text(d => `New: ${formatUsage(d.new_cases)}`);
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty)}%`);
+    }
+
+    function get_move(k, cell_width, d, attr) {
+        let move = 0;
+        if (k === 1 || (attr === 'width' && k === 2)) {
+            move = cell_width*d.uncertainty/100;
+        }
+        return move;
     }
 
 }
@@ -1010,7 +1045,7 @@ function draw_impact_chart(pred_data, model='mlp') {
         year
     };
 
-    const margin = {top: 20, right: 1, bottom: 40, left: 60};
+    const margin = {top: 20, right: 1, bottom: 40, left: 35};
     const height = 5;
     const width = 1200;
     const cell_width = 4;
