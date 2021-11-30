@@ -781,14 +781,12 @@ function draw_parallel_coords() {
     for (let k = 0; k < mid; k++) {
         const lb_line = dashed_lines[k];
         const ub_line = dashed_lines[mid + k];
-        // const lb_line_points = lb_line.getAttribute('d').replace('M', '').replace(/L/g, ' ')
-        // const ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L').reverse().join(' ');
         let lb_line_points = lb_line.getAttribute('d').replace('M', '').split('L')
         let ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L');
         
+        // copy points for green and blue colors
         const green_lb_line_points = _.cloneDeep(lb_line_points);
         const green_ub_line_points = _.cloneDeep(ub_line_points);
-
         const blue_lb_line_points = _.cloneDeep(lb_line_points);
         const blue_ub_line_points = _.cloneDeep(ub_line_points);
 
@@ -815,23 +813,24 @@ function draw_parallel_coords() {
         b_polygons.push(blue_lb_line_points.join(' ') + ' ' + blue_ub_line_points.reverse().join(' '));
     }
 
+    
     [r_polygons, g_polygons, b_polygons].forEach((polygon_data, k) => {
         draw_polys(polygon_data, k);
     });
     
 
     function draw_polys(polygon_data, k) {
-        const poly = svg.selectAll('polygon-'+ k)
+        svg.selectAll('polygon-'+ k)
         .data(polygon_data)
         .enter()
         .append('polygon')
         .attr('points', d=> d)
         .attr('fill-opacity', 0.33)
-        .attr('fill', bubble_colors[k]);
-        // if (k === 2) {
-        //     poly.append('title')
-        //     .text(country);
-        // }
+        .attr('fill', bubble_colors[k])
+        .append('title')
+        .text((d, i) => {
+            return perc_uncerts[i].name;
+        });
     }
 
 }
@@ -845,12 +844,13 @@ function draw_usage_chart() {
         const c_base = all_covid_data[country];
         const c_data = {name: country, iso_code: c_base[0].iso_code};
 
-        const dated_preds = forecast_data[prop][country][sel_model]['y_pred'];
+        const preds = forecast_data[prop][country][sel_model]['y_pred'];
+        const preds = forecast_data[prop][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
         if (date_count) {
-            date_count = dated_preds.length;
+            date_count = preds.length;
         }
-        dated_preds.forEach((value, i) => {
+        preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const uncertainty = Math.abs(ranges[1]-ranges[0])*100/value;
@@ -863,8 +863,8 @@ function draw_usage_chart() {
     data = _.orderBy(data, [(item) => item.date], ['asc']);
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
-    const margin = ({top: 30, right: 20, bottom: 0, left: 50});
-    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 10;
+    const margin = ({top: 50, right: 20, bottom: 0, left: 50});
+    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent)) * 11;
     const width = 954;
     formatCountry = (d) => {
         return d;
@@ -915,31 +915,33 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    svg.append("g")
-    .selectAll("rect")
-    .data(data)
-    .join("rect")
-      .attr("x", d => {
-          const ret = x(d.iso_code);
-          return ret;
-      })
-      .attr("y", d => {
-          let ret = y(moment(new Date(d.date)).format('L')) || 0;
-          if (ret < 30) {
-                ret = 30;
+    for (let k = 0; k < 3; k++) {
+        svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr("x", d => {
+            const ret = x(d.iso_code);
+            if (ret < margin.left) {
+                ret = margin.left;
             }
-          return ret;
-      })
-      .attr("width", x.bandwidth() - 1)
-      .attr("height", y.bandwidth() - 1)
-      .attr("fill", d => {
-          const ret = color()(d.uncertainty);
-          return ret;
-      })
-      .append("title")
-      .text(d => `New: ${formatUsage(d.new_cases)}`);
+            return ret;
+        })
+        .attr("y", d => {
+            let ret = y(moment(new Date(d.date)).format('L')) || 0;
+            if (ret < margin.top) {
+                ret = margin.top;
+            }
+            return ret;
+        })
+        .attr("width", x.bandwidth() - 2)
+        .attr("height", y.bandwidth() - 2)
+        .attr('fill-opacity', 0.33)
+        .attr("fill", bubble_colors[k])
+        .append("title")
+        .text(d => `New: ${formatUsage(d.new_cases)}`);
+    }
 
-    return svg.node();
 }
 
 function draw_impact_chart(pred_data, model='mlp') {
