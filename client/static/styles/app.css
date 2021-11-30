@@ -80,7 +80,7 @@ body.min-size .toolbar, body.min-size .container-box {
 .toolbar .country-select-by-name .country-list-menu {
   display: none;
   position: absolute;
-  height: 300px;
+  height: 400px;
   overflow: hidden;
   z-index: 99;
   background: #efefef;
@@ -88,9 +88,14 @@ body.min-size .toolbar, body.min-size .container-box {
   margin-top: 21px;
   border-radius: 5px;
 }
-.toolbar .country-select-by-name .country-list-menu .list-body {
+.toolbar .country-select-by-name .country-list-menu .list-body-unselected {
   overflow: auto;
-  height: calc(100% - 30px);
+  height: calc(100% - 152px);
+}
+.toolbar .country-select-by-name .country-list-menu .list-body-selected {
+  background: #bedff9;
+  max-height: 125px;
+  overflow-y: auto;
 }
 .toolbar .country-select-by-name .country-list-menu .row-item {
   border-bottom: 1px solid #bdbdbd;
@@ -98,8 +103,11 @@ body.min-size .toolbar, body.min-size .container-box {
 }
 .toolbar .country-select-by-name .country-list-menu .row-item.button-row {
   display: grid;
-  grid-template-columns: 50% 50%;
+  grid-template-columns: calc(50% - 6px) calc(50% - 6px);
   border: 0;
+  position: absolute;
+  bottom: 5px;
+  width: 100%;
 }
 .toolbar .right-items .control-container {
   position: relative;

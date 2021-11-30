@@ -422,36 +422,56 @@ function show_question(question_num) {
 }
 
 function load_country_dropdown() {
-    let country_str_arr = [];
-    const sorted_countries = _.sortBy(countries);
-    sorted_countries.forEach(country => {
-        const selected = selected_countries.indexOf(country) > -1 ? 'checked' : '';
-        country_str_arr.push(`<div class='row-item'>
-        <input type="checkbox" id="by-${country}" ${selected}>
-        <label for="by-${country}">${country}</label>
-        </div>`)
-    });
-
-    document.getElementsByClassName('list-body')[0].innerHTML = country_str_arr.join('');
+    reload_country_list();
 
     d3.selectAll('.button-row input')
     .on("click", function(ev) {
         if (ev.target.defaultValue === "Apply") {
-            selected_countries = [];
-            const checkboxes = d3.selectAll('.list-body .row-item input').nodes();
-            checkboxes.forEach(checkbox => {
-                const is_checked = d3.select(checkbox).property('checked');
-                if (is_checked) {
-                    const name = checkbox.getAttribute('id').replace('by-', '');
-                    selected_countries.push(name);
-                }
-            });
             sel_country_num = 0;
             refresh_container();
         }
         d3.select('.country-list-menu').style('display', 'none');
         country_list_show = false;
     });
+}
+
+function reload_country_list() {
+    let country_str_arr = [];
+    const sorted_countries = _.sortBy(countries);
+    sorted_countries.forEach(country => {
+        if (selected_countries.indexOf(country) === -1) {
+            country_str_arr.push(get_country_row(country, false));
+        }
+    });
+    document.getElementsByClassName('list-body-unselected')[0].innerHTML = country_str_arr.join('');
+
+    country_str_arr = [];
+    selected_countries.forEach(country => {
+        country_str_arr.push(get_country_row(country, true));
+    });
+    document.getElementsByClassName('list-body-selected')[0].innerHTML = country_str_arr.join('');
+
+    d3.selectAll('.row-item input[type="checkbox"]')
+    .on("click", function(ev) {
+        const el = d3.select(this);
+        const is_selected = el.property('checked');
+        const sel_country = el.attr('id').replace('by-', '');
+        const inside_selected = selected_countries.indexOf(sel_country) > -1;
+        if (is_selected && !inside_selected) {
+            selected_countries.push(sel_country);
+        } else {
+            selected_countries = selected_countries.filter(country => sel_country !== country);
+        }
+        selected_countries = _.sortBy(selected_countries);
+        reload_country_list();
+    });
+}
+
+function get_country_row(country, selected) {
+    return `<div class='row-item'>
+    <input type="checkbox" id="by-${country}" ${selected}>
+    <label for="by-${country}">${country}</label>
+    </div>`;
 }
 
 function hide_items() {
