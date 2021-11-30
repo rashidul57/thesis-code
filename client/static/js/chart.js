@@ -663,12 +663,12 @@ function draw_parallel_coords() {
             if (!forecast_data[prop][country]) {
                 return;
             }
-            const dated_preds = forecast_data[prop][country][sel_model]['y_pred'];
-            dated_preds.forEach(value => {
+            const preds = forecast_data[prop][country][sel_model]['y_pred'];
+            preds.forEach(value => {
                 pred_row[prop] = (pred_row[prop] || 0)  + Number(value || 0);
             });
-            const dated_ranges = forecast_data[prop][country][sel_model]['ranges'];
-            dated_ranges.forEach(range => {
+            const ranges = forecast_data[prop][country][sel_model]['ranges'];
+            ranges.forEach(range => {
                 lr_row[prop] = (lr_row[prop] || 0)  + range[0];
                 ur_row[prop] = (ur_row[prop] || 0)  + range[1];
             });
@@ -677,6 +677,15 @@ function draw_parallel_coords() {
         lower_range.push(lr_row);
         upper_range.push(ur_row);
     });
+
+    const perc_uncerts = [];
+    for (let k = 0; k < upper_range.length; k++) {
+        const perc_rec = {name: upper_range[k].name};
+        props.forEach(prop => {
+            perc_rec[prop] = Math.abs(upper_range[k][prop] - lower_range[k][prop]) * 100/upper_range[k][prop];
+        });
+        perc_uncerts.push(perc_rec);
+    }
 
     const width = 1000;
     const height = keys.length * 120;
@@ -763,40 +772,68 @@ function draw_parallel_coords() {
         .attr("stroke-linejoin", "round")
         .attr("stroke", "white"));
 
+    // Draw polygons
     const dashed_lines = d3.selectAll('.rate-svg g.dashed-line path').nodes();
     const mid = dashed_lines.length/2;
-    const polygons = [];
-    const colors = [];
+    const r_polygons = [];
+    const g_polygons = [];
+    const b_polygons = [];
     for (let k = 0; k < mid; k++) {
         const lb_line = dashed_lines[k];
         const ub_line = dashed_lines[mid + k];
-        const lb_line_points = lb_line.getAttribute('d').replace('M', '').replace(/L/g, ' ')
-        const ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L').reverse().join(' ');
-        polygons.push(lb_line_points + ' ' + ub_line_points);
-        colors.push(lb_line.getAttribute('stroke'))
+        // const lb_line_points = lb_line.getAttribute('d').replace('M', '').replace(/L/g, ' ')
+        // const ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L').reverse().join(' ');
+        let lb_line_points = lb_line.getAttribute('d').replace('M', '').split('L')
+        let ub_line_points = ub_line.getAttribute('d').replace('M', '').split('L');
+        
+        const green_lb_line_points = _.cloneDeep(lb_line_points);
+        const green_ub_line_points = _.cloneDeep(ub_line_points);
+
+        const blue_lb_line_points = _.cloneDeep(lb_line_points);
+        const blue_ub_line_points = _.cloneDeep(ub_line_points);
+
+        r_polygons.push(lb_line_points.join(' ') + ' ' + ub_line_points.reverse().join(' '));
+        
+        // add percentage uncertainty on lower bound-x
+        for (let i = 0; i < green_lb_line_points.length; i++) {
+            const lo_points = green_lb_line_points[i].split(',');
+            const l_point_x = Number(lo_points[0]);
+            const change = (l_point_x * perc_uncerts[k][props[i]])/100;
+            lo_points[0] = l_point_x + change/2;
+            green_lb_line_points[i] = lo_points.join(',');
+        }
+        g_polygons.push(green_lb_line_points.join(' ') + ' ' + green_ub_line_points.reverse().join(' '));
+
+        // subtract percentage uncertainty from upper bound-x
+        for (let i = 0; i < lb_line_points.length; i++) {
+            const hi_points = blue_ub_line_points[i].split(',');
+            const r_point_x = Number(hi_points[0]);
+            const change = (r_point_x * perc_uncerts[k][props[i]])/(100 * 2);
+            hi_points[0] = r_point_x - change/2;
+            blue_ub_line_points[i] = hi_points.join(',');
+        }
+        b_polygons.push(blue_lb_line_points.join(' ') + ' ' + blue_ub_line_points.reverse().join(' '));
     }
-    svg.selectAll('polygon')
-        .data(polygons)
+
+    [r_polygons, g_polygons, b_polygons].forEach((polygon_data, k) => {
+        draw_polys(polygon_data, k);
+    });
+    
+
+    function draw_polys(polygon_data, k) {
+        const poly = svg.selectAll('polygon-'+ k)
+        .data(polygon_data)
         .enter()
         .append('polygon')
         .attr('points', d=> d)
         .attr('fill-opacity', 0.33)
-        .attr('fill', (d, i) => {
-            return colors[i];
-        });
+        .attr('fill', bubble_colors[k]);
+        // if (k === 2) {
+        //     poly.append('title')
+        //     .text(country);
+        // }
+    }
 
-//         vis.selectAll("polygon")
-//     .data([poly])
-//   .enter().append("polygon")
-//     .attr("points",function(d) { 
-//         return d.map(function(d) {
-//             return [scaleX(d.x),scaleY(d.y)].join(",");
-//         }).join(" ");
-//     })
-//     .attr("stroke","black")
-//     .attr("stroke-width",2);
-    // debugger
-    // return svg.node();
 }
 
 function draw_usage_chart() {
