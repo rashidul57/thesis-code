@@ -1048,7 +1048,6 @@ function draw_impact_chart(pred_data, model='mlp') {
     const margin = {top: 20, right: 1, bottom: 40, left: 35};
     const height = 5;
     const width = 1200;
-    const cell_width = 4;
     const innerHeight = height * chart_data.names.length;
     const date = (i) => {
         return moment(start_date).add('days', i).format('ll');
@@ -1115,7 +1114,8 @@ function draw_impact_chart(pred_data, model='mlp') {
     
     svg.append("g")
         .call(yAxis);
-    for (let k = 0; k < 4; k++) {
+
+    for (let k = 0; k < 3; k++) {
         svg.append("g")
         .selectAll("g")
         .data(chart_data.uncertainties)
@@ -1125,14 +1125,10 @@ function draw_impact_chart(pred_data, model='mlp') {
         .data(d => d)
         .join("rect")
         .attr("x", (d, i) => {
+            const dev = get_dev(x, d, i);
             let xx = x(chart_data.dates[i]);
-            if (k > 1 && i >= 0) {
-                const dev = get_dev(d);
-                if (k===2) {
-                    xx += 0;
-                } else {
-                    xx += dev/2;
-                }
+            if (k===1) {
+                xx += dev/2;
             }
             if (xx < margin.left) {
                 xx = margin.left;
@@ -1142,15 +1138,11 @@ function draw_impact_chart(pred_data, model='mlp') {
         })
         .attr("width", (d, i) => {
             let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
-            if (k > 1 && i >= 0) {
-                const dev = get_dev(d);
-                width -= dev;
-                if (k===1) {
-                    width -= dev/2;
-                } else {
-                    width -= dev/2;
-                }
+            const dev = get_dev(x, d, i);
+            if (k > 0) {
+                width -= dev/2;
             }
+
             if (width < 0) {
                 width = 0;
             }
@@ -1159,21 +1151,18 @@ function draw_impact_chart(pred_data, model='mlp') {
         })
         .attr("height", y.bandwidth() - 1)
         .attr("fill-opacity", (d) => {
-            return 0.7;
+            return 0.33;
         })
         .attr("fill", (d, i) => {
-            if (k === 0) {
-                return 'transparent';
-            } else {
-                return bubble_colors[k-1] + '80';
-            }
+            return bubble_colors[k];
         })
         .append("title")
         .text((d, i) => `Uncertainty: ${format(d)}%`);
     }
 
-    function get_dev(d) {
-        let dev = d*3/100;
+    function get_dev(x, d, i) {
+        let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
+        let dev = d*width/100;
         return dev;
     }
 
