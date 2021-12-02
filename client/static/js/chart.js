@@ -519,7 +519,6 @@ function draw_horizon_chart(pred_data, model='mlp') {
     
     const series = [];
     countries.forEach(country => {
-        // let actuals = [];
         let predictions = [];
         let lower_ranges = [];
         let upper_ranges = [];
@@ -845,20 +844,22 @@ function show_hide_polygons() {
 function draw_usage_chart() {
     let data = [];
     const prop = 'new_cases';
-    const top_countries = _.take(countries, 20);
+    const top_countries = _.take(countries, 35);
     top_countries.forEach(country  => {
         const c_base = all_covid_data[country];
         const c_data = {name: country, iso_code: c_base[0].iso_code};
 
-        const preds = forecast_data[prop][country][sel_model]['y_pred'];
+        let preds = forecast_data[prop][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
+
+        // preds = _.take(preds, 15)
 
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const divider = _.max([ranges[0], ranges[1], value]);
             const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
-            const row = Object.assign({date, uncertainty}, c_data);
+            const row = Object.assign({date, uncertainty: uncertainty/3}, c_data);
             row[prop] = Number(value || 0);
             data.push(row);
         });
@@ -922,61 +923,65 @@ function draw_usage_chart() {
     }
 
     function draw_layer(k) {
-
+        console.log(k, '.......')
         svg.append("g")
         .selectAll("rect")
         .data(data)
         .join("rect")
-        .attr("x", d => {
-            let x_pos = x(d.iso_code);
-            const move = get_move(k, x.bandwidth(), d, 'x');
-            x_pos += move/2;
-            
-            if (x_pos < margin.left) {
-                x_pos = margin.left;
-            }
-            if (x_pos < 0) {
-                x_pos = 0;
+        .attr("x", (d, i) => {
+            let x_pos = x_base = x(d.iso_code);
+            let width = x.bandwidth() - 2;
+
+            const change = get_rect_change('x', k, d.uncertainty*width/100);
+            x_pos += change;
+            // x_pos = x_pos + (change < 0 ? change : (-change));
+
+            if (x_pos < x_base) {
+                x_pos = x_base;
             }
             return x_pos;
         })
-        .attr("y", d => {
-            let yy = y(moment(new Date(d.date)).format('L')) || 0;
-            if (yy < 0) {
-                yy = 0;
-            }
-            return yy;
-        })
-        .attr("width", (d) => {
-            let width = x.bandwidth() - 2;
-            const move = get_move(k, x.bandwidth(), d, 'width');
-            width -= move/2;
-            if (width < 0) {
-                width = 0;
+        .attr("width", (d, i) => {
+            let width = base_width = x.bandwidth() - 2;
+            const change = get_rect_change('x', k, d.uncertainty*width/100);
+            // width -= change;
+            // width = width + (change < 0 ? change : (-change));
+            width = width - Math.abs(change);
+            // if (width < 0) {
+            //     width = 0;
+            // }
+            if (width > base_width) {
+                width = base_width;
             }
             return width;
         })
-        .attr("height", () => {
-            let h = y.bandwidth() - 2;
-            if (h < 0) {
-                h = 0;
+        .attr("y", (d, i) => {
+            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+            let height = y.bandwidth() - 2;
+            const change = get_rect_change('y', k, d.uncertainty*height/100);
+            y_pos += change;
+
+            if (y_pos < base_y) {
+                y_pos = base_y;
             }
-            return h;
+
+            return y_pos;
+        })
+        .attr("height", (d, i) => {
+            let height = base_height = y.bandwidth() - 2;
+            const change = get_rect_change('y', k, d.uncertainty*height/100);
+            height = height - Math.abs(change);
+
+            if (height > base_height) {
+                height = base_height;
+            }
+            return height;
         })
         .attr('fill-opacity', 0.33)
         .attr("fill", bubble_colors[k])
         .append("title")
         .text(d => `Uncertainty: ${formatUsage(d.uncertainty)}%`);
     }
-
-    function get_move(k, cell_width, d, attr) {
-        let move = 0;
-        if (k === 1 || (attr === 'width' && k === 2)) {
-            move = cell_width*d.uncertainty/100;
-        }
-        return move;
-    }
-
 }
 
 function draw_impact_chart(pred_data, model='mlp') {
@@ -1008,6 +1013,7 @@ function draw_impact_chart(pred_data, model='mlp') {
     const lower_values = [];
     const upper_values = [];
     const uncertainties = [];
+
     countries.forEach(country => {
         const cp_values = [];
         const cl_values = [];
@@ -1025,7 +1031,7 @@ function draw_impact_chart(pred_data, model='mlp') {
             cp_values.push(pred);
             cl_values.push(lower_value);
             cu_values.push(upper_value);
-            c_uncerts.push(perc_unc);
+            c_uncerts.push(perc_unc/2);
         }
         predictions.push(cp_values);
         lower_values.push(cl_values);
@@ -1047,7 +1053,7 @@ function draw_impact_chart(pred_data, model='mlp') {
 
     const margin = {top: 20, right: 1, bottom: 40, left: 35};
     const height = 5;
-    const width = 1200;
+    const width = chart_data.dates.length * 6 + margin.left + margin.right;
     const innerHeight = height * chart_data.names.length;
     const date = (i) => {
         return moment(start_date).add('days', i).format('ll');
@@ -1094,6 +1100,7 @@ function draw_impact_chart(pred_data, model='mlp') {
       .domain(chart_data.names)
       .rangeRound([margin.top, margin.top + innerHeight]);
 
+    const date_count = chart_data.dates.length;
     const min_date = moment(d3.min(chart_data.dates)).toDate();
     const max_date = moment(d3.max(chart_data.dates)).add('days', 1).toDate();
     const x = d3.scaleLinear()
@@ -1111,11 +1118,12 @@ function draw_impact_chart(pred_data, model='mlp') {
     svg.append("g")
         .call(xAxis);
 
-    
     svg.append("g")
         .call(yAxis);
 
+        let widths = [];
     for (let k = 0; k < 3; k++) {
+        let row_count = 0;
         svg.append("g")
         .selectAll("g")
         .data(chart_data.uncertainties)
@@ -1124,32 +1132,88 @@ function draw_impact_chart(pred_data, model='mlp') {
         .selectAll("rect")
         .data(d => d)
         .join("rect")
-        .attr("x", (d, i) => {
-            const dev = get_dev(x, d, i);
-            let xx = x(chart_data.dates[i]);
-            if (k===1) {
-                xx += dev/2;
-            }
-            if (xx < margin.left) {
-                xx = margin.left;
-            }
+        // .attr("x", (d, i) => {
+        //     const dev = get_dev(x, d, i);
+        //     let xx = x(chart_data.dates[i]);
+        //     if (k===1) {
+        //         xx += dev/2;
+        //     }
+        //     if (xx < margin.left) {
+        //         xx = margin.left;
+        //     }
             
-            return xx;
+        //     return xx;
+        // })
+        // .attr("width", (d, i) => {
+        //     let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
+        //     const dev = get_dev(x, d, i);
+        //     if (k > 0) {
+        //         width -= dev/2;
+        //     }
+
+        //     if (width < 0) {
+        //         width = 0;
+        //     }
+            
+        //     return width;
+        // })
+        // .attr("height", y.bandwidth() - 1)
+
+        .attr("x", (d, i) => {
+            const dt_indx = i%date_count;
+            let x_pos = x_base = x(chart_data.dates[dt_indx]);
+            let width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
+            // let width = x.bandwidth() - 2;
+
+            const change = get_rect_change('x', k, d*width/100);
+            x_pos += change;
+            // x_pos = x_pos + (change < 0 ? change : (-change));
+
+            if (x_pos < x_base) {
+                x_pos = x_base;
+            }
+            return x_pos;
         })
         .attr("width", (d, i) => {
-            let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
-            const dev = get_dev(x, d, i);
-            if (k > 0) {
-                width -= dev/2;
+            const dt_indx = i%date_count;
+            // let width = base_width = x.bandwidth() - 2;
+            let width = base_width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
+            widths.push(width);
+            widths = _.uniq(widths)
+            const change = get_rect_change('x', k, d*width/100);
+            // width -= change;
+            // width = width + (change < 0 ? change : (-change));
+            width = width - Math.abs(change);
+            // if (width < 0) {
+            //     width = 0;
+            // }
+            if (width > base_width) {
+                width = base_width;
             }
-
-            if (width < 0) {
-                width = 0;
-            }
-            
             return width;
         })
-        .attr("height", y.bandwidth() - 1)
+        .attr("y", (d, i) => {
+            const indx = (i % row_count === 0) ? (row_count++) : row_count;
+            let y_pos = base_y = y(chart_data.names[indx]) - margin.top; //y(moment(new Date(d.date)).format('L')) || 0;
+            let height = y.bandwidth() - 2;
+            const change = get_rect_change('y', k, d*height/100);
+            y_pos += change;
+
+            if (y_pos < base_y) {
+                y_pos = base_y;
+            }
+            // row_count++;
+            return y_pos;
+        })
+        .attr("height", (d, i) => {
+            let height = base_height = y.bandwidth() - 1;
+            const change = get_rect_change('y', k, d*height/100);
+            height = height - Math.abs(change);
+            if (height > base_height) {
+                height = base_height;
+            }
+            return height;
+        })
         .attr("fill-opacity", (d) => {
             return 0.33;
         })
@@ -1160,14 +1224,40 @@ function draw_impact_chart(pred_data, model='mlp') {
         .text((d, i) => `Uncertainty: ${format(d)}%`);
     }
 
-    function get_dev(x, d, i) {
-        let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
-        let dev = d*width/100;
-        return dev;
+    setTimeout(()=> {
+        console.log(widths)
+    }, 5000);
+
+}
+
+function get_rect_change(axis, rgb_indx, uncertainty) {
+    let change;
+    if (axis === 'x') {
+        switch (rgb_indx) {
+            case 0:
+            change = 0;
+            break;
+            case 1:
+            change = uncertainty * (-Math.sqrt(3)/2);
+            break;
+            case 2:
+            change = uncertainty * (Math.sqrt(3)/2);
+            break;
+        }
+    } else {
+        switch (rgb_indx) {
+            case 0:
+            change = uncertainty;
+            break;
+            case 1:
+            change = uncertainty * (-1)/2;
+            break;
+            case 2:
+            change = uncertainty * (-1)/2;
+            break;
+        }
     }
-
-    return svg.node();
-
+    return change;
 }
 
 function draw_bubble_chart(data, params) {
@@ -1451,37 +1541,37 @@ function draw_bubble_chart(data, params) {
                 if (question_circle_mode === 'ca-static') {
                     new_circle
                     .attr("cx", d => {
-                        return get_coord('x', k, d.data.deviation, 0, true);
+                        return get_circle_coord('x', k, d.data.deviation, 0, true);
                     })
                     .attr("cy", d => {
-                        return get_coord('y', k, d.data.deviation, 0, true);
+                        return get_circle_coord('y', k, d.data.deviation, 0, true);
                     });
                 } else {
                     const ease = d3.easeLinear;
                     new_circle
                     .attr("cx", d => {
-                        return get_coord('x', k, d.data.deviation, 0, false);
+                        return get_circle_coord('x', k, d.data.deviation, 0, false);
                     })
                     .attr("cy", d => {
-                        return get_coord('y', k, d.data.deviation, 0, false);
+                        return get_circle_coord('y', k, d.data.deviation, 0, false);
                     })
                     .transition()             
                     .ease(ease)
                     .duration(2000)    
                     .attr("cx", d => {
-                        return get_coord('x', k, d.data.deviation, 0, true);
+                        return get_circle_coord('x', k, d.data.deviation, 0, true);
                     })
                     .attr("cy", d => {
-                        return get_coord('y', k, d.data.deviation, 0, true);
+                        return get_circle_coord('y', k, d.data.deviation, 0, true);
                     })
                     .transition()             
                     .ease(ease)           
                     .duration(2000)    
                     .attr("cx", d => {
-                        return get_coord('x', k, d.data.deviation, 0, false);
+                        return get_circle_coord('x', k, d.data.deviation, 0, false);
                     })
                     .attr("cy", d => {
-                        return get_coord('y', k, d.data.deviation, 0, false);
+                        return get_circle_coord('y', k, d.data.deviation, 0, false);
                     })
                     .on("end", function() {
                         do_transition();
@@ -1677,45 +1767,44 @@ function draw_percentages(leaves) {
                 circle
                 .attr('cx', () => {
                     let x = 50 + i * 80;
-                    return get_coord('x', k, cur_dev, x, false);
+                    return get_circle_coord('x', k, cur_dev, x, false);
                 })
                 .attr('cy', () => {
-                    return get_coord('y', k, cur_dev, y, false);
+                    return get_circle_coord('y', k, cur_dev, y, false);
                 })
                 .transition()             
                 .ease(ease)
                 .duration(2000)    
                 .attr('cx', () => {
                     let x = 50 + i * 80;
-                    return get_coord('x', k, cur_dev, x, true);
+                    return get_circle_coord('x', k, cur_dev, x, true);
                 })
                 .attr('cy', () => {
-                    return get_coord('y', k, cur_dev, y, true);
+                    return get_circle_coord('y', k, cur_dev, y, true);
                 })
                 .transition()             
                 .ease(ease)           
                 .duration(2000)    
                 .attr('cx', () => {
                     let x = 50 + i * 80;
-                    return get_coord('x', k, cur_dev, x, false);
+                    return get_circle_coord('x', k, cur_dev, x, false);
                 })
                 .attr('cy', () => {
-                    return get_coord('y', k, cur_dev, y, false);
+                    return get_circle_coord('y', k, cur_dev, y, false);
                 })
                 .on("end", function() {
                     repeat();
                 });
             })
         }
-
     }
 }
 
-function get_coord(axis, rgb_val, deviation, init_val, show_aber) {
+function get_circle_coord(axis, rgb_indx, deviation, init_val, show_aber) {
     let coord;
     let r = show_aber ? deviation : 0;
     if (axis === 'x') {
-        switch (rgb_val) {
+        switch (rgb_indx) {
             case 0:
             coord = init_val;
             break;
@@ -1727,7 +1816,7 @@ function get_coord(axis, rgb_val, deviation, init_val, show_aber) {
             break;
         }
     } else {
-        switch (rgb_val) {
+        switch (rgb_indx) {
             case 0:
             coord = init_val + r;
             break;
@@ -1909,8 +1998,6 @@ function get_segment_class(ev, show_log) {
     }
     return cls;
 }
-
-
 
 function toggle_go() {
     const opacity = (bubble_selected.length > 0 || bubble_removed.length > 0 || global_streams.length > 0) ? 1 : 0.3;
