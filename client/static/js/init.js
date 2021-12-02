@@ -70,7 +70,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    const chart_types = ['Questionnaire', 'Bubble Chart', 'Parallel Coords', 'Impact Chart', 'Horizon Chart', 'Usage Chart'];
+    const chart_types = ['Questionnaire', 'Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart'];
     sel_chart_type = chart_types[0];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
