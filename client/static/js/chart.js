@@ -376,7 +376,6 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             return fill_code;
         });
     }
-    // console.log(mode);
 
     stream
     .attr("d", area)
@@ -923,7 +922,6 @@ function draw_usage_chart() {
     }
 
     function draw_layer(k) {
-        console.log(k, '.......')
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -1121,7 +1119,6 @@ function draw_impact_chart(pred_data, model='mlp') {
     svg.append("g")
         .call(yAxis);
 
-        let widths = [];
     for (let k = 0; k < 3; k++) {
         let row_count = 0;
         svg.append("g")
@@ -1132,42 +1129,13 @@ function draw_impact_chart(pred_data, model='mlp') {
         .selectAll("rect")
         .data(d => d)
         .join("rect")
-        // .attr("x", (d, i) => {
-        //     const dev = get_dev(x, d, i);
-        //     let xx = x(chart_data.dates[i]);
-        //     if (k===1) {
-        //         xx += dev/2;
-        //     }
-        //     if (xx < margin.left) {
-        //         xx = margin.left;
-        //     }
-            
-        //     return xx;
-        // })
-        // .attr("width", (d, i) => {
-        //     let width = x(moment(chart_data.dates[i]).add('days', 1).toDate()) - x(chart_data.dates[i]) - 1;
-        //     const dev = get_dev(x, d, i);
-        //     if (k > 0) {
-        //         width -= dev/2;
-        //     }
-
-        //     if (width < 0) {
-        //         width = 0;
-        //     }
-            
-        //     return width;
-        // })
-        // .attr("height", y.bandwidth() - 1)
-
         .attr("x", (d, i) => {
             const dt_indx = i%date_count;
             let x_pos = x_base = x(chart_data.dates[dt_indx]);
             let width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
-            // let width = x.bandwidth() - 2;
 
             const change = get_rect_change('x', k, d*width/100);
             x_pos += change;
-            // x_pos = x_pos + (change < 0 ? change : (-change));
 
             if (x_pos < x_base) {
                 x_pos = x_base;
@@ -1176,17 +1144,9 @@ function draw_impact_chart(pred_data, model='mlp') {
         })
         .attr("width", (d, i) => {
             const dt_indx = i%date_count;
-            // let width = base_width = x.bandwidth() - 2;
             let width = base_width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
-            widths.push(width);
-            widths = _.uniq(widths)
             const change = get_rect_change('x', k, d*width/100);
-            // width -= change;
-            // width = width + (change < 0 ? change : (-change));
             width = width - Math.abs(change);
-            // if (width < 0) {
-            //     width = 0;
-            // }
             if (width > base_width) {
                 width = base_width;
             }
@@ -1202,7 +1162,7 @@ function draw_impact_chart(pred_data, model='mlp') {
             if (y_pos < base_y) {
                 y_pos = base_y;
             }
-            // row_count++;
+
             return y_pos;
         })
         .attr("height", (d, i) => {
@@ -1223,10 +1183,6 @@ function draw_impact_chart(pred_data, model='mlp') {
         .append("title")
         .text((d, i) => `Uncertainty: ${format(d)}%`);
     }
-
-    setTimeout(()=> {
-        console.log(widths)
-    }, 5000);
 
 }
 
