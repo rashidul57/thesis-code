@@ -8,6 +8,9 @@ https://machinelearningmastery.com/how-to-develop-deep-learning-models-for-univa
 https://machinelearningmastery.com/convert-time-series-supervised-learning-problem-python/
 https://machinelearningmastery.com/prediction-intervals-for-deep-learning-neural-networks/
 https://machinelearningmastery.com/time-series-forecasting-with-prophet-in-python/
+https://machinelearningmastery.com/how-to-develop-multilayer-perceptron-models-for-time-series-forecasting/
+
+
 
 Setup:
 1. npm install -g sass
