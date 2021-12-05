@@ -198,6 +198,7 @@ function load_control_data() {
         if (sel_chart_type === "Stream Graphs") {
             draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
         } else {
+            set_color_mode();
             draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
         }
     });
@@ -249,7 +250,7 @@ function load_control_data() {
                 break;
             case 'global-streams':
                 global_streams = [];
-                d3.select('.toggle-texture').attr('mode', 'color').html('Texture Stream');
+                set_color_mode();
                 toggle_cross('.' + control_mode + ' .cross', global_streams.length);
                 break;
         }
@@ -339,6 +340,10 @@ function load_control_data() {
 
     // initial load
     refresh_container();
+}
+
+function set_color_mode() {
+    d3.select('.toggle-texture').attr('mode', 'color').html('Texture Stream');
 }
 
 function refresh_container() {
