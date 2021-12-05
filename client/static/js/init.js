@@ -40,6 +40,9 @@ async function init() {
                 model_data['y_pred'].forEach((val, indx) => {
                     model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });
+                ['ranges', 'y', 'y_pred'].forEach(prop => {
+                    model_data[prop] = _.take(model_data[prop], 36);
+                })
             });
         });
     });
@@ -246,6 +249,7 @@ function load_control_data() {
                 break;
             case 'global-streams':
                 global_streams = [];
+                d3.select('.toggle-texture').attr('mode', 'color').html('Texture Stream');
                 toggle_cross('.' + control_mode + ' .cross', global_streams.length);
                 break;
         }
@@ -254,19 +258,19 @@ function load_control_data() {
     });
 
     // toggle apply-third-prop
-    d3.selectAll('.apply-third-prop')
-    .on("click", function(ev) {
-        const len = d3.selectAll('.sec-path').nodes().length;
-        if (len) {
-            stream_blur_on = !stream_blur_on;
-            const display = stream_blur_on ? 'inline-block' : 'none';
-            d3.selectAll('.sec-path').style("display", display);
-        } else {
-            add_texture_layer(sel_property);
-        }
-        const base_path_display = stream_blur_on ? 'none' : 'inline-block';
-        d3.selectAll('.main-stream-cell').style("display", base_path_display);
-    });
+    // d3.selectAll('.apply-third-prop')
+    // .on("click", function(ev) {
+    //     const len = d3.selectAll('.sec-path').nodes().length;
+    //     if (len) {
+    //         stream_blur_on = !stream_blur_on;
+    //         const display = stream_blur_on ? 'inline-block' : 'none';
+    //         d3.selectAll('.sec-path').style("display", display);
+    //     } else {
+    //         add_texture_layer(sel_property);
+    //     }
+    //     const base_path_display = stream_blur_on ? 'none' : 'inline-block';
+    //     d3.selectAll('.main-stream-cell').style("display", base_path_display);
+    // });
 
     // toggle apply-toggle-texture
     d3.selectAll('.toggle-texture')

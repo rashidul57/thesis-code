@@ -10,6 +10,7 @@ let bubble_selected = [];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
+const rgb_indexes = {'0': 'r', '1': 'g', '2': 'b'};
 
 function draw_predicted_lines(data, sel_country='United States') {
 
@@ -212,6 +213,9 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         d3.select("." + container).selectAll("svg").remove();
     }
     let data = [];
+    let lower_ranges = [];
+    let upper_ranges = [];
+    let series_low, series_up;
     let keys = Object.keys(pred_data)
     let max = 0;
     keys.forEach(country => {
@@ -253,15 +257,23 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         if (country_stream_mode === 'Prediction') {
             for (let i = 0; i < max; i++) {
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
-                const record = {date};
+                const record_pred = {date};
+                const record_low = {date};
+                const record_up = {date};
+
                 keys.forEach(country => {
-                    // record[country] = pred_data[country][algo].y_pred[i] || 0;
-                    const ranges = pred_data[country][algo].ranges[i];
-                    record[country] = Math.abs(ranges[0] - ranges[1]) || 0;
+                    record_pred[country] = pred_data[country][algo].y_pred[i] || 0;
+                    record_low[country] = pred_data[country][algo].ranges[i][0] || 0;
+                    record_up[country] = pred_data[country][algo].ranges[i][1] || 0;
                 });
-                data.push(record);
+                data.push(record_pred);
+                lower_ranges.push(record_low);
+                upper_ranges.push(record_up);
             }
             data = get_normalized_data(data, keys);
+
+            lower_ranges = get_normalized_data(lower_ranges, keys);
+            upper_ranges = get_normalized_data(upper_ranges, keys);
         } else {
             const usa_data = all_covid_data['United States'];
             max = usa_data.length;
@@ -284,14 +296,25 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 
     // apply the selected filter only
     if (global_streams.length) {
-        data = data.map(item => {
-            for (let prop in item) {
+        for (let k = 0; k < data.length; k++) {
+            for (let prop in data[k]) {
                 if (!(prop === 'date' || global_streams.indexOf(prop) > -1)) {
-                    delete item[prop];
+                    delete data[k][prop];
+                    if (lower_ranges.length) {
+                        delete lower_ranges[k][prop];
+                        delete upper_ranges[k][prop];
+                    }
                 }
             }
-            return item;
-        });
+        }
+        // data = data.map(item => {
+        //     for (let prop in item) {
+        //         if (!(prop === 'date' || global_streams.indexOf(prop) > -1)) {
+        //             delete item[prop];
+        //         }
+        //     }
+        //     return item;
+        // });
         keys = global_streams;
     }
 
@@ -317,17 +340,39 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .order(d3.stackOrderInsideOut)
     (data);
 
+    if (lower_ranges.length) {
+        series_low = d3.stack()
+            .keys(keys)
+            .offset(d3.stackOffsetWiggle)
+            .order(d3.stackOrderInsideOut)
+        (lower_ranges);
+
+        series_up = d3.stack()
+            .keys(keys)
+            .offset(d3.stackOffsetWiggle)
+            .order(d3.stackOrderInsideOut)
+        (upper_ranges);
+    }
+
+    const use_series = lower_ranges.length ? series_up : series;
+    const use_data = lower_ranges.length ? upper_ranges : data;
+
     y = d3.scaleSqrt()
-    .domain([d3.min(series, d => d3.min(d, d => d[0])), d3.max(series, d => d3.max(d, d => d[1]))])
+    .domain([d3.min(use_series, d => d3.min(d, d => d[0])), d3.max(use_series, d => d3.max(d, d => d[1]))])
     .range([height - margin.bottom, margin.top]);
 
     x = d3.scaleUtc()
-    .domain(d3.extent(data, d => d.date))
+    .domain(d3.extent(use_data, d => d.date))
     .range([margin.left, width - margin.right]);
 
     let start_path_y;
     area = d3.area()
-    .x(d => x(d.data.date))
+    .x(d => {
+        if (!d.data) {
+            return;
+        }
+        return x(d.data.date);
+    })
     .y0((d, indx) => {
         const d1 = y(d[0]);
         if (indx === 0) {
@@ -355,39 +400,73 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         add_texture_defs(svg, keys, color)
     }
 
-    const stream = svg.append("g")
-        .attr('class', () => {
-            return sel_country ? '' : 'main-stream-g';
-        })
-        .selectAll("path")
-        .data(series)
-        .join("path");
-
-    if (mode === 'color') {
-        stream.attr("fill", ({key}) => color(key));
-    } else {
-        stream.attr("fill", (d) => {
-            const key = d.key;
-            let fill_code = color(key);
-            if (!sel_country) {
-                const nameCls = get_name_cls(key);
-                fill_code = 'url(#texture-' + nameCls + ')';
-            }
-            return fill_code;
-        });
+    const all_series = [series];
+    if (lower_ranges.length) {
+        all_series.push(series_up, series_low);
     }
 
-    stream
-    .attr("d", area)
-    .attr('class', ({key}) =>{
-        const nameCls = get_name_cls(key);
-        const cls = 'main-stream-cell stream-cell-' + nameCls;
-        return sel_country ? '' : cls;
-    })
-    .append("title")
-    .text(({key}) => {
-        return key;
-    });
+    let stream;
+    for (let k = 0; k < all_series.length; k++) {
+        draw_layer(k);
+    }
+    
+
+    function draw_layer(k) {
+        stream = svg.append("g")
+            .attr('class', () => {
+                return sel_country ? '' : 'main-stream-g';
+            })
+            .selectAll("path")
+            .data(all_series[k])
+            .join("path");
+
+        stream.attr("fill", ({key}) => {
+                return all_series.length === 1 ? color(key) : bubble_colors[k];
+        })
+        .attr("fill-opacity", (d) => {
+            return all_series.length === 1 ? 1 : 0.33;
+        });
+
+        stream
+            .attr("d", area)
+            .attr('class', ({key}) =>{
+                const nameCls = get_name_cls(key);
+                const cls = 'main-stream-cell stream-cell-' + nameCls + ' rgb-' + k;
+                return sel_country ? '' : cls;
+            })
+            .append("title")
+            .text(({key}) => {
+                return key;
+            });
+        }
+
+
+    if (mode === 'color') {
+        // stream.attr("fill", ({key}) => color(key));
+    } else {
+        // stream.attr("fill", (d) => {
+        //     const key = d.key;
+        //     let fill_code = color(key);
+        //     if (!sel_country) {
+        //         const nameCls = get_name_cls(key);
+        //         fill_code = 'url(#texture-' + nameCls + ')';
+        //     }
+        //     return fill_code;
+        // });
+        add_texture_layer(sel_property);
+    }
+
+    // stream
+    // .attr("d", area)
+    // .attr('class', ({key}) =>{
+    //     const nameCls = get_name_cls(key);
+    //     const cls = 'main-stream-cell stream-cell-' + nameCls;
+    //     return sel_country ? '' : cls;
+    // })
+    // .append("title")
+    // .text(({key}) => {
+    //     return key;
+    // });
 
     if (sel_country) {
         const country_center = d3.select('.circle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
@@ -414,80 +493,85 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 }
 
 function add_texture_layer(sel_property) {
-    const texture_prop = sel_property === 'new_cases' ? 'new_deaths' : 'new_cases';
+    d3.selectAll('.main-stream-cell').style("display", 'none');
+
+    const texture_prop = sel_property; // === 'new_cases' ? 'new_deaths' : 'new_cases';
     const paths = d3.selectAll('.main-stream-g path').nodes();
     // prediction is done for 200 days, so that has to be divisible by num_of_days
-    const num_of_days = country_stream_mode === 'Prediction' ? 25 : 30;
+    const num_of_days = country_stream_mode === 'Prediction' ? 2 : 30;
     paths.forEach((path_item, index) => {
         const country = path_item.textContent;
-        const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
-        const parts = d.split('L');
-        let poly_data = {};
-        
-        const size = parts.length;
-        const side1 = _.take(parts, size/2);
-        const side2 = _.takeRight(parts, size/2);
-        const side_len = side1.length;
-        const country_data = all_covid_data[country];
-        
-        side1.forEach((item, index) => {
-            const sec_indx = parseInt(index / num_of_days, 10);
-            if (!poly_data[sec_indx]) {
-                poly_data[sec_indx] = {start: [], end: [], count: 0};
-                log = true;
-            }
-
-            // poly_data[sec_indx].count += pred_data[country][algo].y[sec_indx];
-            poly_data[sec_indx].count += country_data[index] && country_data[index][texture_prop] || 0;
-
-            const ind = index%num_of_days;
-            const val = side2[side_len - (num_of_days*(sec_indx+1)) + ind - 1];
-            if (val) {
-                poly_data[sec_indx].start.push(item);
-                poly_data[sec_indx].end.push(val);
-            }
-        });
-
-        const max_val = _.maxBy(_.values(poly_data), 'count').count;
+        const d_str = d3.select(path_item).attr('d');
         const cont_g = d3.select('.main-stream-g');
-        for (let prop in poly_data) {
-            const start = poly_data[prop].start.join('L');
-            const end = poly_data[prop].end.join('L');
-            if (!start || !end) {
-                continue;
-            }
-            const d_str = 'M' + start + 'L' + end + ' Z';
-            cont_g.append('path')
-                .attr('class', 'sec-path')
-                .attr("fill", (d) => {
-                    const nameCls = get_name_cls(country);
-                    let count = parseInt(poly_data[prop].count*100/max_val, 10);
-                    // count = count > 100 ? 100 : count;
-                    // console.log(count)
-                    const fill_code = 'url(#texture-' + nameCls + '-' + count + ')';
-                    return fill_code;
-                })
-                // .style('opacity', () => {
-                //     let opacity = poly_data[prop].count/max_val;
-                //     if (opacity > 0.8) {
-                //         opacity = 0.8;
-                //     }
-                //     return opacity;
-                // })
-                .attr('d', d_str)
-                .on('mousedown', function (ev, d) {
-                    const el = d3.select(this);
-                    const opacity = el.style('opacity');
-                    let actual_opacity = el.attr('actual-opacity');
-                    if (!actual_opacity) {
-                        actual_opacity = opacity;
-                        el.attr('actual-opacity', actual_opacity);
-                    }
-                    const new_opacity = opacity === actual_opacity ? 0 : actual_opacity;
-                    el.style('opacity', new_opacity);
-                });
-        }
+        add_texture_layer(index, cont_g, d_str, country);
+        // const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
+        // const parts = d.split('L');
+        // let poly_data = {};
+        
+        // const size = parts.length;
+        // const side1 = _.take(parts, size/2);
+        // const side2 = _.takeRight(parts, size/2);
+        // const side_len = side1.length;
+        // // const country_data = all_covid_data[country];
+        // const country_data = forecast_data[texture_prop][country][sel_model];
+        
+        // side1.forEach((item, index) => {
+        //     const sec_indx = parseInt(index / num_of_days, 10);
+        //     if (!poly_data[sec_indx]) {
+        //         poly_data[sec_indx] = {start: [], end: [], count: 0};
+        //         log = true;
+        //     }
+
+        //     if (country_stream_mode === 'Prediction') {
+        //         const ranges = country_data['ranges'][index];
+        //         poly_data[sec_indx].count += Math.abs(ranges[1] - ranges[0]);
+        //     } else {
+        //         poly_data[sec_indx].count += country_data['y'] && country_data['y'][index]|| 0;
+        //     }
+
+        //     const ind = index%num_of_days;
+        //     const val = side2[side_len - (num_of_days*(sec_indx+1)) + ind - 1];
+        //     if (val) {
+        //         poly_data[sec_indx].start.push(item);
+        //         poly_data[sec_indx].end.push(val);
+        //     }
+        // });
+
+        // const max_val = _.maxBy(_.values(poly_data), 'count').count;
+        // const cont_g = d3.select('.main-stream-g');
+        // for (let prop in poly_data) {
+        //     const start = poly_data[prop].start.join('L');
+        //     const end = poly_data[prop].end.join('L');
+        //     if (!start || !end) {
+        //         continue;
+        //     }
+        //     const d_str = 'M' + start + 'L' + end + ' Z';
+
+        //     for (let k = 0; k< 3; k++) {
+        //         add_texture_layer(k);
+        //     }
+        // }
     });
+
+    function add_texture_layer(k, cont_g, d_str, country) {
+        const nameCls = get_name_cls(country);
+        cont_g.append('path')
+            .attr('class', 'sec-path')
+            .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
+            .attr('fill-opacity', 0.33)
+            .attr('d', d_str)
+            // .on('mousedown', function (ev, d) {
+            //     const el = d3.select(this);
+            //     const opacity = el.style('opacity');
+            //     let actual_opacity = el.attr('actual-opacity');
+            //     if (!actual_opacity) {
+            //         actual_opacity = opacity;
+            //         el.attr('actual-opacity', actual_opacity);
+            //     }
+            //     const new_opacity = opacity === actual_opacity ? 0 : actual_opacity;
+            //     el.style('opacity', new_opacity);
+            // });
+    }
 }
 
 function draw_horizon_chart(pred_data, model='mlp') {
@@ -1842,59 +1926,68 @@ function get_name_cls(key) {
 }
 
 function add_texture_defs(svg, keys, color) {
-    keys.forEach((key, index) => {
-        const nameCls = get_name_cls(key);
-        svg
-        .append('defs')
-        .append('pattern')
-          .attr('id', 'texture-' + nameCls)
-          .attr('patternUnits', 'userSpaceOnUse')
-          .attr('width', 7)
-          .attr('height', 7)
-        .append('circle')
-          .attr('cx', 4)
-          .attr('cy', 4)
-          .attr('r', 3)
-          .attr('fill', color(key));
+    
+    const bubble_data = prepare_bubble_data(prop_pred_data, sel_model);
 
-        // For blur layers
-        for (k = 0; k <= 100; k++) {
-            const pattern = svg
+    keys.forEach((key, index) => {
+        for (let k = 0; k < 3; k++) {
+            const nameCls = get_name_cls(key);
+            const deviation = bubble_data.find(country => country.name === key).deviation;
+            const cx = get_circle_coord('x', k, deviation, 8, true);
+            const cy = get_circle_coord('y', k, deviation, 8, true);
+            svg
             .append('defs')
             .append('pattern')
-            .attr('id', 'texture-' + nameCls + '-' +k)
+            .attr('id', 'texture-' + nameCls + '-' + rgb_indexes[k])
             .attr('patternUnits', 'userSpaceOnUse')
-            .attr('width', 7)
-            .attr('height', 7);
-
-            const linGrad = pattern.append('linearGradient')
-                .attr('id', 'lin-grad-' + nameCls + '-' +k )
-                // .attr('patternUnits', 'userSpaceOnUse')
-                .attr('x1', '0%')
-                .attr('y1', '0%')
-                .attr('x2', '100%')
-                .attr('y2', '0%');
-
-            linGrad.append('stop')
-                .attr('offset', '0%')
-                .attr('style', () => {
-                    const c = color(key);
-                    // console.log(key, c)
-                    return 'stop-color:' + c;
-                });
-
-            linGrad.append('stop')
-                .attr('offset', k +'%')
-                .attr('style', () => {
-                    return 'stop-color:rgb(255,255,255)';
-                });
-
-            pattern.append('circle')
-                .attr('cx', 4)
-                .attr('cy', 4)
-                .attr('r', 3)
-                .attr('fill', 'url(#lin-grad-' + nameCls + '-' + k + ')');
+            .attr('width', 25)
+            .attr('height', 25)
+            .append('circle')
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', 5)
+            .attr('fill', bubble_colors[k]);
         }
+
+
+        // For blur layers
+        // for (k = 0; k <= 100; k++) {
+        //     const pattern = svg
+        //     .append('defs')
+        //     .append('pattern')
+        //     .attr('id', 'texture-' + nameCls + '-' +k)
+        //     .attr('patternUnits', 'userSpaceOnUse')
+        //     .attr('width', 7)
+        //     .attr('height', 7);
+
+        //     const linGrad = pattern.append('linearGradient')
+        //         .attr('id', 'lin-grad-' + nameCls + '-' +k )
+        //         // .attr('patternUnits', 'userSpaceOnUse')
+        //         .attr('x1', '0%')
+        //         .attr('y1', '0%')
+        //         .attr('x2', '100%')
+        //         .attr('y2', '0%');
+
+        //     linGrad.append('stop')
+        //         .attr('offset', '0%')
+        //         .attr('style', () => {
+        //             const c = color(key);
+        //             // console.log(key, c)
+        //             return 'stop-color:' + c;
+        //         });
+
+        //     linGrad.append('stop')
+        //         .attr('offset', k +'%')
+        //         .attr('style', () => {
+        //             return 'stop-color:rgb(255,255,255)';
+        //         });
+
+        //     pattern.append('circle')
+        //         .attr('cx', 4)
+        //         .attr('cy', 4)
+        //         .attr('r', 3)
+        //         .attr('fill', 'url(#lin-grad-' + nameCls + '-' + k + ')');
+        // }
     });
     
 }
