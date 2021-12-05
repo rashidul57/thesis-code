@@ -1524,6 +1524,7 @@ function draw_bubble_chart(data, params) {
                             toggle_go();
                             toggle_cross('.' + control_mode + ' .cross', bubble_selected.length);
                             break;
+
                         case 'bubble-remove':
                             d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
                             if (bubble_removed.indexOf(d.data.name) > -1) {
@@ -1545,9 +1546,11 @@ function draw_bubble_chart(data, params) {
                             }
                             const opacity = global_streams.length ? 0.1 : 0.8;
                             d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
+                            d3.selectAll('.circle-container').style("opacity", 0.7);
                             global_streams.forEach(name => {
                                 nameCls = get_name_cls(name);
                                 d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
+                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
                             });
 
                             toggle_go();
@@ -1933,15 +1936,15 @@ function add_texture_defs(svg, keys, color) {
         for (let k = 0; k < 3; k++) {
             const nameCls = get_name_cls(key);
             const deviation = bubble_data.find(country => country.name === key).deviation;
-            const cx = get_circle_coord('x', k, deviation, 8, true);
-            const cy = get_circle_coord('y', k, deviation, 8, true);
+            const cx = get_circle_coord('x', k, deviation, 12, true);
+            const cy = get_circle_coord('y', k, deviation, 9, true);
             svg
             .append('defs')
             .append('pattern')
             .attr('id', 'texture-' + nameCls + '-' + rgb_indexes[k])
             .attr('patternUnits', 'userSpaceOnUse')
-            .attr('width', 25)
-            .attr('height', 25)
+            .attr('width', 35)
+            .attr('height', 35)
             .append('circle')
             .attr('cx', cx)
             .attr('cy', cy)
