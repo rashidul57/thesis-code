@@ -176,7 +176,8 @@ body {
     height: 750px;
     position: relative;
     display: grid;
-    grid-template-columns: 50% 50%;
+    grid-template-columns: calc(50% - 3px) calc(50% - 3px);
+    margin: 0 3px;
     width: 1500px;
     &.single-columns{
         width: 960px;
