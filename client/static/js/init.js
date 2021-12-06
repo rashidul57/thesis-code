@@ -40,9 +40,9 @@ async function init() {
                 model_data['y_pred'].forEach((val, indx) => {
                     model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });
-                ['ranges', 'y', 'y_pred'].forEach(prop => {
-                    model_data[prop] = _.take(model_data[prop], 36);
-                })
+                // ['ranges', 'y', 'y_pred'].forEach(prop => {
+                //     model_data[prop] = _.take(model_data[prop], 36);
+                // })
             });
         });
     });
