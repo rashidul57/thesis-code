@@ -1957,15 +1957,15 @@ function add_texture_defs(svg, keys, color) {
             const nameCls = get_name_cls(key);
             // const deviation = bubble_data.find(country => country.name === key).deviation;
             for (let dev = 0; dev < 10; dev++) {
-                const cx = get_circle_coord('x', k, dev, 7, true);
-                const cy = get_circle_coord('y', k, dev, 7, true);
+                const cx = get_circle_coord('x', k, dev, 8, true);
+                const cy = get_circle_coord('y', k, dev, 8, true);
                 svg
                 .append('defs')
                 .append('pattern')
                 .attr('id', 'texture-' + nameCls + '-' + rgb_indexes[k] + '-' + dev)
                 .attr('patternUnits', 'userSpaceOnUse')
-                .attr('width', 18)
-                .attr('height', 18)
+                .attr('width', 20)
+                .attr('height', 20)
                 .append('circle')
                 .attr('cx', cx)
                 .attr('cy', cy)
