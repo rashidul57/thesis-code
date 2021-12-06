@@ -552,6 +552,7 @@ function add_textures() {
                 if (!start || !end) {
                     continue;
                 }
+
                 vertexes.push([start, end]);
                 const d_str = 'M' + start + 'L' + end + ' Z';
                 // cont_g.append('path')
@@ -1948,9 +1949,10 @@ function get_name_cls(key) {
     return key.replace(/\s/g, '-') || '';
 }
 
+
 function add_texture_defs(svg, keys, color) {
     
-    const bubble_data = prepare_bubble_data(prop_pred_data, sel_model);
+    // const bubble_data = prepare_bubble_data(prop_pred_data, sel_model);
 
     keys.forEach((key, index) => {
         for (let k = 0; k < 3; k++) {
@@ -1958,14 +1960,14 @@ function add_texture_defs(svg, keys, color) {
             // const deviation = bubble_data.find(country => country.name === key).deviation;
             for (let dev = 0; dev < 10; dev++) {
                 const cx = get_circle_coord('x', k, dev, 8, true);
-                const cy = get_circle_coord('y', k, dev, 8, true);
+                const cy = get_circle_coord('y', k, dev, 6 + dev*.3, true);
                 svg
                 .append('defs')
                 .append('pattern')
                 .attr('id', 'texture-' + nameCls + '-' + rgb_indexes[k] + '-' + dev)
                 .attr('patternUnits', 'userSpaceOnUse')
                 .attr('width', 20)
-                .attr('height', 20)
+                .attr('height', 10 + dev*1.4)
                 .append('circle')
                 .attr('cx', cx)
                 .attr('cy', cy)
@@ -2016,6 +2018,8 @@ function add_texture_defs(svg, keys, color) {
     });
     
 }
+
+
 
 function get_normalized_data(data, keys) {
     const maxs = {};
