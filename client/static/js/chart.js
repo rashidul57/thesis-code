@@ -250,7 +250,6 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             });
             keys = Object.keys(country_data[0]).filter(key => ['date', 'iso_code', 'location'].indexOf(key) === -1);
             data = get_normalized_data(country_data, keys);
-            
         }
 
     } else {
@@ -267,13 +266,13 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                     record_up[country] = pred_data[country][algo].ranges[i][1] || 0;
                 });
                 data.push(record_pred);
-                lower_ranges.push(record_low);
-                upper_ranges.push(record_up);
+                // lower_ranges.push(record_low);
+                // upper_ranges.push(record_up);
             }
             data = get_normalized_data(data, keys);
 
-            lower_ranges = get_normalized_data(lower_ranges, keys);
-            upper_ranges = get_normalized_data(upper_ranges, keys);
+            // lower_ranges = get_normalized_data(lower_ranges, keys);
+            // upper_ranges = get_normalized_data(upper_ranges, keys);
         } else {
             const usa_data = all_covid_data['United States'];
             max = usa_data.length;
@@ -505,77 +504,74 @@ function add_textures() {
         const cont_g = d3.select('.main-stream-g');
         // add_texture_layer(path_index, cont_g, d_str, country);
 
-        if (path_index === 2) {
-            const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
-            const parts = d.split('L');
-            let poly_data = {};
-            
-            const size = parts.length;
-            const side1 = _.take(parts, size/2);
-            const side2 = _.takeRight(parts, size/2);
-            const side_len = side1.length;
-            // const country_data = all_covid_data[country];
-            const country_data = forecast_data[sel_property][country][sel_model];
-            
-            side1.forEach((item, side_index) => {
-                const sec_indx = parseInt(side_index / num_of_days, 10);
-                if (!poly_data[sec_indx]) {
-                    poly_data[sec_indx] = {start: [], end: [], count: 0};
-                    log = true;
-                }
-
-                if (country_stream_mode === 'Prediction') {
-                    const ranges = country_data['ranges'][side_index];
-                    poly_data[sec_indx].count += Math.abs(ranges[1] - ranges[0]);
-                } else {
-                    poly_data[sec_indx].count += country_data['y'] && country_data['y'][side_index]|| 0;
-                }
-
-                const ind = side_index%num_of_days;
-                const val = side2[side_len - (num_of_days*(sec_indx+1)) + ind];
-                if (val) {
-                    poly_data[sec_indx].start.push(item);
-                    poly_data[sec_indx].end.push(val);
-                }
-            });
-
-            // const max_val = _.maxBy(_.values(poly_data), 'count').count;
-            const vertexes = [];
-            for (let sec_indx in poly_data) {
-                const start = poly_data[sec_indx].start.join('L');
-                const end = poly_data[sec_indx].end.join('L');
-                let deviation = parseInt(poly_data[sec_indx].count/(num_of_days*100), 10);
-                while (deviation >= 10) {
-                    deviation = Math.ceil(deviation / 10);
-                }
-
-                if (!start || !end) {
-                    continue;
-                }
-
-                vertexes.push([start, end]);
-                const d_str = 'M' + start + 'L' + end + ' Z';
-                // cont_g.append('path')
-                // .attr("stroke", 'red')
-                // .attr("stroke-width", 1)
-                // .attr("fill", "none")
-                // // .attr('class', 'sec-path')
-                // // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
-                // // .attr('fill-opacity', 0.33)
-                // .attr('d', d_str);
-
-                for (let k = 0; k< 3; k++) {
-                    add_texture_layer(k, deviation, cont_g, d_str, country);
-                }
+        const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
+        const parts = d.split('L');
+        let poly_data = {};
+        
+        const size = parts.length;
+        const side1 = _.take(parts, size/2);
+        const side2 = _.takeRight(parts, size/2);
+        const side_len = side1.length;
+        // const country_data = all_covid_data[country];
+        const country_data = forecast_data[sel_property][country][sel_model];
+        
+        side1.forEach((item, side_index) => {
+            const sec_indx = parseInt(side_index / num_of_days, 10);
+            if (!poly_data[sec_indx]) {
+                poly_data[sec_indx] = {start: [], end: [], count: 0};
+                log = true;
             }
-            // debugger
+
+            if (country_stream_mode === 'Prediction') {
+                const ranges = country_data['ranges'][side_index];
+                poly_data[sec_indx].count += Math.abs(ranges[1] - ranges[0]);
+            } else {
+                poly_data[sec_indx].count += country_data['y'] && country_data['y'][side_index]|| 0;
+            }
+
+            const ind = side_index%num_of_days;
+            const val = side2[side_len - (num_of_days*(sec_indx+1)) + ind];
+            if (val) {
+                poly_data[sec_indx].start.push(item);
+                poly_data[sec_indx].end.push(val);
+            }
+        });
+
+        // const max_val = _.maxBy(_.values(poly_data), 'count').count;
+        const vertexes = [];
+        for (let sec_indx in poly_data) {
+            const start = poly_data[sec_indx].start.join('L');
+            const end = poly_data[sec_indx].end.join('L');
+            let deviation = parseInt(poly_data[sec_indx].count/(num_of_days*100), 10);
+            while (deviation >= 10) {
+                deviation = Math.ceil(deviation / 10);
+            }
+
+            if (!start || !end) {
+                continue;
+            }
+
+            vertexes.push([start, end]);
+            const d_str = 'M' + start + 'L' + end + ' Z';
+            // cont_g.append('path')
+            // .attr("stroke", 'red')
+            // .attr("stroke-width", 1)
+            // .attr("fill", "none")
+            // // .attr('class', 'sec-path')
+            // // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
+            // // .attr('fill-opacity', 0.33)
+            // .attr('d', d_str);
+
+            for (let k = 0; k< 3; k++) {
+                add_texture_layer(k, deviation, cont_g, d_str, country);
+            }
         }
     });
 
     function add_texture_layer(k, deviation, cont_g, d_str, country) {
         const nameCls = get_name_cls(country);
         cont_g.append('path')
-            .attr('class', 'sec-path')
+            .attr('class', 'sec-path path-' + country)
             .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
             .attr('fill-opacity', 0.33)
             .attr('d', d_str)
