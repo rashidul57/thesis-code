@@ -954,6 +954,7 @@ function draw_usage_chart() {
         const c_data = {name: country, iso_code: c_base[0].iso_code};
 
         let preds = forecast_data[prop][country][sel_model]['y_pred'];
+        let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
         // preds = _.take(preds, 15)
@@ -965,6 +966,7 @@ function draw_usage_chart() {
             const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
             const row = Object.assign({date, uncertainty: uncertainty/3}, c_data);
             row[prop] = Number(value || 0);
+            row['new_deaths'] = Number(deaths_preds[i] || 0);
             data.push(row);
         });
     });
@@ -1000,19 +1002,18 @@ function draw_usage_chart() {
     .call(g => g.select(".domain").remove());
 
     color = () => {
-        // let [min, max] = d3.extent(data, d => d.uncertainty);
-        // if (min < 0) {
-        //   max = Math.max(-min, max);
-        //   return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
-        // }
-        // uncertainty in percentage
-        return d3.scaleSequential([0, 100], d3.interpolateReds);
+        let [min, max] = d3.extent(data, d => d.new_deaths);
+        if (min < 0) {
+          max = Math.max(-min, max);
+          return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
+        }
+        return d3.scaleSequential([0, max], d3.interpolateReds);
     }
 
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg')
-        .attr("viewBox", [0, 10, width, height])
+        .attr("viewBox", [0, 15, width, height])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
@@ -1021,6 +1022,9 @@ function draw_usage_chart() {
   
     svg.append("g")
         .call(yAxis);
+
+    // background layer of rects
+    draw_layer(4);
 
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
@@ -1033,57 +1037,79 @@ function draw_usage_chart() {
         .join("rect")
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
-            let width = x.bandwidth() - 2;
+            if (k === 4) {
+                return x_pos;
+            } else {
+                let width = x.bandwidth() - 4;
+                const change = get_rect_change('x', k, d.uncertainty*width/100);
+                x_pos += change;
+                // x_pos = x_pos + (change < 0 ? change : (-change));
 
-            const change = get_rect_change('x', k, d.uncertainty*width/100);
-            x_pos += change;
-            // x_pos = x_pos + (change < 0 ? change : (-change));
-
-            if (x_pos < x_base) {
-                x_pos = x_base;
+                if (x_pos < x_base) {
+                    x_pos = x_base;
+                }
+                return x_pos + 2;
             }
-            return x_pos;
         })
         .attr("width", (d, i) => {
-            let width = base_width = x.bandwidth() - 2;
-            const change = get_rect_change('x', k, d.uncertainty*width/100);
-            // width -= change;
-            // width = width + (change < 0 ? change : (-change));
-            width = width - Math.abs(change);
-            // if (width < 0) {
-            //     width = 0;
-            // }
-            if (width > base_width) {
-                width = base_width;
+            if (k === 4) {
+                return x.bandwidth();
+            } else {
+                let width = base_width = x.bandwidth() - 4;
+                const change = get_rect_change('x', k, d.uncertainty*width/100);
+                width = width - Math.abs(change);
+                if (width > base_width) {
+                    width = base_width;
+                }
+                return width;
             }
-            return width;
         })
         .attr("y", (d, i) => {
-            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
-            let height = y.bandwidth() - 2;
-            const change = get_rect_change('y', k, d.uncertainty*height/100);
-            y_pos += change;
+            
+            if (k === 4) {
+                return y(moment(new Date(d.date)).format('L')) || 0;
+            } else {
+                let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+                let height = y.bandwidth() - 4;
+                const change = get_rect_change('y', k, d.uncertainty*height/100);
+                y_pos += change;
 
-            if (y_pos < base_y) {
-                y_pos = base_y;
+                if (y_pos < base_y) {
+                    y_pos = base_y;
+                }
+
+                return y_pos + 2;
             }
-
-            return y_pos;
         })
         .attr("height", (d, i) => {
-            let height = base_height = y.bandwidth() - 2;
-            const change = get_rect_change('y', k, d.uncertainty*height/100);
-            height = height - Math.abs(change);
+            if (k === 4) {
+                return y.bandwidth();
+            } else {
+                let height = base_height = y.bandwidth() - 4;
+                const change = get_rect_change('y', k, d.uncertainty*height/100);
+                height = height - Math.abs(change);
 
-            if (height > base_height) {
-                height = base_height;
+                if (height > base_height) {
+                    height = base_height;
+                }
+                return height;
             }
-            return height;
         })
         .attr('fill-opacity', 0.33)
-        .attr("fill", bubble_colors[k])
+        .attr("fill", (d) => {
+            if (k === 4) {
+                return color()(d.new_deaths || 0);;
+            } else {
+                return bubble_colors[k];
+            }
+        })
+        .attr('stroke', () => {
+            const stroke_color = k === 4 ? '#121214' : 'none';
+            return stroke_color;
+        })
+        .attr("stroke-width", 0.1)
         .append("title")
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty)}%`);
+        .text(d => `Deaths: ${formatUsage(d.new_deaths)}, Uncertainty: ${formatUsage(d.uncertainty)}%`);
     }
 }
 
