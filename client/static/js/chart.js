@@ -539,8 +539,7 @@ function add_textures() {
                 }
             });
 
-            const max_val = _.maxBy(_.values(poly_data), 'count').count;
-            // const cont_g = d3.select('.main-stream-g');
+            // const max_val = _.maxBy(_.values(poly_data), 'count').count;
             const vertexes = [];
             for (let sec_indx in poly_data) {
                 const start = poly_data[sec_indx].start.join('L');
@@ -549,6 +548,7 @@ function add_textures() {
                 while (deviation >= 10) {
                     deviation = Math.ceil(deviation / 10);
                 }
+
                 if (!start || !end) {
                     continue;
                 }
