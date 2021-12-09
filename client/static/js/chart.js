@@ -10,7 +10,8 @@ let bubble_selected = [];
 let global_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
-const bubble_colors2 = {0: '#808000	', 1: '#00FFFF', 2: '#FF00FF	'}; //maroon, aqua, Fuchsia: https://en.wikipedia.org/wiki/Web_colors
+const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroon, fushia
+const bubble_colors2 = {0: '#008080	', 1: '#0000FF', 2: '#000080'}; //teal, blue, navy: https://en.wikipedia.org/wiki/Web_colors
 const rgb_indexes = {'0': 'r', '1': 'g', '2': 'b'};
 
 function draw_predicted_lines(data, sel_country='United States') {
@@ -421,7 +422,7 @@ function add_textures() {
     const paths = d3.selectAll('.main-stream-g path').nodes();
 
     // prediction is done for 200 days, so that has to be divisible by num_of_days
-    let num_of_days = 4;
+    let num_of_days = 3;
     paths.forEach((path_item, country_index) => {
         const country = path_item.textContent;
         const cont_g = d3.select('.main-stream-g');
@@ -480,15 +481,15 @@ function add_textures() {
             }
 
             const d_str = 'M' + start + 'L' + end + ' Z';
-            // cont_g.append('path')
-            // .attr("stroke", 'red')
-            // .attr("stroke-width", 1)
-            // .attr("fill", "none")
-            // .attr('class', 'poly' + sec_indx)
-            // // .attr('class', 'sec-path')
-            // // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
-            // // .attr('fill-opacity', 0.33)
-            // .attr('d', d_str);
+            cont_g.append('path')
+            .attr("stroke", 'red')
+            .attr("stroke-width", 1)
+            .attr("fill", "none")
+            .attr('class', 'poly' + sec_indx)
+            // .attr('class', 'sec-path')
+            // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
+            // .attr('fill-opacity', 0.33)
+            .attr('d', d_str);
 
             for (let k = 0; k< 3; k++) {
                 add_texture_layer(k, deviation, cont_g, d_str, country, country_index);
@@ -894,7 +895,7 @@ function draw_usage_chart() {
         let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
-        // preds = _.take(preds, 15)
+        // preds = _.take(preds, 5)
 
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
@@ -968,6 +969,7 @@ function draw_usage_chart() {
     }
 
     function draw_layer(k) {
+        const buffer = 4;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -977,23 +979,24 @@ function draw_usage_chart() {
             if (k === 4) {
                 return x_pos;
             } else {
-                let width = x.bandwidth() - 4;
+                let width = x.bandwidth() - buffer;
                 const change = get_rect_change('x', k, d.uncertainty*width/100);
+                // console.log('k:', k, '  x=', change);
                 x_pos += change;
-                // x_pos = x_pos + (change < 0 ? change : (-change));
 
                 if (x_pos < x_base) {
                     x_pos = x_base;
                 }
-                return x_pos + 2;
+                return x_pos + buffer/2;
             }
         })
         .attr("width", (d, i) => {
             if (k === 4) {
                 return x.bandwidth();
             } else {
-                let width = base_width = x.bandwidth() - 4;
+                let width = base_width = x.bandwidth() - buffer;
                 const change = get_rect_change('x', k, d.uncertainty*width/100);
+                // console.log('k:', k, '  w=', change);
                 width = width - Math.abs(change);
                 if (width > base_width) {
                     width = base_width;
@@ -1007,23 +1010,25 @@ function draw_usage_chart() {
                 return y(moment(new Date(d.date)).format('L')) || 0;
             } else {
                 let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
-                let height = y.bandwidth() - 4;
+                let height = y.bandwidth() - buffer;
                 const change = get_rect_change('y', k, d.uncertainty*height/100);
+                // console.log('k:', k, '  y=', change);
                 y_pos += change;
 
                 if (y_pos < base_y) {
                     y_pos = base_y;
                 }
 
-                return y_pos + 2;
+                return y_pos + buffer/2;
             }
         })
         .attr("height", (d, i) => {
             if (k === 4) {
                 return y.bandwidth();
             } else {
-                let height = base_height = y.bandwidth() - 4;
+                let height = base_height = y.bandwidth() - buffer;
                 const change = get_rect_change('y', k, d.uncertainty*height/100);
+                // console.log('k:', k, '  h:', change);
                 height = height - Math.abs(change);
 
                 if (height > base_height) {
@@ -1032,10 +1037,15 @@ function draw_usage_chart() {
                 return height;
             }
         })
-        .attr('fill-opacity', 0.33)
+        .attr('fill-opacity', () => {
+            return k === 4 ? 1 : 0.33;
+        })
         .attr("fill", (d) => {
             if (k === 4) {
-                return color()(d.new_deaths || 0);;
+                // const unc = parseInt(d.uncertainty*255*10/100);
+                // const hex_code = unc.toString(16);
+                // return '#' + hex_code + hex_code + hex_code;
+                return color()(d.new_deaths || 0);
             } else {
                 return bubble_colors[k];
             }
@@ -1892,7 +1902,6 @@ function prepare_bubble_data(data, model) {
     return bubble_data;
 }
 
-
 function set_cell_tooltip_position(event, tooltip, d) {
     let x = Math.abs(event.pageX) - 50;
     let y = Math.abs(event.pageY) + 15;
@@ -1923,20 +1932,24 @@ function add_texture_defs(svg, keys, color) {
             // const deviation = bubble_data.find(country => country.name === key).deviation;
             for (let dev = 0; dev < 10; dev++) {
                 const fract_dev = dev/6;
-                const cx = get_circle_coord('x', k, fract_dev, 3, true);
-                const cy = get_circle_coord('y', k, fract_dev, 3 + fract_dev, true);
+                const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
+                const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*4/(dev+1)), true);
                 for (let c = 0; c < 2; c++) {
                     let fill_color, texture_id;
                     if (c%2===1) {
-                        fill_color = bubble_colors[k];
+                        fill_color = bubble_colors1[k];
                         texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     } else {
                         fill_color = bubble_colors2[k];
                         texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     }
-                    let w = dev >= 3 ? (6 + dev*.2) : 6;
-                    let h = dev >= 3 ? (6 + dev*.2) : 6;
-
+                    let w = 5;
+                    const base_h = 4;
+                    let h = base_h + dev*0.15;
+                    let r = 1.5 - dev*0.005;
+                    const cx = w/2 + cx_change;
+                    const cy = base_h/2 + cy_change;
+                    
                     svg
                     .append('defs')
                     .append('pattern')
@@ -1947,7 +1960,7 @@ function add_texture_defs(svg, keys, color) {
                     .append('circle')
                     .attr('cx', cx)
                     .attr('cy', cy)
-                    .attr('r', 2.1)
+                    .attr('r', r)
                     .attr('fill', fill_color);
                 }
             }
