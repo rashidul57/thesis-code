@@ -1933,7 +1933,7 @@ function add_texture_defs(svg, keys, color) {
             for (let dev = 0; dev < 10; dev++) {
                 const fract_dev = dev/6;
                 const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
-                const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*4/(dev+1)), true);
+                const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*2/(dev+1)), true);
                 for (let c = 0; c < 2; c++) {
                     let fill_color, texture_id;
                     if (c%2===1) {
@@ -1944,7 +1944,7 @@ function add_texture_defs(svg, keys, color) {
                         texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     }
                     let w = 5;
-                    const base_h = 4;
+                    const base_h = 4.5;
                     let h = base_h + dev*0.15;
                     let r = 1.5 - dev*0.005;
                     const cx = w/2 + cx_change;
