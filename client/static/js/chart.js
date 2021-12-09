@@ -481,15 +481,15 @@ function add_textures() {
             }
 
             const d_str = 'M' + start + 'L' + end + ' Z';
-            cont_g.append('path')
-            .attr("stroke", 'red')
-            .attr("stroke-width", 1)
-            .attr("fill", "none")
-            .attr('class', 'poly' + sec_indx)
-            // .attr('class', 'sec-path')
-            // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
-            // .attr('fill-opacity', 0.33)
-            .attr('d', d_str);
+            // cont_g.append('path')
+            // .attr("stroke", 'red')
+            // .attr("stroke-width", 1)
+            // .attr("fill", "none")
+            // .attr('class', 'poly' + sec_indx)
+            // // .attr('class', 'sec-path')
+            // // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
+            // // .attr('fill-opacity', 0.33)
+            // .attr('d', d_str);
 
             for (let k = 0; k< 3; k++) {
                 add_texture_layer(k, deviation, cont_g, d_str, country, country_index);
@@ -1946,8 +1946,11 @@ function add_texture_defs(svg, keys, color) {
                     let w = 5;
                     const base_h = 4.5;
                     let h = base_h + dev*0.15;
-                    let r = 1.5 - dev*0.005;
-                    const cx = w/2 + cx_change;
+                    let r = 1.5 - dev*0.08;
+                    let cx = w/2 + cx_change;
+                    if (dev <= 3 ) {
+                        cx += .6;
+                    }
                     const cy = base_h/2 + cy_change;
                     
                     svg
