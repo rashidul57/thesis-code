@@ -911,6 +911,14 @@ function draw_usage_chart() {
     const c_codes = _.uniq(data.map(c => c.iso_code));
     data = _.orderBy(data, [(item) => item.date], ['asc']);
 
+    // const total_count = _.reduce(data, (total, item) => {
+    //     return total += item['new_deaths'] || 0;
+    // }, 0);
+    // data = data.map(item => {
+    //     item['color_count'] = (item['new_deaths'] || 0)*255/total_count;
+    //     return item;
+    // });
+
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
     const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
@@ -962,7 +970,11 @@ function draw_usage_chart() {
         .call(yAxis);
 
     // background layer of rects
-    draw_layer(4);
+    for (let k = 4; k <= 6; k++) {
+        draw_layer(k);
+    }
+
+    draw_layer(3);
 
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
@@ -974,9 +986,14 @@ function draw_usage_chart() {
         .selectAll("rect")
         .data(data)
         .join("rect")
+        .attr('class', (d, i) => {
+            return 'urect-' + i;
+        })
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
-            if (k === 4) {
+            if (k===3) {
+                return x_pos + buffer/2;
+            } else if (k>=4) {
                 return x_pos;
             } else {
                 let width = x.bandwidth() - buffer;
@@ -991,7 +1008,9 @@ function draw_usage_chart() {
             }
         })
         .attr("width", (d, i) => {
-            if (k === 4) {
+            if (k===3) {
+                return x.bandwidth() - buffer;
+            } else if (k>=4) {
                 return x.bandwidth();
             } else {
                 let width = base_width = x.bandwidth() - buffer;
@@ -1005,11 +1024,13 @@ function draw_usage_chart() {
             }
         })
         .attr("y", (d, i) => {
-            
-            if (k === 4) {
+            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+            if (k===3) {
+                return y_pos + buffer/2;
+            } else if (k>=4) {
                 return y(moment(new Date(d.date)).format('L')) || 0;
             } else {
-                let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+                
                 let height = y.bandwidth() - buffer;
                 const change = get_rect_change('y', k, d.uncertainty*height/100);
                 // console.log('k:', k, '  y=', change);
@@ -1023,7 +1044,9 @@ function draw_usage_chart() {
             }
         })
         .attr("height", (d, i) => {
-            if (k === 4) {
+            if (k===3) {
+                return y.bandwidth() - buffer;
+            } else if (k>=4) {
                 return y.bandwidth();
             } else {
                 let height = base_height = y.bandwidth() - buffer;
@@ -1038,20 +1061,24 @@ function draw_usage_chart() {
             }
         })
         .attr('fill-opacity', () => {
-            return k === 4 ? 1 : 0.33;
+            // return k === 4 ? 1 : 0.33;
+            return k>=3 ? 1 : 0.33;
         })
         .attr("fill", (d) => {
-            if (k === 4) {
-                // const unc = parseInt(d.uncertainty*255*10/100);
-                // const hex_code = unc.toString(16);
-                // return '#' + hex_code + hex_code + hex_code;
-                return color()(d.new_deaths || 0);
+            if (k===3) {
+                return '#fff';
+            } else if (k>=4) {
+                const u =  d.uncertainty*255*3;
+                const unc = parseInt(u/100);
+                // const unc = d.color_count;
+                const hex_code = unc.toString(16);
+                return bubble_colors[k%3].replace('ff', hex_code);
             } else {
                 return bubble_colors[k];
             }
         })
         .attr('stroke', () => {
-            const stroke_color = k === 4 ? '#121214' : 'none';
+            const stroke_color = k>=4 ? '#121214' : 'none';
             return stroke_color;
         })
         .attr("stroke-width", 0.1)
