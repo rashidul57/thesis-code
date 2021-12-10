@@ -1062,7 +1062,7 @@ function draw_usage_chart() {
         })
         .attr('fill-opacity', () => {
             // return k === 4 ? 1 : 0.33;
-            return k>=3 ? 1 : 0.33;
+            return k===3 ? 1 : 0.33;
         })
         .attr("fill", (d) => {
             if (k===3) {
