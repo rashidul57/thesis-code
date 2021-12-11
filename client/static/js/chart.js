@@ -974,11 +974,11 @@ function draw_usage_chart() {
         draw_layer(k);
     }
 
-    draw_layer(3);
+    // draw_layer(3);
 
-    for (let k = 0; k < 3; k++) {
-        draw_layer(k);
-    }
+    // for (let k = 0; k < 3; k++) {
+    //     draw_layer(k);
+    // }
 
     function draw_layer(k) {
         const buffer = 4;
@@ -1083,7 +1083,8 @@ function draw_usage_chart() {
         })
         .attr("stroke-width", 0.1)
         .append("title")
-        .text(d => `Deaths: ${formatUsage(d.new_deaths)}, Uncertainty: ${formatUsage(d.uncertainty)}%`);
+        // .text(d => `Deaths: ${formatUsage(d.new_deaths)}, Uncertainty: ${formatUsage(d.uncertainty)}%`);
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*3)}%`);
     }
 }
 
