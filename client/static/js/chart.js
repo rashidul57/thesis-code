@@ -902,7 +902,7 @@ function draw_usage_chart() {
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const divider = _.max([ranges[0], ranges[1], value]);
             const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
-            const row = Object.assign({date, uncertainty: uncertainty/3}, c_data);
+            const row = Object.assign({date, uncertainty: uncertainty/2}, c_data);
             row[prop] = Number(value || 0);
             row['new_deaths'] = Number(deaths_preds[i] || 0);
             data.push(row);
@@ -910,14 +910,6 @@ function draw_usage_chart() {
     });
     const c_codes = _.uniq(data.map(c => c.iso_code));
     data = _.orderBy(data, [(item) => item.date], ['asc']);
-
-    // const total_count = _.reduce(data, (total, item) => {
-    //     return total += item['new_deaths'] || 0;
-    // }, 0);
-    // data = data.map(item => {
-    //     item['color_count'] = (item['new_deaths'] || 0)*255/total_count;
-    //     return item;
-    // });
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
@@ -969,19 +961,14 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    // background layer of rects
-    for (let k = 4; k <= 6; k++) {
+    draw_layer(3);
+
+    for (let k = 0; k < 3; k++) {
         draw_layer(k);
     }
 
-    // draw_layer(3);
-
-    // for (let k = 0; k < 3; k++) {
-    //     draw_layer(k);
-    // }
-
     function draw_layer(k) {
-        const buffer = 4;
+        const buffer = 2;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -992,8 +979,6 @@ function draw_usage_chart() {
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
             if (k===3) {
-                return x_pos + buffer/2;
-            } else if (k>=4) {
                 return x_pos;
             } else {
                 let width = x.bandwidth() - buffer;
@@ -1009,14 +994,14 @@ function draw_usage_chart() {
         })
         .attr("width", (d, i) => {
             if (k===3) {
-                return x.bandwidth() - buffer;
-            } else if (k>=4) {
                 return x.bandwidth();
             } else {
                 let width = base_width = x.bandwidth() - buffer;
                 const change = get_rect_change('x', k, d.uncertainty*width/100);
                 // console.log('k:', k, '  w=', change);
                 width = width - Math.abs(change);
+
+                // console.log(base_width, width)
                 if (width > base_width) {
                     width = base_width;
                 }
@@ -1026,11 +1011,8 @@ function draw_usage_chart() {
         .attr("y", (d, i) => {
             let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
             if (k===3) {
-                return y_pos + buffer/2;
-            } else if (k>=4) {
-                return y(moment(new Date(d.date)).format('L')) || 0;
+                return y_pos;
             } else {
-                
                 let height = y.bandwidth() - buffer;
                 const change = get_rect_change('y', k, d.uncertainty*height/100);
                 // console.log('k:', k, '  y=', change);
@@ -1045,8 +1027,6 @@ function draw_usage_chart() {
         })
         .attr("height", (d, i) => {
             if (k===3) {
-                return y.bandwidth() - buffer;
-            } else if (k>=4) {
                 return y.bandwidth();
             } else {
                 let height = base_height = y.bandwidth() - buffer;
@@ -1057,34 +1037,176 @@ function draw_usage_chart() {
                 if (height > base_height) {
                     height = base_height;
                 }
+                
                 return height;
             }
         })
         .attr('fill-opacity', () => {
-            // return k === 4 ? 1 : 0.33;
             return k===3 ? 1 : 0.33;
         })
         .attr("fill", (d) => {
             if (k===3) {
                 return '#fff';
-            } else if (k>=4) {
-                const u =  d.uncertainty*255*3;
-                const unc = parseInt(u/100);
-                // const unc = d.color_count;
-                const hex_code = unc.toString(16);
-                return bubble_colors[k%3].replace('ff', hex_code);
             } else {
-                return bubble_colors[k];
+                const u =  d.uncertainty*255*2;
+                const unc = parseInt(u/100);
+                const hex_code = unc.toString(16);
+                return bubble_colors[k].replace('ff', hex_code);
             }
         })
         .attr('stroke', () => {
-            const stroke_color = k>=4 ? '#121214' : 'none';
+            const stroke_color = k===3 ? '#121214' : 'none';
             return stroke_color;
         })
         .attr("stroke-width", 0.1)
         .append("title")
-        // .text(d => `Deaths: ${formatUsage(d.new_deaths)}, Uncertainty: ${formatUsage(d.uncertainty)}%`);
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*3)}%`);
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
+    }
+}
+
+function draw_usage_chart2() {
+    let data = [];
+    const prop = 'new_cases';
+    const top_countries = _.take(countries, 35);
+    top_countries.forEach(country  => {
+        const c_base = all_covid_data[country];
+        const c_data = {name: country, iso_code: c_base[0].iso_code};
+
+        let preds = forecast_data[prop][country][sel_model]['y_pred'];
+        let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
+        const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
+
+        preds.forEach((value, i) => {
+            const date = moment(start_date).add('days', i).toDate();
+            const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
+            const divider = _.max([ranges[0], ranges[1], value]);
+            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
+            const row = Object.assign({date, uncertainty: uncertainty/2}, c_data);
+            row[prop] = Number(value || 0);
+            row['new_deaths'] = Number(deaths_preds[i] || 0);
+            data.push(row);
+        });
+    });
+
+    const c_codes = _.uniq(data.map(c => c.iso_code));
+    data = _.orderBy(data, [(item) => item.date], ['asc']);
+
+    const dateExtent = d3.extent(data, d => new Date(d.date));
+    const margin = ({top: 35, right: 20, bottom: 0, left: 50});
+    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
+    const width = 954;
+    formatCountry = (d) => {
+        return d;
+    }
+
+    formatDay = (d) => {
+        return moment(new Date(d)).format('L');
+    }
+    formatDate = d3.timeFormat("%B %-d, %-I %p");
+    formatUsage = d3.format(",.0f");
+
+    const days_y = d3.timeDays(...dateExtent).map(date => moment(new Date(date)).format('L'))
+    y = d3.scaleBand(days_y, [margin.top, height - margin.bottom]).round(true);
+    x = d3.scaleBand(c_codes, [margin.left, width - margin.right]).round(true);
+    
+    yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).tickFormat(formatDay))
+    .call(g => g.select(".domain").remove());
+
+    xAxis = g => g
+    .attr("transform", `translate(0,${margin.top})`)
+    .call(d3.axisTop(x).tickFormat(formatCountry))
+    .call(g => g.select(".domain").remove());
+
+    color = () => {
+        let [min, max] = d3.extent(data, d => d.new_deaths);
+        if (min < 0) {
+          max = Math.max(-min, max);
+          return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
+        }
+        return d3.scaleSequential([0, max], d3.interpolateReds);
+    }
+
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'rate-svg')
+        .attr("viewBox", [0, 15, width, height])
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 15);
+    
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    draw_layer(3);
+
+    // background layer of rects
+    for (let k = 0; k < 3; k++) {
+        draw_layer(k);
+    }
+
+    function draw_layer(k) {
+        const buffer = 2;
+        svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr('class', (d, i) => {
+            return 'urect-' + i;
+        })
+        .attr("x", (d, i) => {
+            let x_pos = x_base = x(d.iso_code);
+            if (k===3) {
+                return x_pos;
+            } else {
+                return x_pos + buffer/2;
+            }
+        })
+        .attr("width", (d, i) => {
+            if (k===3) {
+                return x.bandwidth();
+            } else {
+                return x.bandwidth() - buffer;
+            }
+        })
+        .attr("y", (d, i) => {
+            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+            if (k===3) {
+                return y_pos;
+            } else {
+                return y_pos + buffer/2;
+            }
+        })
+        .attr("height", (d, i) => {
+            if (k===3) {
+                return y.bandwidth();
+            } else {
+                return y.bandwidth() - buffer;
+            }
+        })
+        .attr('fill-opacity', () => {
+            return k===3 ? 1 : 0.33;
+        })
+        .attr("fill", (d) => {
+            if (k===3) {
+                return '#fff';
+            } else {
+                const u =  d.uncertainty*255*2;
+                const unc = parseInt(u/100);
+                const hex_code = unc.toString(16);
+                return bubble_colors[k%3].replace('ff', hex_code);
+            }
+        })
+        .attr('stroke', () => {
+            const stroke_color = k===3 ? '#121214' : 'none';
+            return stroke_color;
+        })
+        .attr("stroke-width", 0.1)
+        .append("title")
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
     }
 }
 
