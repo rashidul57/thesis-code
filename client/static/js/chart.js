@@ -486,9 +486,6 @@ function add_textures() {
             // .attr("stroke-width", 1)
             // .attr("fill", "none")
             // .attr('class', 'poly' + sec_indx)
-            // // .attr('class', 'sec-path')
-            // // .attr("fill", 'url(#texture-' + nameCls + '-' + rgb_indexes[k] + ')')
-            // // .attr('fill-opacity', 0.33)
             // .attr('d', d_str);
 
             for (let k = 0; k< 3; k++) {
@@ -511,9 +508,9 @@ function add_textures() {
     function add_texture_layer(k, deviation, cont_g, d_str, country, country_index) {
         const nameCls = get_name_cls(country);
         cont_g.append('path')
-            .attr('class', 'sec-path path-' + country)
+            .attr('class', 'texture-sec-path path-' + country)
             .attr("fill", 'url(#texture_country' + country_index + '-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
-            .attr('fill-opacity', 0.33)
+            // .attr('fill-opacity', 0.33)
             .attr('d', d_str)
             .append('title')
             .text('Uncertainty: ' + deviation);
@@ -655,12 +652,13 @@ function draw_horizon_chart(pred_data, model='mlp') {
                 return ret;
             })
             .join("use")
-            .attr("fill-opacity", (d) => {
-                return 0.33;
-            })
+            // .attr("fill-opacity", (d) => {
+            //     return 0.33;
+            // })
             .attr("fill", (d, i) => {
                 return bubble_colors[k];
             })
+            .attr('class', 'horizon-flow')
             .attr("transform", (d, i) => `translate(0,${(i + 1) * step})`)
             .attr("xlink:href", d => d.pathId.href);
 
@@ -869,8 +867,9 @@ function draw_parallel_coords() {
         .enter()
         .append('polygon')
         .attr('points', d=> d)
-        .attr('fill-opacity', 0.33)
+        // .attr('fill-opacity', 0.33)
         .attr('fill', bubble_colors[k])
+        .attr('class', 'parallel-coords')
         .append('title')
         .text((d, i) => {
             return perc_uncerts[i].name;
@@ -895,7 +894,7 @@ function draw_usage_chart() {
         let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
-        // preds = _.take(preds, 5)
+        preds = _.take(preds, 40)
 
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
@@ -961,43 +960,42 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    draw_layer(3);
+    // draw_layer(3);
 
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
     }
 
     function draw_layer(k) {
-        const buffer = 2;
+        const ca_space = 6;
         svg.append("g")
         .selectAll("rect")
         .data(data)
         .join("rect")
         .attr('class', (d, i) => {
-            return 'urect-' + i;
+            return 'usage-rect';
         })
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
             if (k===3) {
                 return x_pos;
             } else {
-                let width = x.bandwidth() - buffer;
-                const change = get_rect_change('x', k, d.uncertainty*width/100);
+                const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  x=', change);
                 x_pos += change;
 
                 if (x_pos < x_base) {
                     x_pos = x_base;
                 }
-                return x_pos + buffer/2;
+                return x_pos;
             }
         })
         .attr("width", (d, i) => {
             if (k===3) {
                 return x.bandwidth();
             } else {
-                let width = base_width = x.bandwidth() - buffer;
-                const change = get_rect_change('x', k, d.uncertainty*width/100);
+                let width = base_width = x.bandwidth();
+                const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  w=', change);
                 width = width - Math.abs(change);
 
@@ -1013,8 +1011,7 @@ function draw_usage_chart() {
             if (k===3) {
                 return y_pos;
             } else {
-                let height = y.bandwidth() - buffer;
-                const change = get_rect_change('y', k, d.uncertainty*height/100);
+                const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  y=', change);
                 y_pos += change;
 
@@ -1022,15 +1019,15 @@ function draw_usage_chart() {
                     y_pos = base_y;
                 }
 
-                return y_pos + buffer/2;
+                return y_pos;
             }
         })
         .attr("height", (d, i) => {
             if (k===3) {
                 return y.bandwidth();
             } else {
-                let height = base_height = y.bandwidth() - buffer;
-                const change = get_rect_change('y', k, d.uncertainty*height/100);
+                let height = base_height = y.bandwidth();
+                const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  h:', change);
                 height = height - Math.abs(change);
 
@@ -1041,9 +1038,9 @@ function draw_usage_chart() {
                 return height;
             }
         })
-        .attr('fill-opacity', () => {
-            return k===3 ? 1 : 0.33;
-        })
+        // .attr('fill-opacity', () => {
+        //     return k===3 ? 1 : 0.33;
+        // })
         .attr("fill", (d) => {
             if (k===3) {
                 return '#fff';
@@ -1054,13 +1051,14 @@ function draw_usage_chart() {
                 return bubble_colors[k].replace('ff', hex_code);
             }
         })
-        .attr('stroke', () => {
-            const stroke_color = k===3 ? '#121214' : 'none';
-            return stroke_color;
-        })
-        .attr("stroke-width", 0.1)
-        .append("title")
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
+        // .attr('stroke', () => {
+        //     const stroke_color = k===3 ? '#121214' : 'none';
+        //     return stroke_color;
+        // })
+        // .attr("mix-blend-mode", "lighten")
+        // .attr("stroke-width", 0.1)
+        // .append("title")
+        // .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
     }
 }
 
@@ -1411,7 +1409,6 @@ function draw_impact_chart(pred_data, model='mlp') {
         .append("title")
         .text((d, i) => `Uncertainty: ${format(d)}%`);
     }
-
 }
 
 function get_rect_change(axis, rgb_indx, uncertainty) {
@@ -1608,9 +1605,9 @@ function draw_bubble_chart(data, params) {
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
-                .attr("fill-opacity", (d) => {
-                    return 0.33;
-                })
+                // .attr("fill-opacity", (d) => {
+                //     return 0.33;
+                // })
                 .attr('class', ()=> {
                     let cls;
                     if (question_circle_mode) {
@@ -1625,6 +1622,9 @@ function draw_bubble_chart(data, params) {
                     let color = bubble_colors[k];
                     if (question_circle_mode === 'trans') {
                         color = color + '80';
+                    }
+                    if (question_circle_mode === 'noise') {
+                        // color = 'transparent';
                     }
                     return color;
                 });
@@ -1767,19 +1767,23 @@ function draw_bubble_chart(data, params) {
             }
 
             function add_noise_layer(circle, k) {
-                for ( let i = 0; i < 1000; i++) {
+                const dev = bubble_data[0].deviation/2.5;
+                const num_dots = dev*100;
+                console.log(dev, num_dots);
+                for ( let i = 0; i < num_dots; i++) {
                     var rad = Math.sqrt((Math.random() * 40 * 40)),
                         angle = Math.random() * Math.PI * 2,
                         posx = Math.cos(angle),
                         posy = Math.sin(angle);
-                    let opacity = bubble_data[0].deviation/100;
+                    // let opacity = bubble_data[0].deviation/100;
 
                     var c2 = circle
                         .append('circle')
+                        .attr('class', 'noise-circle')
                         .attr('id', 'cir')
                         .attr('cx', posx * rad)
                         .attr('cy', posy * rad)
-                        .attr('r', 1)
+                        .attr('r', 1.5)
                         .style('fill', () => {
                             let indx;
                             if (i%3 === 0) {
@@ -1792,7 +1796,7 @@ function draw_bubble_chart(data, params) {
                             let color = bubble_colors[indx];
                             return color;
                         })
-                        .style('opacity', opacity);
+                        // .style('opacity', opacity);
                     }
         
                 if (k === 2) {
@@ -1909,7 +1913,7 @@ function draw_percentages(leaves) {
         .attr('width', 400)
         .attr('height', 58)
         .attr('stroke', '#7678A9')
-        .attr('fill', 'white');
+        .attr('fill', 'transparent');
 
         // draw circles
         for(let i = 0; i < perc_count; i++) {
@@ -1921,9 +1925,9 @@ function draw_percentages(leaves) {
                 .attr("fill", d => {
                     return bubble_colors[k];
                 })
-                .attr("fill-opacity", (d) => {
-                    return 0.33;
-                });
+                // .attr("fill-opacity", (d) => {
+                //     return 0.33;
+                // });
 
                 // percentage label
                 const label = (i*25) + '%';
@@ -2210,7 +2214,7 @@ function add_country_code(country_cell, show_aber) {
             let size = 10 / bubble_chart_scale;
             return size + 'px';
         })
-        .attr("fill", 'white');
+        .attr("fill", 'black');
 }
 
 function add_zoom_listener(svg, width, height, selector) {
