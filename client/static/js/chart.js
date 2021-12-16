@@ -1821,7 +1821,7 @@ function draw_bubble_chart(data, params) {
                 .ease(d3.easeLinear)           
                 .duration(500)
                 .attr("x", -350)
-                .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 0% to 100%')
+                .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 10% to 100%')
                 
                 .attr("font-size", 25)
                 ;
