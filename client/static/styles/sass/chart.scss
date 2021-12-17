@@ -189,7 +189,7 @@ body {
     }
 
     .left-chart-container {
-        // background: #fff;
+        background: #fff;
         z-index: 9;
         // position: absolute;
         overflow: visible;
@@ -291,17 +291,17 @@ body {
     }
 }
 
-svg.rate-svg{
-    transform: translateZ(0);
-}
+// svg.rate-svg{
+//     transform: translateZ(0);
+// }
 
-.usage-rect, .horizon-flow, .parallel-coords, .texture-sec-path, .circle-container circle, .percent-row circle{
-    mix-blend-mode: lighten;
-    will-change: transform;
-    &.noise-circle{
-        mix-blend-mode: hard-light;
-    }
-}
+// .usage-rect, .horizon-flow, .parallel-coords, .texture-sec-path, .circle-container circle, .percent-row circle{
+//     mix-blend-mode: lighten;
+//     will-change: transform;
+//     &.noise-circle{
+//         mix-blend-mode: hard-light;
+//     }
+// }
 
 .clear-fish-graph, .apply-third-prop, .toggle-texture{
     font-size: 13px;
