@@ -510,7 +510,7 @@ function add_textures() {
         cont_g.append('path')
             .attr('class', 'texture-sec-path path-' + country)
             .attr("fill", 'url(#texture_country' + country_index + '-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
-            // .attr('fill-opacity', 0.33)
+            .attr('fill-opacity', 0.33)
             .attr('d', d_str)
             .append('title')
             .text('Uncertainty: ' + deviation);
@@ -652,9 +652,9 @@ function draw_horizon_chart(pred_data, model='mlp') {
                 return ret;
             })
             .join("use")
-            // .attr("fill-opacity", (d) => {
-            //     return 0.33;
-            // })
+            .attr("fill-opacity", (d) => {
+                return 0.33;
+            })
             .attr("fill", (d, i) => {
                 return bubble_colors[k];
             })
@@ -867,7 +867,7 @@ function draw_parallel_coords() {
         .enter()
         .append('polygon')
         .attr('points', d=> d)
-        // .attr('fill-opacity', 0.33)
+        .attr('fill-opacity', 0.33)
         .attr('fill', bubble_colors[k])
         .attr('class', 'parallel-coords')
         .append('title')
@@ -960,7 +960,7 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    // draw_layer(3);
+    draw_layer(3);
 
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
@@ -973,7 +973,7 @@ function draw_usage_chart() {
         .data(data)
         .join("rect")
         .attr('class', (d, i) => {
-            return 'usage-rect';
+            return 'usage-rect' + ' urect-' + i;
         })
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
@@ -1051,12 +1051,12 @@ function draw_usage_chart() {
                 return bubble_colors[k].replace('ff', hex_code);
             }
         })
-        // .attr('stroke', () => {
-        //     const stroke_color = k===3 ? '#121214' : 'none';
-        //     return stroke_color;
-        // })
-        // .attr("mix-blend-mode", "lighten")
-        // .attr("stroke-width", 0.1)
+        .attr('stroke', () => {
+            const stroke_color = k===3 ? '#121214' : 'none';
+            return stroke_color;
+        })
+        .attr("mix-blend-mode", "lighten")
+        .attr("stroke-width", 0.1)
         .append("title")
         .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
     }
@@ -1605,9 +1605,9 @@ function draw_bubble_chart(data, params) {
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
-                // .attr("fill-opacity", (d) => {
-                //     return 0.33;
-                // })
+                .attr("fill-opacity", (d) => {
+                    return 0.33;
+                })
                 .attr('class', ()=> {
                     let cls;
                     if (question_circle_mode) {
@@ -1774,23 +1774,19 @@ function draw_bubble_chart(data, params) {
             }
 
             function add_noise_layer(circle, k) {
-                const dev = bubble_data[0].deviation/2.5;
-                const num_dots = dev*100;
-                console.log(dev, num_dots);
-                for ( let i = 0; i < num_dots; i++) {
+                for ( let i = 0; i < 1000; i++) {
                     var rad = Math.sqrt((Math.random() * 40 * 40)),
                         angle = Math.random() * Math.PI * 2,
                         posx = Math.cos(angle),
                         posy = Math.sin(angle);
-                    // let opacity = bubble_data[0].deviation/100;
+                    let opacity = bubble_data[0].deviation/100;
 
                     var c2 = circle
                         .append('circle')
-                        .attr('class', 'noise-circle')
                         .attr('id', 'cir')
                         .attr('cx', posx * rad)
                         .attr('cy', posy * rad)
-                        .attr('r', 1.5)
+                        .attr('r', 1)
                         .style('fill', () => {
                             let indx;
                             if (i%3 === 0) {
@@ -1803,7 +1799,7 @@ function draw_bubble_chart(data, params) {
                             let color = bubble_colors[indx];
                             return color;
                         })
-                        // .style('opacity', opacity);
+                        .style('opacity', opacity);
                     }
         
                 if (k === 2) {
@@ -1924,7 +1920,7 @@ function draw_percentages(leaves) {
         .attr('width', 400)
         .attr('height', 58)
         .attr('stroke', '#7678A9')
-        .attr('fill', 'transparent');
+        .attr('fill', 'white');
 
         // draw circles
         for(let i = 0; i < perc_count; i++) {
@@ -1936,9 +1932,9 @@ function draw_percentages(leaves) {
                 .attr("fill", d => {
                     return bubble_colors[k];
                 })
-                // .attr("fill-opacity", (d) => {
-                //     return 0.33;
-                // });
+                .attr("fill-opacity", (d) => {
+                    return 0.33;
+                });
 
                 // percentage label
                 const label = (i*25) + '%';
@@ -1950,7 +1946,7 @@ function draw_percentages(leaves) {
                     return 37;
                 })
                 .attr("font-size", 13)
-                .attr("fill", 'white')
+                .attr("fill", 'black')
                 .html(label);
 
                 // store circle
@@ -2225,7 +2221,7 @@ function add_country_code(country_cell, show_aber) {
             let size = 10 / bubble_chart_scale;
             return size + 'px';
         })
-        .attr("fill", 'black');
+        .attr("fill", 'white');
 }
 
 function add_zoom_listener(svg, width, height, selector) {
