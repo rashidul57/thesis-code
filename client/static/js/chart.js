@@ -885,7 +885,7 @@ function show_hide_polygons() {
 function draw_usage_chart() {
     let data = [];
     const prop = 'new_cases';
-    const top_countries = _.take(countries, 35);
+    const top_countries = _.take(countries, 31);
     top_countries.forEach(country  => {
         const c_base = all_covid_data[country];
         const c_data = {name: country, iso_code: c_base[0].iso_code};
@@ -894,7 +894,7 @@ function draw_usage_chart() {
         let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
-        preds = _.take(preds, 40)
+        // preds = _.take(preds, 40)
 
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
@@ -1057,15 +1057,15 @@ function draw_usage_chart() {
         // })
         // .attr("mix-blend-mode", "lighten")
         // .attr("stroke-width", 0.1)
-        // .append("title")
-        // .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
+        .append("title")
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
     }
 }
 
 function draw_usage_chart2() {
     let data = [];
     const prop = 'new_cases';
-    const top_countries = _.take(countries, 35);
+    const top_countries = _.take(countries, 31);
     top_countries.forEach(country  => {
         const c_base = all_covid_data[country];
         const c_data = {name: country, iso_code: c_base[0].iso_code};
@@ -1654,7 +1654,8 @@ function draw_bubble_chart(data, params) {
                             }
                             break;
                         case 'bubble-select':
-                            d3.selectAll('.circle-container').style("opacity", 0.7);
+                            // d3.selectAll('.circle-container').style("opacity", 0.7);
+                            select_deselect('.circle-container', false);
                             if (bubble_selected.indexOf(d.data.name) > -1) {
                                 bubble_selected = bubble_selected.filter(item => item !== d.data.name);
                             } else {
@@ -1662,7 +1663,8 @@ function draw_bubble_chart(data, params) {
                             }
                             bubble_selected.forEach(name => {
                                 nameCls = get_name_cls(name);
-                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                select_deselect('.circle-container-' + nameCls, true);
                             });
 
                             toggle_go();
@@ -1670,13 +1672,16 @@ function draw_bubble_chart(data, params) {
                             break;
 
                         case 'bubble-remove':
-                            d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
+                            // d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
+                            select_deselect('.circle-container-' + nameCls, false);
                             if (bubble_removed.indexOf(d.data.name) > -1) {
-                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                select_deselect('.circle-container-' + nameCls, true);
                                 bubble_removed = bubble_removed.filter(item => item !== d.data.name);
                             } else {
                                 bubble_removed.push(d.data.name);
-                                d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
+                                // d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
+                                select_deselect('.circle-container-' + nameCls, false);
                             }
                             toggle_go();
                             toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
@@ -1690,11 +1695,13 @@ function draw_bubble_chart(data, params) {
                             }
                             const opacity = global_streams.length ? 0.1 : 0.8;
                             d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
-                            d3.selectAll('.circle-container').style("opacity", 0.7);
+                            // d3.selectAll('.circle-container').style("opacity", 0.7);
+                            select_deselect('.circle-container', false);
                             global_streams.forEach(name => {
                                 nameCls = get_name_cls(name);
                                 d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
-                                d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
+                                select_deselect('.circle-container-' + nameCls, true);
                             });
 
                             toggle_go();
@@ -1874,6 +1881,10 @@ function add_alt_mode(country_cell, given_dev, circle_for) {
             return 25 + 'px';
         })
         .attr("fill", 'black');
+}
+
+function select_deselect(selector, clear) {
+    d3.selectAll(selector + ' circle').style("opacity", clear ? 0.7 : 1);
 }
 
 function add_circle_blur(svg, deviation) {
