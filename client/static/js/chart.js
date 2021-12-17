@@ -1038,9 +1038,9 @@ function draw_usage_chart() {
                 return height;
             }
         })
-        // .attr('fill-opacity', () => {
-        //     return k===3 ? 1 : 0.33;
-        // })
+        .attr('fill-opacity', () => {
+            return k===3 ? 1 : 0.33;
+        })
         .attr("fill", (d) => {
             if (k===3) {
                 return '#fff';
