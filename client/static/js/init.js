@@ -6,6 +6,7 @@ let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
 let country_list_show = false;
 let selected_countries = [];
 let show_polygon = true;
+let mapped_countries = {};
 
 window.onload = init;
 
@@ -21,6 +22,11 @@ async function init() {
     
     prop_pred_data = forecast_data[sel_property];
     countries = Object.keys(prop_pred_data);
+    countries.forEach(country => {
+        const code = prop_pred_data[country].code;
+        mapped_countries[country] = code;
+        mapped_countries[code] = country;
+    });
 
     ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations'].forEach(prop => {
         countries.forEach(country => {
@@ -182,7 +188,7 @@ function load_control_data() {
     });
 
     // country stream-graph options
-    const country_stream_modes = ['By Properties', 'Prediction'];
+    const country_stream_modes = ['Prediction', 'By Properties'];
     country_stream_mode = country_stream_modes[0];
     d3.select("#drp-country-stream-type")
     .selectAll('model-list')
@@ -277,6 +283,10 @@ function load_control_data() {
     d3.selectAll('.toggle-texture')
     .on("click", function(ev) {
         const elem = d3.select(this);
+        const country_streams = d3.selectAll('.country-stream-svg').nodes();
+        if (!(global_streams.length || country_streams.length)) {
+            return alert('No country stream to show textures.');
+        }
         let mode = elem.attr('mode');
         if (!mode || mode === 'color') {
             mode = 'texture';

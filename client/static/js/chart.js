@@ -8,10 +8,12 @@ let stream_chart_scale = 1;
 let bubble_removed = [];
 let bubble_selected = [];
 let global_streams = [];
+let country_streams = [];
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
 const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroon, fushia
 const bubble_colors2 = {0: '#008080	', 1: '#0000FF', 2: '#000080'}; //teal, blue, navy: https://en.wikipedia.org/wiki/Web_colors
+const bubble_colors3 = {0: '#2C0000', 1: '#005300', 2: '#000095'};
 const rgb_indexes = {'0': 'r', '1': 'g', '2': 'b'};
 
 function draw_predicted_lines(data, sel_country='United States') {
@@ -215,7 +217,6 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         d3.select("." + container).selectAll("svg").remove();
     }
     let data = [];
-    let series_low, series_up;
     let keys = Object.keys(pred_data)
     let max = 0;
     keys.forEach(country => {
@@ -289,7 +290,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     }
 
     // apply the selected filter only
-    if (global_streams.length) {
+    if (!sel_country && global_streams.length) {
         for (let k = 0; k < data.length; k++) {
             for (let prop in data[k]) {
                 if (!(prop === 'date' || global_streams.indexOf(prop) > -1)) {
@@ -362,7 +363,8 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .attr('class', 'main-stream-svg');
         svg.attr("viewBox", [0, 0, width, height]);
 
-        add_texture_defs(svg, keys, color)
+        const stream_countries = global_streams.concat(country_streams);
+        def_textures(svg, stream_countries);
     }
 
     let stream = svg.append("g")
@@ -378,16 +380,38 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .attr('class', ({key}) => {
             const nameCls = get_name_cls(key);
             const cls = 'main-stream-cell stream-cell-' + nameCls;
-            return sel_country ? '' : cls;
+            return sel_country ? 'sel-country-stream-cell' : cls;
         })
         .append("title")
         .text(({key}) => {
             return key;
         });
 
+    if (!global_streams.length || mode === 'color') {
+        stream.attr("fill", ({key}) => {
+            let colr = color(key);
+            // if (sel_country) {
+            //     let bubble_colrs;
+            //     if (key === 'mlp') {
+            //         bubble_colrs = bubble_colors1;
+            //     } else if (key === 'cnn') {
+            //         bubble_colrs = bubble_colors2;
+            //     } else {
+            //         bubble_colrs = bubble_colors3;
+            //     }
+            //     colr = '#' + (bubble_colrs[0] + bubble_colrs[1] + bubble_colrs[2]).replace(/[(#)(00)]/g, '');
+            // }
+            return colr;
+        });
+    }
+
+    // for the selected country streams
     if (mode === 'color') {
-        stream.attr("fill", ({key}) => color(key));
-    } else {
+        const cont_g = d3.selectAll('.country-stream-svg g');
+        cont_g.selectAll('.sel-country-stream-cell').style('display', 'block');
+        cont_g.selectAll('.texture-sec-path').remove();
+    }
+    if (mode !== 'color') {
         add_textures();
     }
 
@@ -416,92 +440,110 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 }
 
 function add_textures() {
-    d3.selectAll('.main-stream-cell').style("display", 'none');
-
-    // const texture_prop = sel_property; // === 'new_cases' ? 'new_deaths' : 'new_cases';
-    const paths = d3.selectAll('.main-stream-g path').nodes();
-
-    // prediction is done for 200 days, so that has to be divisible by num_of_days
-    let num_of_days = 3;
-    paths.forEach((path_item, country_index) => {
-        const country = path_item.textContent;
-        const cont_g = d3.select('.main-stream-g');
-
-        const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
-        const parts = d.split('L');
-        let poly_data = {};
-        
-        const size = parts.length;
-        const side1 = _.take(parts, size/2);
-        let side2 = _.takeRight(parts, size/2);
-        side2.reverse();
-        const side_len = side1.length;
-        const country_data = forecast_data[sel_property][country][sel_model];
-        
-        let sec_indx = 0;
-        side1.forEach((item, side_index) => {
-            if (!poly_data[sec_indx]) {
-                poly_data[sec_indx] = {start: [], end: [], count: 0};
-                log = true;
+    const selectors = ['.country-stream-svg'];
+    if (global_streams.length) {
+        d3.selectAll('.main-stream-cell').style("display", 'none');
+        selectors.push('.main-stream-g');
+    }
+    selectors.forEach((selector, sel_indx) => {
+        const containers = d3.selectAll(selector).nodes();
+        containers.forEach(container => {
+            let cont_g = d3.select(container);
+            const paths = cont_g.selectAll('path').nodes();
+            if (sel_indx === 0) {
+                cont_g = cont_g.select('g');
+                cont_g.selectAll('.sel-country-stream-cell').style('display', 'none');
+                cont_g.selectAll('.texture-sec-path').remove();
             }
 
-            if (sec_indx > 0 && poly_data[sec_indx].start.length === 0) {
-                poly_data[sec_indx].start.push(side1[side_index-1]);
-                poly_data[sec_indx].end.push(side2[side_index-1]);
-                poly_data[sec_indx].count = get_count(country_stream_mode, country_data, side_index-1);
-            }
+            // prediction is done for 200 days, so that has to be divisible by num_of_days
+            let num_of_days = 3;
+            paths.forEach((path_item, country_index) => {
+                let country, cur_model;
+                if (sel_indx === 0) {
+                    const country_code = path_item.parentElement.parentElement.previousSibling.textContent;
+                    country = mapped_countries[country_code];
+                    cur_model = path_item.textContent;
+                } else {
+                    country = path_item.textContent;
+                    cur_model = sel_model;
+                }
+                
+                const d = d3.select(path_item).attr('d').replace(/[MZ]/gi, '');
+                const parts = d.split('L');
+                let poly_data = {};
+                
+                const size = parts.length;
+                const side1 = _.take(parts, size/2);
+                let side2 = _.takeRight(parts, size/2);
+                side2.reverse();
+                if (!forecast_data[sel_property][country]) {
+                    return;
+                }
+                const country_data = forecast_data[sel_property][country][cur_model];
+                
+                let sec_indx = 0;
+                side1.forEach((item, side_index) => {
+                    if (!poly_data[sec_indx]) {
+                        poly_data[sec_indx] = {start: [], end: [], count: 0};
+                        log = true;
+                    }
 
-            poly_data[sec_indx].count += get_count(country_stream_mode, country_data, side_index);
+                    if (sec_indx > 0 && poly_data[sec_indx].start.length === 0) {
+                        poly_data[sec_indx].start.push(side1[side_index-1]);
+                        poly_data[sec_indx].end.push(side2[side_index-1]);
+                        poly_data[sec_indx].count = get_count(country_stream_mode, country_data, side_index-1);
+                    }
 
-            const val = side2[side_index];
-            if (val) {
-                poly_data[sec_indx].start.push(item);
-                poly_data[sec_indx].end.push(val);
-            }
+                    poly_data[sec_indx].count += get_count(country_stream_mode, country_data, side_index);
 
-            if (poly_data[sec_indx].start.length === num_of_days) {
-                sec_indx++;
-            }
+                    const val = side2[side_index];
+                    if (val) {
+                        poly_data[sec_indx].start.push(item);
+                        poly_data[sec_indx].end.push(val);
+                    }
+
+                    if (poly_data[sec_indx].start.length === num_of_days) {
+                        sec_indx++;
+                    }
+                });
+
+                for (let sec_indx in poly_data) {
+                    const start = poly_data[sec_indx].start.join('L');
+                    const end = poly_data[sec_indx].end.reverse().join('L');
+                    let deviation = parseInt(poly_data[sec_indx].count/(num_of_days*100), 10);
+                    while (deviation >= 10) {
+                        deviation = Math.ceil(deviation / 10);
+                    }
+
+                    if (!start || !end) {
+                        continue;
+                    }
+
+                    const d_str = 'M' + start + 'L' + end + ' Z';
+                    // cont_g.append('path')
+                    // .attr("stroke", 'red')
+                    // .attr("stroke-width", 1)
+                    // .attr("fill", "none")
+                    // .attr('class', 'poly' + sec_indx)
+                    // .attr('d', d_str);
+
+                    for (let k = 0; k < 3; k++) {
+                        add_texture_layer(k, deviation, cont_g, d_str, country, country_index);
+                    }
+                }
+            });
         });
-
-        // const max_val = _.maxBy(_.values(poly_data), 'count').count;
-        for (let sec_indx in poly_data) {
-            const start = poly_data[sec_indx].start.join('L');
-            const end = poly_data[sec_indx].end.reverse().join('L');
-            let deviation = parseInt(poly_data[sec_indx].count/(num_of_days*100), 10);
-            while (deviation >= 10) {
-                deviation = Math.ceil(deviation / 10);
-            }
-
-            // deviation = count%10;
-            // count++;
-
-            if (!start || !end) {
-                continue;
-            }
-
-            const d_str = 'M' + start + 'L' + end + ' Z';
-            // cont_g.append('path')
-            // .attr("stroke", 'red')
-            // .attr("stroke-width", 1)
-            // .attr("fill", "none")
-            // .attr('class', 'poly' + sec_indx)
-            // .attr('d', d_str);
-
-            for (let k = 0; k< 3; k++) {
-                add_texture_layer(k, deviation, cont_g, d_str, country, country_index);
-            }
-        }
     });
 
     function get_count(country_stream_mode, country_data, side_index) {
         let count;
-        if (country_stream_mode === 'Prediction') {
-            const ranges = country_data['ranges'][side_index];
-            count = Math.abs(ranges[1] - ranges[0]);
-        } else {
+        // if (country_stream_mode === 'Prediction') {
+        //     const ranges = country_data['ranges'][side_index];
+        //     count = Math.abs(ranges[1] - ranges[0]);
+        // } else {
             count = country_data['y'] && country_data['y'][side_index]|| 0;
-        }
+        // }
         return count;
     }
 
@@ -901,7 +943,7 @@ function draw_usage_chart() {
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const divider = _.max([ranges[0], ranges[1], value]);
             const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
-            const row = Object.assign({date, uncertainty: uncertainty/2}, c_data);
+            const row = Object.assign({date, uncertainty: uncertainty}, c_data);
             row[prop] = Number(value || 0);
             row['new_deaths'] = Number(deaths_preds[i] || 0);
             data.push(row);
@@ -960,14 +1002,17 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    draw_layer(3);
-
+    
+    let max_x = [], max_y = [];
+    let min_w = [], min_h = [];
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
     }
 
+    // draw_layer(3);
+
     function draw_layer(k) {
-        const ca_space = 6;
+        const ca_space = 2;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -978,45 +1023,76 @@ function draw_usage_chart() {
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
             if (k===3) {
-                return x_pos;
+                return max_x[i]; //x_pos + max_x_change;
             } else {
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
-                // console.log('k:', k, '  x=', change);
-                x_pos += change;
+                if (!max_x[i]) {
+                    max_x[i] = -9999;
+                }
+                // if (i ===111) {
+                //     console.log('k:', k, '  change:', change, 'x_pos:', x_pos);
+                // }
+                if (change >= 0) {
+                    x_pos = x_pos + change;
+                } else {
+                    x_pos = x_pos + ca_space - change;
+                }
 
-                if (x_pos < x_base) {
-                    x_pos = x_base;
+                if (x_pos > max_x[i]) {
+                    max_x[i] = x_pos;
                 }
                 return x_pos;
             }
         })
         .attr("width", (d, i) => {
             if (k===3) {
-                return x.bandwidth();
+                return min_w[i]; // x.bandwidth() - max_x_change;
             } else {
                 let width = base_width = x.bandwidth();
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  w=', change);
-                width = width - Math.abs(change);
+                // width = width - ca_space + change;
+                if (change >= 0) {
+                    width = width - 2*ca_space - change;
+                } else {
+                    width = width - 2*ca_space + change;
+                }
+                if (!min_w[i]) {
+                    min_w[i] = 999999;
+                }
+
+                if (width < min_w[i]) {
+                    min_w[i] = width;
+                }
 
                 // console.log(base_width, width)
-                if (width > base_width) {
-                    width = base_width;
-                }
+                // if (width > base_width) {
+                //     width = base_width;
+                // }
                 return width;
             }
         })
         .attr("y", (d, i) => {
             let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
             if (k===3) {
-                return y_pos;
+                return max_y[i]; // y_pos + max_y_change;
             } else {
                 const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
-                // console.log('k:', k, '  y=', change);
-                y_pos += change;
+                // if (i ===111) {
+                //     console.log('k:', k, '  change:', change, 'y_pos: ', y_pos);
+                // }
+                if (!max_y[i]) {
+                    max_y[i] = -999999;
+                }
+                
+                if (change >= 0) {
+                    y_pos = y_pos + change;
+                } else {
+                    y_pos = y_pos + ca_space - change;
+                }
 
-                if (y_pos < base_y) {
-                    y_pos = base_y;
+                if (y_pos > max_y[i]) {
+                    max_y[i] = y_pos;
                 }
 
                 return y_pos;
@@ -1024,15 +1100,22 @@ function draw_usage_chart() {
         })
         .attr("height", (d, i) => {
             if (k===3) {
-                return y.bandwidth();
+                return min_h[i]; //y.bandwidth() - max_y_change;
             } else {
                 let height = base_height = y.bandwidth();
                 const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  h:', change);
-                height = height - Math.abs(change);
+                if (change >= 0) {
+                    height = height - 2*ca_space - change;
+                } else {
+                    height = height - 2*ca_space + change;
+                }
+                if (!min_h[i]) {
+                    min_h[i] = 999999;
+                }
 
-                if (height > base_height) {
-                    height = base_height;
+                if (height < min_h[i]) {
+                    min_h[i] = height;
                 }
                 
                 return height;
@@ -1043,7 +1126,7 @@ function draw_usage_chart() {
         })
         .attr("fill", (d) => {
             if (k===3) {
-                return '#fff';
+                return '#888';
             } else {
                 const u =  d.uncertainty*255*2;
                 const unc = parseInt(u/100);
@@ -1051,158 +1134,12 @@ function draw_usage_chart() {
                 return bubble_colors[k].replace('ff', hex_code);
             }
         })
-        .attr('stroke', () => {
-            const stroke_color = k===3 ? '#121214' : 'none';
-            return stroke_color;
-        })
-        .attr("mix-blend-mode", "lighten")
-        .attr("stroke-width", 0.1)
-        .append("title")
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
-    }
-}
-
-function draw_usage_chart2() {
-    let data = [];
-    const prop = 'new_cases';
-    const top_countries = _.take(countries, 31);
-    top_countries.forEach(country  => {
-        const c_base = all_covid_data[country];
-        const c_data = {name: country, iso_code: c_base[0].iso_code};
-
-        let preds = forecast_data[prop][country][sel_model]['y_pred'];
-        let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
-        const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
-
-        preds.forEach((value, i) => {
-            const date = moment(start_date).add('days', i).toDate();
-            const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
-            const divider = _.max([ranges[0], ranges[1], value]);
-            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
-            const row = Object.assign({date, uncertainty: uncertainty/2}, c_data);
-            row[prop] = Number(value || 0);
-            row['new_deaths'] = Number(deaths_preds[i] || 0);
-            data.push(row);
-        });
-    });
-
-    const c_codes = _.uniq(data.map(c => c.iso_code));
-    data = _.orderBy(data, [(item) => item.date], ['asc']);
-
-    const dateExtent = d3.extent(data, d => new Date(d.date));
-    const margin = ({top: 35, right: 20, bottom: 0, left: 50});
-    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
-    const width = 954;
-    formatCountry = (d) => {
-        return d;
-    }
-
-    formatDay = (d) => {
-        return moment(new Date(d)).format('L');
-    }
-    formatDate = d3.timeFormat("%B %-d, %-I %p");
-    formatUsage = d3.format(",.0f");
-
-    const days_y = d3.timeDays(...dateExtent).map(date => moment(new Date(date)).format('L'))
-    y = d3.scaleBand(days_y, [margin.top, height - margin.bottom]).round(true);
-    x = d3.scaleBand(c_codes, [margin.left, width - margin.right]).round(true);
-    
-    yAxis = g => g
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).tickFormat(formatDay))
-    .call(g => g.select(".domain").remove());
-
-    xAxis = g => g
-    .attr("transform", `translate(0,${margin.top})`)
-    .call(d3.axisTop(x).tickFormat(formatCountry))
-    .call(g => g.select(".domain").remove());
-
-    color = () => {
-        let [min, max] = d3.extent(data, d => d.new_deaths);
-        if (min < 0) {
-          max = Math.max(-min, max);
-          return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
-        }
-        return d3.scaleSequential([0, max], d3.interpolateReds);
-    }
-
-    const svg = d3.select('.left-chart-container')
-        .append("svg")
-        .attr('class', 'rate-svg')
-        .attr("viewBox", [0, 15, width, height])
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 15);
-    
-    svg.append("g")
-        .call(xAxis);
-
-    svg.append("g")
-        .call(yAxis);
-
-    draw_layer(3);
-
-    // background layer of rects
-    for (let k = 0; k < 3; k++) {
-        draw_layer(k);
-    }
-
-    function draw_layer(k) {
-        const buffer = 2;
-        svg.append("g")
-        .selectAll("rect")
-        .data(data)
-        .join("rect")
-        .attr('class', (d, i) => {
-            return 'urect-' + i;
-        })
-        .attr("x", (d, i) => {
-            let x_pos = x_base = x(d.iso_code);
-            if (k===3) {
-                return x_pos;
-            } else {
-                return x_pos + buffer/2;
-            }
-        })
-        .attr("width", (d, i) => {
-            if (k===3) {
-                return x.bandwidth();
-            } else {
-                return x.bandwidth() - buffer;
-            }
-        })
-        .attr("y", (d, i) => {
-            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
-            if (k===3) {
-                return y_pos;
-            } else {
-                return y_pos + buffer/2;
-            }
-        })
-        .attr("height", (d, i) => {
-            if (k===3) {
-                return y.bandwidth();
-            } else {
-                return y.bandwidth() - buffer;
-            }
-        })
-        .attr('fill-opacity', () => {
-            return k===3 ? 1 : 0.33;
-        })
-        .attr("fill", (d) => {
-            if (k===3) {
-                return '#fff';
-            } else {
-                const u =  d.uncertainty*255*2;
-                const unc = parseInt(u/100);
-                const hex_code = unc.toString(16);
-                return bubble_colors[k%3].replace('ff', hex_code);
-            }
-        })
-        .attr('stroke', () => {
-            const stroke_color = k===3 ? '#121214' : 'none';
-            return stroke_color;
-        })
-        .attr("stroke-width", 0.1)
+        // .attr('stroke', () => {
+        //     const stroke_color = k===3 ? '#121214' : 'none';
+        //     return stroke_color;
+        // })
+        // .attr("mix-blend-mode", "lighten")
+        // .attr("stroke-width", 0.1)
         .append("title")
         .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
     }
@@ -1575,7 +1512,7 @@ function draw_bubble_chart(data, params) {
         }
 
         function add_circle(k) {
-            const abberation = k === 0;
+            const first_circle = k === 0;
             const circle = svg.selectAll("g")
             .data(root.leaves())
             .join("g")
@@ -1623,23 +1560,21 @@ function draw_bubble_chart(data, params) {
                     if (question_circle_mode === 'trans') {
                         color = color + '80';
                     }
-                    if (question_circle_mode === 'noise') {
-                        // color = 'transparent';
-                    }
                     return color;
                 });
 
             if (!question_circle_mode) {
-                new_circle.on('mouseover', function (event, d) {
+                new_circle
+                .on('mouseover', function (event, d) {
                     if (control_mode === 'wing-stream' && !question_circle_mode) {
                         reorder_bubbles(this.parentNode, root.leaves());
                         toggle_focus(d.data.nameCls, 'mouseover');
                     }
                 })
                 .on('mouseout', function (event, d) {
-                    if (control_mode === 'wing-stream' && !question_circle_mode) {
-                        toggle_focus(d.data.nameCls, 'mouseout');
-                    }
+                    // if (control_mode === 'wing-stream' && !question_circle_mode) {
+                    //     toggle_focus(d.data.nameCls, 'mouseout');
+                    // }
                 })
                 .on('mousedown', function (ev, d) {
                     if (question_circle_mode) {
@@ -1648,13 +1583,17 @@ function draw_bubble_chart(data, params) {
                     let nameCls = d.data.nameCls;
                     switch (control_mode) {
                         case 'wing-stream':
-                            if (!abberation) {
+                            if (!first_circle) {
+                                if (country_streams.indexOf(d.data.name) > -1) {
+                                    country_streams = country_streams.filter(item => item !== d.data.name);
+                                } else {
+                                    country_streams.push(d.data.name);
+                                }
                                 d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
                                 draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
                             }
                             break;
                         case 'bubble-select':
-                            // d3.selectAll('.circle-container').style("opacity", 0.7);
                             select_deselect('.circle-container', false);
                             if (bubble_selected.indexOf(d.data.name) > -1) {
                                 bubble_selected = bubble_selected.filter(item => item !== d.data.name);
@@ -1663,7 +1602,6 @@ function draw_bubble_chart(data, params) {
                             }
                             bubble_selected.forEach(name => {
                                 nameCls = get_name_cls(name);
-                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
                                 select_deselect('.circle-container-' + nameCls, true);
                             });
 
@@ -1672,15 +1610,12 @@ function draw_bubble_chart(data, params) {
                             break;
 
                         case 'bubble-remove':
-                            // d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
                             select_deselect('.circle-container-' + nameCls, false);
                             if (bubble_removed.indexOf(d.data.name) > -1) {
-                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
                                 select_deselect('.circle-container-' + nameCls, true);
                                 bubble_removed = bubble_removed.filter(item => item !== d.data.name);
                             } else {
                                 bubble_removed.push(d.data.name);
-                                // d3.select('.circle-container-' + nameCls).style("opacity", 0.7);
                                 select_deselect('.circle-container-' + nameCls, false);
                             }
                             toggle_go();
@@ -1695,12 +1630,10 @@ function draw_bubble_chart(data, params) {
                             }
                             const opacity = global_streams.length ? 0.1 : 0.8;
                             d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
-                            // d3.selectAll('.circle-container').style("opacity", 0.7);
                             select_deselect('.circle-container', false);
                             global_streams.forEach(name => {
                                 nameCls = get_name_cls(name);
                                 d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
-                                // d3.select('.circle-container-' + nameCls).style("opacity", 1);
                                 select_deselect('.circle-container-' + nameCls, true);
                             });
 
@@ -1825,7 +1758,6 @@ function draw_bubble_chart(data, params) {
                 .duration(500)
                 .attr("x", -350)
                 .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 10% to 100%')
-                
                 .attr("font-size", 25)
                 ;
 
@@ -1858,8 +1790,6 @@ function draw_bubble_chart(data, params) {
                         show_question(question_num+1);
                     }
                 });
-
-
             }
         }
     }
@@ -2083,27 +2013,26 @@ function get_name_cls(key) {
 }
 
 
-function add_texture_defs(svg, keys, color) {
-    
-    // const bubble_data = prepare_bubble_data(prop_pred_data, sel_model);
-
+function def_textures(svg, keys) {
     keys.forEach((key, index) => {
         for (let k = 0; k < 3; k++) {
             const nameCls = get_name_cls(key);
-            // const deviation = bubble_data.find(country => country.name === key).deviation;
             for (let dev = 0; dev < 10; dev++) {
                 const fract_dev = dev/6;
                 const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
                 const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*2/(dev+1)), true);
-                for (let c = 0; c < 2; c++) {
+                for (let c = 0; c < 3; c++) {
                     let fill_color, texture_id;
-                    if (c%2===1) {
+                    if (c%2===0) {
                         fill_color = bubble_colors1[k];
-                        texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     } else {
                         fill_color = bubble_colors2[k];
-                        texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     }
+                    // else {
+                    //     fill_color = bubble_colors3[k];
+                    // }
+                    texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
+                    // console.log('defs:', texture_id)
                     let w = 5;
                     const base_h = 4.5;
                     let h = base_h + dev*0.15;
