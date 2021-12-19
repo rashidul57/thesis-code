@@ -6,7 +6,9 @@ let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
 let country_list_show = false;
 let selected_countries = [];
 let show_polygon = true;
+let color_or_texture = 'color';
 let mapped_countries = {};
+let color_mappings = {};
 
 window.onload = init;
 
@@ -294,6 +296,7 @@ function load_control_data() {
             mode = 'color';
             elem.html('Texture Stream');
         }
+        color_or_texture = mode;
         elem.attr('mode', mode);
         draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
     });
