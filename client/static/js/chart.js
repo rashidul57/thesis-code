@@ -362,9 +362,11 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .append("svg")
         .attr('class', 'main-stream-svg');
         svg.attr("viewBox", [0, 0, width, height]);
+    }
 
-        const stream_countries = global_streams.concat(country_streams);
-        def_textures(svg, stream_countries);
+    const stream_countries = global_streams.concat(country_streams);
+    if (stream_countries.length) {
+        def_textures(svg, stream_countries, max);
     }
 
     let stream = svg.append("g")
@@ -445,6 +447,7 @@ function add_textures() {
         d3.selectAll('.main-stream-cell').style("display", 'none');
         selectors.push('.main-stream-g');
     }
+
     selectors.forEach((selector, sel_indx) => {
         const containers = d3.selectAll(selector).nodes();
         containers.forEach(container => {
@@ -456,7 +459,6 @@ function add_textures() {
                 cont_g.selectAll('.texture-sec-path').remove();
             }
 
-            // prediction is done for 200 days, so that has to be divisible by num_of_days
             let num_of_days = 3;
             paths.forEach((path_item, country_index) => {
                 let country, cur_model;
@@ -492,10 +494,10 @@ function add_textures() {
                     if (sec_indx > 0 && poly_data[sec_indx].start.length === 0) {
                         poly_data[sec_indx].start.push(side1[side_index-1]);
                         poly_data[sec_indx].end.push(side2[side_index-1]);
-                        poly_data[sec_indx].count = get_count(country_stream_mode, country_data, side_index-1);
+                        poly_data[sec_indx].count = get_count(country_data, side_index-1);
                     }
 
-                    poly_data[sec_indx].count += get_count(country_stream_mode, country_data, side_index);
+                    poly_data[sec_indx].count += get_count(country_data, side_index);
 
                     const val = side2[side_index];
                     if (val) {
@@ -529,26 +531,24 @@ function add_textures() {
                     // .attr('d', d_str);
 
                     for (let k = 0; k < 3; k++) {
-                        add_texture_layer(k, deviation, cont_g, d_str, country, country_index);
+                        add_texture_layer(k, deviation, cont_g, d_str, country, country_index, selector);
                     }
                 }
             });
         });
     });
 
-    function get_count(country_stream_mode, country_data, side_index) {
-        let count;
-        // if (country_stream_mode === 'Prediction') {
-        //     const ranges = country_data['ranges'][side_index];
-        //     count = Math.abs(ranges[1] - ranges[0]);
-        // } else {
-            count = country_data['y'] && country_data['y'][side_index]|| 0;
-        // }
-        return count;
+    function get_count(country_data, side_index) {
+        return country_data['y'] && country_data['y'][side_index]|| 0;
     }
 
-    function add_texture_layer(k, deviation, cont_g, d_str, country, country_index) {
+
+    function add_texture_layer(k, deviation, cont_g, d_str, country, country_index, selector) {
         const nameCls = get_name_cls(country);
+        if (selector.indexOf('main') > -1) {
+            country_index = country_index%2 === 0 ? color_mappings[country][0] : color_mappings[country][2];
+        }
+
         cont_g.append('path')
             .attr('class', 'texture-sec-path path-' + country)
             .attr("fill", 'url(#texture_country' + country_index + '-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
@@ -1572,9 +1572,9 @@ function draw_bubble_chart(data, params) {
                     }
                 })
                 .on('mouseout', function (event, d) {
-                    // if (control_mode === 'wing-stream' && !question_circle_mode) {
-                    //     toggle_focus(d.data.nameCls, 'mouseout');
-                    // }
+                    if (control_mode === 'wing-stream' && !question_circle_mode) {
+                        toggle_focus(d.data.nameCls, 'mouseout');
+                    }
                 })
                 .on('mousedown', function (ev, d) {
                     if (question_circle_mode) {
@@ -1590,6 +1590,7 @@ function draw_bubble_chart(data, params) {
                                     country_streams.push(d.data.name);
                                 }
                                 d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
+                                set_color_mode();
                                 draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
                             }
                             break;
@@ -1876,7 +1877,7 @@ function draw_percentages(leaves) {
                     return 37;
                 })
                 .attr("font-size", 13)
-                .attr("fill", 'black')
+                .attr("fill", 'white')
                 .html(label);
 
                 // store circle
@@ -2012,25 +2013,53 @@ function get_name_cls(key) {
     return key.replace(/\s/g, '-') || '';
 }
 
+function get_color_orders(key, max) {
+    const model_types = ['mlp', 'cnn', 'lstm'];
+    let data = [];
+    for (let i = 0; i < max; i++) {
+        const date = moment(new Date(prop_pred_data[key].mlp.start_timestamp)).add('days', i).toDate();
+        const record = {date};
+        model_types.forEach(model => {
+            const ranges = prop_pred_data[key][model].ranges[i];
+            record[model] = Math.abs(ranges[0] - ranges[1]) || 0;
+        });
+        data.push(record);
+    }
+    data = get_normalized_data(data, model_types);
+    let orders = [];
+    ['mlp', 'cnn', 'lstm'].forEach((prop, indx) => {
+        orders.push({name: prop, value: data[0][prop], index: indx});
+    });
+    orders = _.orderBy(orders, ['value'], ['asc']);
+    return orders;
+}
 
-function def_textures(svg, keys) {
+function def_textures(svg, keys, max) {
+    color_mappings = {};
+
     keys.forEach((key, index) => {
+        const color_orders = get_color_orders(key, max);
+        const first_two_col_indexs = [color_orders[0].index, color_orders[1].index]; 
+        color_mappings[key] = color_orders.map(item => item.index);
+        
+        // For number of aberration points
         for (let k = 0; k < 3; k++) {
             const nameCls = get_name_cls(key);
-            for (let dev = 0; dev < 10; dev++) {
-                const fract_dev = dev/6;
-                const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
-                const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*2/(dev+1)), true);
-                for (let c = 0; c < 3; c++) {
-                    let fill_color, texture_id;
-                    if (c%2===0) {
-                        fill_color = bubble_colors1[k];
-                    } else {
-                        fill_color = bubble_colors2[k];
-                    }
-                    // else {
-                    //     fill_color = bubble_colors3[k];
-                    // }
+
+            // For number of alternative colors
+            for (let c = 0; c < 3; c++) {
+                let fill_color, texture_id;
+                if (first_two_col_indexs.indexOf(c) > -1) {
+                    fill_color = bubble_colors1[k];
+                } else {
+                    fill_color = bubble_colors2[k];
+                }
+                // number of deviation scales
+                for (let dev = 0; dev < 10; dev++) {
+                    const fract_dev = dev/6;
+                    const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
+                    const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*2/(dev+1)), true);
+
                     texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
                     // console.log('defs:', texture_id)
                     let w = 5;
@@ -2059,7 +2088,7 @@ function def_textures(svg, keys) {
             }
         }
     });
-    
+
 }
 
 
