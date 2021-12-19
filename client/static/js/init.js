@@ -283,8 +283,7 @@ function load_control_data() {
     d3.selectAll('.toggle-texture')
     .on("click", function(ev) {
         const elem = d3.select(this);
-        const country_streams = d3.selectAll('.country-stream-svg').nodes();
-        if (!(global_streams.length || country_streams.length)) {
+        if ((global_streams.length + country_streams.length) === 0) {
             return alert('No country stream to show textures.');
         }
         let mode = elem.attr('mode');
