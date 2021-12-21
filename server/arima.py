@@ -43,14 +43,12 @@ def predict_usage_data(data, n_periods):
                         suppress_warnings=True, 
                         stepwise=True)
 
-    # print(model.summary())
-
     # Forecast
     fc, confint = model.predict(n_periods=n_periods, return_conf_int=True)
     index_of_fc = np.arange(len(df.values), len(df.values)+n_periods)
 
     # make series for plotting purpose
-    fc_series = pd.Series(fc, index=index_of_fc).to_json()
+    fc_series = pd.Series(fc, index=index_of_fc).to_numpy()
     lower_series = pd.Series(confint[:, 0], index=index_of_fc).array
     upper_series = pd.Series(confint[:, 1], index=index_of_fc).array
     ranges = list()
