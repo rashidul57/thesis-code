@@ -89,5 +89,5 @@ for k in range(len(props)):
 
         resp[prop][location] = {"code": code, "arima": arima}
 
-with open('resp-arima.json', 'w+') as outfile:
+with open('resp-arima-new.json', 'w+') as outfile:
     json.dump(json.dumps(resp, cls=model_service.NumpyArrayEncoder), outfile)
