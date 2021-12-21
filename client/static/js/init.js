@@ -59,15 +59,7 @@ async function init() {
                 //     model_data['y'][indx] = Math.abs(Number(val)) || 0;
                 // });
 
-                // TODO: remove on next arima forecasts
-                if (model === 'arima') {
-                    const parsed_preds = JSON.parse(model_data['y_pred']);
-                    model_data['y_pred'] = [];
-                    const indexs = Object.keys(parsed_preds);
-                    indexs.forEach(indx => {
-                        model_data['y_pred'].push(parsed_preds[indx]);
-                    });
-                }
+
                 model_data['y_pred'].forEach((val, indx) => {
                     model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });
