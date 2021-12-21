@@ -28,11 +28,7 @@ async function init() {
     props = ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations']
     props.forEach(prop => {
         for (let country in forecast_data[prop]) {
-            if (arima_data[prop][country]) {
-                forecast_data[prop][country]['arima'] = arima_data[prop][country]['arima'];
-            } else {
-                delete forecast_data[prop][country];
-            }
+            forecast_data[prop][country]['arima'] = arima_data[prop][country]['arima'];
         }
     });
 
@@ -51,13 +47,14 @@ async function init() {
                 if (!forecast_data[prop][country]) {
                     return;
                 }
-                
+
                 const model_data = forecast_data[prop][country][model];
                 model_data['ranges'].forEach(item => {
                     [0, 1].forEach(indx => {
                         item[indx] = Math.abs(Number(item[indx])) || 0;
                     });
                 });
+
                 // model_data['y'].forEach((val, indx) => {
                 //     model_data['y'][indx] = Math.abs(Number(val)) || 0;
                 // });
