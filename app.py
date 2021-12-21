@@ -1,7 +1,7 @@
 import flask
 import os
 from flask import request, jsonify, render_template
-from server import new_model_service as model_service
+from server import model_service as model_service
 import json
 
 app = flask.Flask(__name__, template_folder='./client/templates', static_folder="./client/static");
@@ -18,6 +18,12 @@ def index():
 @app.route('/get-forcasts', methods=['GET'])
 def get_forcasts():
     with open('resp.json') as json_file:
+        data = json.load(json_file)
+        return jsonify(data)
+
+@app.route('/get-arima-forcasts', methods=['GET'])
+def get_forcasts():
+    with open('arima-resp.json') as json_file:
         data = json.load(json_file)
         return jsonify(data)
 

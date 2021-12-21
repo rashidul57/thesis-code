@@ -21,6 +21,9 @@ async function init() {
 
     const forecasts = await $.get("/get-forcasts");
     forecast_data = JSON.parse(forecasts);
+
+    const forecasts = await $.get("/get-arima-forecast");
+    forecast_data = JSON.parse(forecasts);
     
     prop_pred_data = forecast_data[sel_property];
     countries = Object.keys(prop_pred_data);
@@ -160,7 +163,7 @@ function load_control_data() {
     // Machine learning predictive models
     d3.select("#drp-models option").remove();
 
-    const models = ['mlp', 'cnn', 'lstm'];
+    const models = ['mlp', 'cnn', 'lstm', 'arima'];
     d3.select("#drp-models")
     .selectAll('model-list')
     .data(models)
