@@ -19,14 +19,26 @@ window.onload = init;
  */
 async function init() {
 
-    const forecasts = await $.get("/get-forcasts");
+    const forecasts = await $.get("/get-forecasts");
     forecast_data = JSON.parse(forecasts);
 
-    const forecasts = await $.get("/get-arima-forecast");
-    forecast_data = JSON.parse(forecasts);
-    
+    const arima_forecasts = await $.get("/get-arima-forecasts");
+    arima_data = JSON.parse(arima_forecasts);
+
+    props = ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations']
+    props.forEach(prop => {
+        for (let country in forecast_data[prop]) {
+            if (arima_data[prop][country]) {
+                forecast_data[prop][country]['arima'] = arima_data[prop][country]['arima'];
+            } else {
+                delete forecast_data[prop][country];
+            }
+        }
+    });
+
     prop_pred_data = forecast_data[sel_property];
     countries = Object.keys(prop_pred_data);
+
     countries.forEach(country => {
         const code = prop_pred_data[country].code;
         mapped_countries[country] = code;
@@ -35,19 +47,30 @@ async function init() {
 
     ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations'].forEach(prop => {
         countries.forEach(country => {
-            ['mlp', 'cnn', 'lstm'].forEach(model => {
+            ['mlp', 'cnn', 'lstm', 'arima'].forEach(model => {
                 if (!forecast_data[prop][country]) {
                     return;
                 }
+                
                 const model_data = forecast_data[prop][country][model];
                 model_data['ranges'].forEach(item => {
                     [0, 1].forEach(indx => {
                         item[indx] = Math.abs(Number(item[indx])) || 0;
                     });
                 });
-                model_data['y'].forEach((val, indx) => {
-                    model_data['y'][indx] = Math.abs(Number(val)) || 0;
-                });
+                // model_data['y'].forEach((val, indx) => {
+                //     model_data['y'][indx] = Math.abs(Number(val)) || 0;
+                // });
+
+                // TODO: remove on next arima forecasts
+                if (model === 'arima') {
+                    const parsed_preds = JSON.parse(model_data['y_pred']);
+                    model_data['y_pred'] = [];
+                    const indexs = Object.keys(parsed_preds);
+                    indexs.forEach(indx => {
+                        model_data['y_pred'].push(parsed_preds[indx]);
+                    });
+                }
                 model_data['y_pred'].forEach((val, indx) => {
                     model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });

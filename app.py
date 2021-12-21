@@ -15,15 +15,15 @@ def index():
 
 
 
-@app.route('/get-forcasts', methods=['GET'])
-def get_forcasts():
+@app.route('/get-forecasts', methods=['GET'])
+def get_forecasts():
     with open('resp.json') as json_file:
         data = json.load(json_file)
         return jsonify(data)
 
-@app.route('/get-arima-forcasts', methods=['GET'])
-def get_forcasts():
-    with open('arima-resp.json') as json_file:
+@app.route('/get-arima-forecasts', methods=['GET'])
+def get_arima_forecasts():
+    with open('resp-arima.json') as json_file:
         data = json.load(json_file)
         return jsonify(data)
 
