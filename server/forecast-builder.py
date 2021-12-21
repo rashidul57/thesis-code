@@ -1,5 +1,5 @@
 import os
-import new_model_service as model_service
+import model_service as model_service
 import json
 from json import JSONEncoder
 

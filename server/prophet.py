@@ -30,4 +30,4 @@ forecast = model.predict(future)
 print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].head())
 # plot forecast
 model.plot(forecast)
-# pyplot.show()
+pyplot.show()
