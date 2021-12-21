@@ -1,7 +1,6 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
 let sel_property = 'new_cases';
-let control_mode = 'wing-stream';
-let stream_blur_on = false;
+let control_mode = 'star-fish';
 let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
 let country_list_show = false;
 let selected_countries = [];
@@ -281,27 +280,14 @@ function load_control_data() {
         refresh_container();
     });
 
-    // toggle apply-third-prop
-    // d3.selectAll('.apply-third-prop')
-    // .on("click", function(ev) {
-    //     const len = d3.selectAll('.sec-path').nodes().length;
-    //     if (len) {
-    //         stream_blur_on = !stream_blur_on;
-    //         const display = stream_blur_on ? 'inline-block' : 'none';
-    //         d3.selectAll('.sec-path').style("display", display);
-    //     } else {
-    //         add_texture_layer(sel_property);
-    //     }
-    //     const base_path_display = stream_blur_on ? 'none' : 'inline-block';
-    //     d3.selectAll('.main-stream-cell').style("display", base_path_display);
-    // });
-
     // toggle apply-toggle-texture
     d3.selectAll('.toggle-texture')
     .on("click", function(ev) {
         const elem = d3.select(this);
-        if ((global_streams.length + country_streams.length) === 0) {
-            return alert('No country stream to show textures.');
+        if (sel_chart_type === 'Bubble Chart') {
+            if ((global_streams.length + country_streams.length) === 0) {
+                return alert('No country stream to show textures.');
+            }
         }
         let mode = elem.attr('mode');
         if (!mode || mode === 'color') {
@@ -313,7 +299,11 @@ function load_control_data() {
         }
         color_or_texture = mode;
         elem.attr('mode', mode);
-        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
+        if (sel_chart_type === 'Bubble Chart') {
+            draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
+        } else {
+            draw_horizon_chart(prop_pred_data, color_or_texture);
+        }
     });
 
     const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
@@ -371,6 +361,7 @@ function load_control_data() {
 
 function set_color_mode() {
     d3.select('.toggle-texture').attr('mode', 'color').html('Texture Stream');
+    color_or_texture = 'color';
 }
 
 function refresh_container() {
@@ -411,7 +402,9 @@ function refresh_container() {
         break;
 
         case 'Horizon Chart':
-        draw_horizon_chart(prop_pred_data);
+        d3.selectAll(".toggle-texture").style("display", "inline-block");
+        set_color_mode();
+        draw_horizon_chart(prop_pred_data, color_or_texture);
         break;
 
         case 'Usage Chart':
