@@ -44,6 +44,14 @@ body.min-size .toolbar, body.min-size .container-box {
   display: none;
 }
 
+.drill-models-container {
+  background: white;
+}
+.drill-models-container .hint {
+  margin: 50px 50px;
+  display: block;
+}
+
 .toolbar {
   text-align: left;
   width: 1495px;
@@ -55,7 +63,7 @@ body.min-size .toolbar, body.min-size .container-box {
   padding-left: 5px;
   position: relative;
   display: grid;
-  grid-template-columns: calc(100% - 594px) 594px;
+  grid-template-columns: calc(100% - 660px) 660px;
 }
 .toolbar input, .toolbar select {
   border-width: 1px;
@@ -249,6 +257,22 @@ body.min-size .toolbar, body.min-size .container-box {
 }
 .main-stream-svg .main-stream-cell.focused {
   opacity: 1;
+}
+
+.drill-models-container {
+  padding-left: 80px;
+}
+.drill-models-container .model-row {
+  position: relative;
+  margin-top: 20px;
+}
+.drill-models-container .model-row text {
+  position: absolute;
+  left: -50px;
+  top: 58px;
+}
+.drill-models-container .country-stream-svg {
+  width: 100%;
 }
 
 .clear-fish-graph, .apply-third-prop, .toggle-texture {

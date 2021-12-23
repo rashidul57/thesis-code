@@ -189,7 +189,7 @@ function load_control_data() {
         d3.select(".left-chart-container").selectAll("svg").remove();
         sel_model = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(prop_pred_data, sel_model, 'left-chart-container', undefined, undefined, undefined);
+            draw_stream_graph({pred_data: prop_pred_data, sel_model, container: 'left-chart-container'});
         } else if (sel_chart_type === "Bubble Chart") {
             draw_bubble_chart(prop_pred_data, {model: sel_model});
         } else if (sel_chart_type === "Parallel Coords") {
@@ -218,10 +218,10 @@ function load_control_data() {
     .on("change", function(ev) {
         country_stream_mode = d3.select(this).property("value");
         if (sel_chart_type === "Stream Graphs") {
-            draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
+            draw_stream_graph({pred_data: prop_pred_data, container: 'left-chart-container'});
         } else {
             set_color_mode();
-            draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+            draw_stream_graph({pred_data: prop_pred_data, container: 'main-stream-chart'});
         }
     });
 
@@ -240,6 +240,7 @@ function load_control_data() {
         control_mode = cur_cls.split(' ')[1].trim();
         cur_cls = cur_cls + ' active';
         el.attr('class', cur_cls);
+        drill_country = undefined;
 
         if (control_mode === 'bubble-remove') {
             toggle_cross('.' + 'bubble-select' + ' .cross', 0);
@@ -247,6 +248,10 @@ function load_control_data() {
         } else if (control_mode === 'bubble-select') {
             toggle_cross('.' + 'bubble-remove' + ' .cross', 0);
             bubble_removed = [];
+        } else if (control_mode === 'global-streams') {
+            toggle_main_stream_container(true);
+        } else if (control_mode === 'drill-models') {
+            toggle_main_stream_container(false);
         }
     });
 
@@ -285,7 +290,7 @@ function load_control_data() {
     .on("click", function(ev) {
         const elem = d3.select(this);
         if (sel_chart_type === 'Bubble Chart') {
-            if ((global_streams.length + country_streams.length) === 0) {
+            if ((global_streams.length + country_streams.length) === 0 && !drill_country) {
                 return alert('No country stream to show textures.');
             }
         }
@@ -300,7 +305,11 @@ function load_control_data() {
         color_or_texture = mode;
         elem.attr('mode', mode);
         if (sel_chart_type === 'Bubble Chart') {
-            draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined, ev, mode);
+            if (drill_country) {
+                create_drill_container();
+            } else {
+                draw_stream_graph({pred_data: prop_pred_data, container: 'main-stream-chart', ev, mode});
+            }
         } else {
             draw_horizon_chart(prop_pred_data, color_or_texture);
         }
@@ -359,6 +368,11 @@ function load_control_data() {
     refresh_container();
 }
 
+function toggle_main_stream_container(show_main_stream) {
+    d3.select('.main-stream-chart').style('display', show_main_stream ? 'inline' : 'none');
+    d3.select('.drill-models-container').style('display', show_main_stream ? 'none' : 'inline');
+}
+
 function set_color_mode() {
     d3.select('.toggle-texture').attr('mode', 'color').html('Texture Stream');
     color_or_texture = 'color';
@@ -378,7 +392,6 @@ function refresh_container() {
 
         // case "Stream Graphs":
         // d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
-        // draw_stream_graph(prop_pred_data, undefined, 'left-chart-container', undefined, undefined);
         // break;
 
         case 'Questionnaire':
@@ -389,7 +402,7 @@ function refresh_container() {
         case 'Bubble Chart':
         d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
         draw_bubble_chart(prop_pred_data, {model: sel_model});
-        draw_stream_graph(prop_pred_data, undefined, 'main-stream-chart', undefined, undefined);
+        draw_stream_graph({pred_data: prop_pred_data, container: 'main-stream-chart'});
         break;
 
         case 'Parallel Coords':

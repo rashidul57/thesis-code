@@ -9,6 +9,7 @@ let bubble_removed = [];
 let bubble_selected = [];
 let global_streams = [];
 let country_streams = [];
+let drill_country;
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
 const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroon, fushia
@@ -210,8 +211,10 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
 }
 
 
-function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel_country_cls='', ev, mode='color') {
-    if (container) {
+function draw_stream_graph(params) {
+    let {pred_data, container='', sel_country='', sel_country_cls='', drill_model, ev, mode='color'} = params;
+
+    if (container && !drill_model) {
         d3.select("." + container).selectAll("svg").remove();
     }
     let data = [];
@@ -225,7 +228,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 
     if (sel_country) {
         if (country_stream_mode === 'Prediction') {
-            const model_types = ['mlp', 'cnn', 'lstm'];
+            let model_types = drill_model ? [drill_model] : ['mlp', 'cnn', 'lstm'];
             for (let i = 0; i < max; i++) {
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
@@ -238,6 +241,7 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
             data = get_normalized_data(data, model_types);
             keys = model_types;
         } else {
+            // For property(non prediction) based option
             let country_data = all_covid_data[sel_country];
             // Filtering is needed to ensure country stream start point go inside circle
             let found = false;
@@ -260,9 +264,9 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
                 const record_up = {date};
 
                 keys.forEach(country => {
-                    record_pred[country] = pred_data[country][algo].y_pred[i] || 0;
-                    record_low[country] = pred_data[country][algo].ranges[i][0] || 0;
-                    record_up[country] = pred_data[country][algo].ranges[i][1] || 0;
+                    record_pred[country] = pred_data[country][sel_model].y_pred[i] || 0;
+                    record_low[country] = pred_data[country][sel_model].ranges[i][0] || 0;
+                    record_up[country] = pred_data[country][sel_model].ranges[i][1] || 0;
                 });
                 data.push(record_pred);
             }
@@ -310,10 +314,13 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
     .domain(keys)
     .range(d3.schemeCategory10);
 
+    let axis_y = height - margin.bottom;
     xAxis = g => g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .attr("transform", `translate(0,${axis_y})`)
     .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
     .call(g => g.select(".domain").remove());
+
+    
 
     series = d3.stack()
         .keys(keys)
@@ -348,10 +355,17 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
 
     let svg;
     if (sel_country) {
-        if (ev.target) {
-            svg = d3.select('.' + 'circle-container-' + sel_country_cls)
+        container = container ? ('.' + container) : ('.' + 'circle-container-' + sel_country_cls);
+        if (container) {
+            svg = d3.select(container)
             .append('svg')
             .attr('class', 'country-stream-svg ');
+
+            if (drill_model) {
+                svg
+                .attr("preserveAspectRatio", "none")
+                .attr("viewBox", "0 0 550 130");
+            }
         } else {
             return;
         }
@@ -362,14 +376,14 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         svg.attr("viewBox", [0, 0, width, height]);
     }
 
-    const stream_countries = global_streams.concat(country_streams);
-    if (stream_countries.length) {
+    const stream_countries = drill_country ? [drill_country] : global_streams.concat(country_streams);
+    if (stream_countries.length && (!drill_country || (drill_country && drill_model === 'mlp'))) {
         def_textures(svg, stream_countries, max);
     }
 
     let stream = svg.append("g")
         .attr('class', () => {
-            return sel_country ? '' : 'main-stream-g';
+            return sel_country ? 'selected-country-g' : 'main-stream-g';
         })
         .selectAll("path")
         .data(series)
@@ -379,15 +393,14 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         .attr("d", area)
         .attr('class', ({key}) => {
             const nameCls = get_name_cls(key);
-            const cls = 'main-stream-cell stream-cell-' + nameCls;
-            return sel_country ? 'sel-country-stream-cell' : cls;
+            return sel_country ? 'sel-country-stream-cell' : ('main-stream-cell stream-cell-' + nameCls);
         })
         .append("title")
         .text(({key}) => {
             return key;
         });
 
-    if (!global_streams.length || mode === 'color') {
+    if ((!global_streams.length && !drill_country) || mode === 'color') {
         stream.attr("fill", ({key}) => {
             return color(key);
         });
@@ -398,12 +411,11 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         const cont_g = d3.selectAll('.country-stream-svg g');
         cont_g.selectAll('.sel-country-stream-cell').style('display', 'block');
         cont_g.selectAll('.texture-sec-path').remove();
-    }
-    if (mode !== 'color') {
-        show_textures();
+    } else {
+        show_textures(drill_model);
     }
 
-    if (sel_country) {
+    if (sel_country && !drill_model) {
         const country_center = d3.select('.circle-container-' + sel_country_cls + ' circle').attr('center-point').split(',');
         const c_cx = Number(country_center[0]);
         const c_cy = Number(country_center[1]);
@@ -415,26 +427,29 @@ function draw_stream_graph(pred_data, algo='mlp', container, sel_country='', sel
         country_g
             .style('transform', `translate(0px,-${ty}px) rotate(${angle}deg)`)
             .style('transform-origin', `0px ${ty}px`);
-    }
 
-    if (sel_country) {
         // add_zoom_listener(svg, width, height, 150);
-    } else {
-        svg.append("g")
-            .call(xAxis);
 
+    } else {
+        if (!drill_model) {
+            svg.append("g").call(xAxis);
+        }
         add_zoom_listener(svg, width, height, 'main-stream-svg');
     }
 }
 
-function show_textures() {
+function show_textures(drill_model) {
     let selectors;
     if (sel_chart_type === 'Bubble Chart') {
-        selectors = ['.country-stream-svg'];
+        selectors = drill_model ? ['.drill-models-container .model-row-' + drill_model] : ['.country-stream-svg'];
         if (global_streams.length) {
             d3.selectAll('.main-stream-cell').style("display", 'none');
             selectors.push('.main-stream-g');
         }
+        if (drill_country) {
+            d3.selectAll('.sel-country-stream-cell').style("display", 'none');
+        }
+
     } else if (sel_chart_type === 'Horizon Chart') {
         selectors = ['.rate-svg'];
         d3.selectAll('.horizon-flow').style('display', 'none');
@@ -466,6 +481,10 @@ function show_textures() {
                     country = path_item.parentElement.__data__.name;
                     cur_model = sel_model;
                     cont_g = d3.select(path_item.parentElement.parentElement.nextSibling);
+                } else if (selector.indexOf('drill') > -1) {
+                    cur_model = drill_model;
+                    country = drill_country;
+                    cont_g = cont_g.select('g');
                 }
                 
                 const path_d = d3.select(path_item).attr('d');
@@ -479,7 +498,7 @@ function show_textures() {
                 const size = parts.length;
                 const side1 = _.take(parts, size/2);
                 let side2 = _.takeRight(parts, size/2);
-                console.log(country, side1.length);
+                // console.log(country, side1.length);
 
                 side2.reverse();
                 if (!forecast_data[sel_property][country]) {
@@ -1604,8 +1623,13 @@ function draw_bubble_chart(data, params) {
                                 }
                                 d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
                                 set_color_mode();
-                                draw_stream_graph(prop_pred_data, model, undefined, d.data.name, nameCls, ev);
+                                draw_stream_graph({pred_data: prop_pred_data, sel_country: d.data.name, sel_country_cls: nameCls, ev});
                             }
+                            break;
+
+                        case 'drill-models':
+                            drill_country = d.data.name;
+                            create_drill_container();
                             break;
                         case 'bubble-select':
                             select_deselect('.circle-container', false);
@@ -1805,8 +1829,30 @@ function draw_bubble_chart(data, params) {
                     }
                 });
             }
+
+            
         }
     }
+}
+
+function create_drill_container() {
+    const base_selector = 'drill-models-container';
+    const nameCls = get_name_cls(drill_country);
+    d3.selectAll('.' + base_selector + ' div' + ', .' + base_selector + ' span').remove();
+
+    const models = ['mlp', 'cnn', 'lstm', 'arima'];
+    d3.select('.' + base_selector)
+    .selectAll("div")
+    .data(models)
+    .enter()
+    .append("div")
+    .attr("class", (d) => 'model-row model-row-' + d)
+    .append('text')
+    .text(d => d);
+
+    models.forEach(prop => {
+        draw_stream_graph({pred_data: prop_pred_data, drill_model: prop, container: base_selector + ' .model-row-' + prop, sel_country: drill_country, sel_country_cls: nameCls, mode: color_or_texture});
+    });
 }
 
 function add_alt_mode(country_cell, given_dev, circle_for) {

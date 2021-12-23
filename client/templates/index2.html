@@ -1,19 +1,88 @@
-
-<svg style="height: 1000px;width: 1000px;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <style>
-        .usage-rect { mix-blend-mode: overlay; }
+        body{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: "Open Sans", sans-serif;
+            overflow: hidden;
+            margin: 2px;
+        }
+        
+        .bubble-chart{
+            overflow: hidden;
+            border: 1px solid black;
+            height: 750px;
+            position: relative;
+            margin: 0 3px;
+            width: 1500px;
+        }
+        .bubble-svg{
+            overflow: visible;
+        }
 
-     </style>
-    <g transform="translate(140,40)"><text>[R,G,B] vs [G,B,R] rectangle sequence effect.</text></g>
-    <g class='r-g-b-sequence'>
-        <rect class="usage-rect urect-111" x="205" width="25" y="67.76434333219298" height="9.23565666780702" fill="#ea0000"></rect>
-        <rect class="usage-rect urect-111" x="205" width="22.606008449538756" y="65" height="10.61782833390351" fill="#00ea00"></rect>
-        <rect class="usage-rect urect-111" x="207.39399155046124" width="22.606008449538756" y="65" height="10.61782833390351" fill="#0000ea"></rect>
-    </g>
 
-    <g class='g-b-r-sequence'>
-        <rect class="usage-rect urect-111" x="305" width="22.606008449538756" y="65" height="10.61782833390351" fill="#00ea00"></rect>
-        <rect class="usage-rect urect-111" x="307.39399155046124" width="22.606008449538756" y="65" height="10.61782833390351" fill="#0000ea"></rect>
-        <rect class="usage-rect urect-111" x="305" width="25" y="67.76434333219298" height="9.23565666780702" fill="#ea0000"></rect>
-    </g>
-</svg>
+        /* Please play with these two styles */
+        .circle-container circle{
+            mix-blend-mode: lighten;
+        }
+        .circle-container circle{
+            fill-opacity: 0.33;
+        }
+
+    </style>
+</head>
+<body>
+<div class="bubble-chart">
+    <svg class="bubble-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g class="circle-container circle-container-India" transform="translate(221,131)">
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#ff0000" cx="0" cy="0"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#00ff00" cx="0" cy="0"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#0000ff" cx="0" cy="0"></circle>
+            <text class="country-code" y="75" x="-10" font-size="25px" fill="black">0%</text>
+            <text class="country-code" y="5" x="-9px" font-size="10px" fill="white">IND</text>
+        </g>
+    </svg>
+    <svg class="bubble-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g class="circle-container circle-container-India" transform="translate(391,131)">
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#ff0000" cx="0" cy="2.5"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#00ff00" cx="-2.1650635094610964" cy="-1.25"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#0000ff" cx="2.1650635094610964" cy="-1.25"></circle>
+            <text class="country-code" y="75" x="-10" font-size="25px" fill="black">25%</text>
+            <text class="country-code" y="5" x="-9px" font-size="10px" fill="white">IND</text>
+        </g>
+    </svg>
+    <svg class="bubble-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g class="circle-container circle-container-India" transform="translate(561,131)">
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#ff0000" cx="0" cy="5"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#00ff00" cx="-4.330127018922193" cy="-2.5"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#0000ff" cx="4.330127018922193" cy="-2.5"></circle>
+            <text class="country-code" y="75" x="-10" font-size="25px" fill="black">50%</text>
+            <text class="country-code" y="5" x="-9px" font-size="10px" fill="white">IND</text>
+        </g>
+    </svg>
+    <svg class="bubble-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g class="circle-container circle-container-India" transform="translate(731,131)">
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#ff0000" cx="0" cy="7.5"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#00ff00" cx="-6.495190528383289" cy="-3.75"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#0000ff" cx="6.495190528383289" cy="-3.75"></circle>
+            <text class="country-code" y="75" x="-10" font-size="25px" fill="black">75%</text>
+            <text class="country-code" y="5" x="-9px" font-size="10px" fill="white">IND</text>
+        </g>
+    </svg>
+    <svg class="bubble-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g class="circle-container circle-container-India" transform="translate(901,131)">
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#ff0000" cx="0" cy="10"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#00ff00" cx="-8.660254037844386" cy="-5"></circle>
+            <circle id="India-15863038.689500006" r="40" center-point="50,50" class="abberation" fill="#0000ff" cx="8.660254037844386" cy="-5"></circle>
+            <text class="country-code" y="75" x="-10" font-size="25px" fill="black">100%</text>
+            <text class="country-code" y="5" x="-9px" font-size="10px" fill="white">IND</text>
+        </g>
+    </svg>
+</div>
+</body>
+</html>
