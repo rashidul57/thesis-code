@@ -58,9 +58,21 @@ body {
 }
 
 
+$totalWidth: 1500px;
+$height: 750px;
+
+.drill-models-container{
+    background: white;
+    .hint{
+        margin: 50px 50px;
+        display: block;
+    }
+}
+
+
 .toolbar{
     text-align: left;
-    width: 1495px;
+    width: $totalWidth - 5px;
     padding-bottom: 2px;
     border-top: 1px solid #000;
     padding-top: 1px;
@@ -69,7 +81,7 @@ body {
     padding-left: 5px;
     position: relative;
     display: grid;
-    grid-template-columns: calc(100% - 594px) 594px;
+    grid-template-columns: calc(100% - 660px) 660px;
 
     input, select {
         border-width: 1px;
@@ -170,21 +182,22 @@ body {
     }
 }
 
+
 .container-box{
     overflow: hidden;
     border: 1px solid black;
-    height: 750px;
+    height: $height;
     position: relative;
     display: grid;
     grid-template-columns: calc(50% - 3px) calc(50% - 3px);
     margin: 0 3px;
-    width: 1500px;
+    width: $totalWidth;
     &.single-columns{
         width: 960px;
         display: inline;
     }
     &.whole-width{
-        width: 1500px;
+        width: $totalWidth;
         display: inline;
     }
 
@@ -288,6 +301,22 @@ body {
         &.focused{
             opacity: 1;
         }
+    }
+}
+.drill-models-container{
+    padding-left: 80px;
+    
+    .model-row{
+        position: relative;
+        margin-top: 20px;
+        text{
+            position: absolute;
+            left: -50px;
+            top: 58px;
+        }
+    }
+    .country-stream-svg{
+        width: 100%;
     }
 }
 
