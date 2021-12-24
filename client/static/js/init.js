@@ -1,6 +1,7 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
 let sel_property = 'new_cases';
 let control_mode = 'star-fish';
+const models = ['mlp', 'cnn', 'lstm', 'arima'];
 let sel_model;
 let country_list_show = false;
 let selected_countries = [];
@@ -173,7 +174,6 @@ function load_control_data() {
     // Machine learning predictive models
     d3.select("#drp-models option").remove();
 
-    const models = ['mlp', 'cnn', 'lstm', 'arima'];
     d3.select("#drp-models")
     .selectAll('model-list')
     .data(models)

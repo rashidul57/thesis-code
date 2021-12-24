@@ -480,7 +480,10 @@ function show_textures(drill_model) {
                 } else if (selector.indexOf('rate-svg') > -1) {
                     country = path_item.parentElement.__data__.name;
                     cur_model = sel_model;
-                    cont_g = d3.select(path_item.parentElement.parentElement.nextSibling);
+                    cont_g = d3.select(path_item.parentElement.parentElement)
+                        .append('g')
+                        .attr("transform", `translate(-2,24)`);
+        
                 } else if (selector.indexOf('drill') > -1) {
                     cur_model = drill_model;
                     country = drill_country;
@@ -598,6 +601,9 @@ function draw_horizon_chart(pred_data, mode='color') {
     let start_date;
     const overlap = 1;
     const width = 1000;
+    if (question_mode) {
+        countries = _.take(countries, 12);
+    }
     countries.forEach(country => {
         if (pred_data[country][sel_model].y_pred.length > num_dates) {
             num_dates = pred_data[country][sel_model].y_pred.length;
