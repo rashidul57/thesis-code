@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chromatic Aberration</title>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- Library js codes -->
+    <script src="../static/libs/d3.min.js"></script>
+    <script src="../static/libs/d3-tip.min.js"></script>
+    <script src="../static/libs/topojson.v2.min.js"></script>
+    <script src="../static/libs/lodash.min.js"></script>
+    <script src="../static/libs/moment.js"></script>
+    <script src="../static/libs/jquery-3.6.0.min.js"></script>
+  
+    <!-- Custom js codes -->
+    <script src="../static/js/init.js"></script>
+    <script src="../static/js/questionnaire.js"></script>
+    <script src="../static/js/chart.js"></script>
+
+    <!-- Custom css styles -->
+    <link rel="stylesheet" type="text/css" href="../static/styles/app.css"/>
+</head>
+<body class='questionnaire'>
+    <div class='toolbar'>
+        <span class='left-items'>
+            <span class='option chart-type-item'>
+                <span class='caption'>Chart</span>
+                <select id="drp-chart-types"></select>
+            </span>
+    
+            <span class='hideable-item option'>
+                <span class='caption'>Property</span>
+                <select id="drp-property"></select>
+            </span>
+            <!-- <span class='option chart-type-item'>
+                <span class='caption'>Chart Type</span>
+                <select id="drp-chart-type"></select>
+            </span> -->
+            <!-- <span class='hideable-item option countries-item'>
+                <span class='caption'>Select Country</span>
+                <select id="drp-countries"></select>
+            </span> -->
+            <span class='hideable-item option models-item'>
+                <span class='caption'>Model</span>
+                <select id="drp-models"></select>
+            </span>
+            <span class='hideable-item option questions-item'>
+                <span class='caption'>Select Option</span>
+                <select id="drp-question-options"></select>
+            </span>
+            <span class='hideable-item option number-of-country'>
+                <span class='caption'>Num of Country</span>
+                <select id="drp-num-country"></select>
+            </span>
+            <span class='hideable-item option country-select-by-name'>
+                <span class='caption select-by-name' >Select By Name</span>
+                <div class='country-list-menu'>
+                    <div class='list-body-unselected'></div>
+                    <div class='list-body-selected'></div>
+                    <div class='row-item button-row'>
+                        <input type="button" class='btn-apply-country-menu' value="Apply">
+                        <input type="button" class='btn-close-country-menu' value="Close">
+                    </div>
+                </div>
+            </span>
+
+            <span class='hideable-item option poly-show-hide'>
+                <input type="checkbox" id="chk-show-hide-poly" checked>
+                <label for="chk-show-hide-poly">Toggle Polygon</label>
+            </span>
+
+            <!-- <span class='hideable-item option country-stream-type'>
+                <span class='caption'>Country Stream With</span>
+                <select id="drp-country-stream-type"></select>
+            </span> -->
+            <span class='hideable-item clear-fish-graph'>Reset</span>
+            <span class='hideable-item toggle-texture'>Texture Stream</span>
+
+        </span>
+        
+        <span class='hideable-item right-items'>
+            <span class='control-container'>
+                <span class="control-item pan" title="Drag Chart">Pan Chart</span>
+                <span class="control-item star fish active" title='Country Stream Mode'>Star Fish</span>
+                <span class="control-item drill-models" title='Country Stream Mode'>Drill Models</span>
+                <span class="control-item bubble-select" title="Select Country for Bubble chart">
+                    <span>Bubbles Select</span>
+                    <span class='cross'>x</span>
+                </span>
+                <span class="control-item bubble-remove" title="Hide Country from Bubble chart">
+                    <span>Bubbles Remove</span>
+                    <span class='cross'>x</span>
+                </span>
+                <span class="control-item global-streams" title="All Streams Mode">
+                    <span>Reshuffle Streams</span>
+                    <span class='cross'>x</span>
+                </span>
+                <span class="btn-go">Go</span>
+            </span>
+        </span>
+    </div>
+    <div class='container-box'>
+        <div class='left-chart-container'></div>
+        <div class='hideable-item main-stream-chart'></div>
+        <div class='hideable-item drill-models-container'><span class='hint'>Please select a country</span></div>
+    </div>
+      
+</body>
+</html>

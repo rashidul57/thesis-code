@@ -303,12 +303,16 @@ $height: 750px;
         }
     }
 }
+
 .drill-models-container{
     padding-left: 80px;
     
     .model-row{
         position: relative;
-        margin-top: 20px;
+        margin-top: 5px;
+        &.model-row-mlp{
+            margin-top: 40px;
+        }
         text{
             position: absolute;
             left: -50px;
@@ -384,17 +388,27 @@ svg{
 
 
 
-:root {
-    --syntax_normal: #1b1e23;
-    --syntax_comment: #a9b0bc;
-    --syntax_number: #20a5ba;
-    --syntax_keyword: #c30771;
-    --syntax_atom: #10a778;
-    --syntax_string: #008ec4;
-    --syntax_error: #ffbedc;
-    --syntax_unknown_variable: #838383;
-    --syntax_known_variable: #005f87;
-    --syntax_matchbracket: #20bbfc;
-    --syntax_key: #6636b4;
-    --mono_fonts: 82%/1.5 Menlo,Consolas,monospace;
+// :root {
+//     --syntax_normal: #1b1e23;
+//     --syntax_comment: #a9b0bc;
+//     --syntax_number: #20a5ba;
+//     --syntax_keyword: #c30771;
+//     --syntax_atom: #10a778;
+//     --syntax_string: #008ec4;
+//     --syntax_error: #ffbedc;
+//     --syntax_unknown_variable: #838383;
+//     --syntax_known_variable: #005f87;
+//     --syntax_matchbracket: #20bbfc;
+//     --syntax_key: #6636b4;
+//     --mono_fonts: 82%/1.5 Menlo,Consolas,monospace;
+// }
+
+body.questionnaire{
+    .toolbar{
+        display: none;
+    }
+
+    .txt-opinion{
+        width: calc(100% - 20px);
+    }
 }

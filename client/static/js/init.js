@@ -1,13 +1,17 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
 let sel_property = 'new_cases';
 let control_mode = 'star-fish';
-let sel_model, sel_quest_circle_mode, question_num, sel_country_num;
+let sel_model;
 let country_list_show = false;
 let selected_countries = [];
 let show_polygon = true;
 let color_or_texture = 'color';
 let mapped_countries = {};
 let color_mappings = {};
+let question_mode;
+let drill_country;
+const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart'];
+const country_stream_modes = ['Prediction', 'By Properties'];
 
 window.onload = init;
 
@@ -17,6 +21,7 @@ window.onload = init;
  * Excecutes on page load(start of the application)
  */
 async function init() {
+    question_mode = location.href.indexOf('question') > -1 ? true : false;
 
     const forecasts = await $.get("/get-forecasts");
     forecast_data = JSON.parse(forecasts);
@@ -54,17 +59,9 @@ async function init() {
                     });
                 });
 
-                // model_data['y'].forEach((val, indx) => {
-                //     model_data['y'][indx] = Math.abs(Number(val)) || 0;
-                // });
-
-
                 model_data['y_pred'].forEach((val, indx) => {
                     model_data['y_pred'][indx] = Math.abs(Number(val)) || 0;
                 });
-                // ['ranges', 'y', 'y_pred'].forEach(prop => {
-                //     model_data[prop] = _.take(model_data[prop], 36);
-                // })
             });
         });
     });
@@ -83,11 +80,15 @@ async function init() {
         }
         covid_data.push(rec);
     });
+    
     all_covid_data = _.groupBy(covid_data, 'location');
 
-    load_control_data();
-    
-    load_country_dropdown();
+    if (question_mode) {
+        show_question();
+    } else {
+        load_control_data();
+        load_country_dropdown();
+    }
 
 }
 
@@ -95,7 +96,6 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    const chart_types = ['Questionnaire', 'Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart'];
     sel_chart_type = chart_types[0];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
@@ -148,7 +148,6 @@ function load_control_data() {
     // d3.selectAll("#drp-chart-type")
     // .on("change", function(ev) {
     //     hide_items();
-
     //     sel_chart_type = d3.select(this).property("value");
     //     refresh_container();
     // });
@@ -204,7 +203,7 @@ function load_control_data() {
     });
 
     // country stream-graph options
-    const country_stream_modes = ['Prediction', 'By Properties'];
+    
     country_stream_mode = country_stream_modes[0];
     d3.select("#drp-country-stream-type")
     .selectAll('model-list')
@@ -315,22 +314,21 @@ function load_control_data() {
         }
     });
 
-    const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
-    sel_quest_circle_mode = sel_questions[0];
-    d3.select("#drp-question-options")
-    .selectAll('question-list')
-    .data(sel_questions)
-    .enter()
-    .append('option')
-    .text((d) => { return d; })
-    .attr("value", (d) => { return d; })
-    .property("selected", (d) => d===sel_quest_circle_mode);
+    // const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
+    // d3.select("#drp-question-options")
+    // .selectAll('question-list')
+    // .data(sel_questions)
+    // .enter()
+    // .append('option')
+    // .text((d) => { return d; })
+    // .attr("value", (d) => { return d; })
+    // .property("selected", (d) => d===sel_quest_circle_mode);
 
-    d3.selectAll('#drp-question-options')
-    .on("change", function(ev) {
-        sel_quest_circle_mode = d3.select(this).property("value");
-        show_question(1);
-    });
+    // d3.selectAll('#drp-question-options')
+    // .on("change", function(ev) {
+    //     sel_quest_circle_mode = d3.select(this).property("value");
+    //     show_question(1);
+    // });
 
     const num_of_countries = [
         {label: 'Top Five', value: 5},
@@ -394,10 +392,10 @@ function refresh_container() {
         // d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
         // break;
 
-        case 'Questionnaire':
-        d3.selectAll(".ca-options, .questions-item").style("display", "inline-block");
-        show_question(1);
-        break;
+        // case 'Questionnaire':
+        // d3.selectAll(".ca-options, .questions-item").style("display", "inline-block");
+        // show_question(1);
+        // break;
 
         case 'Bubble Chart':
         d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
@@ -425,43 +423,6 @@ function refresh_container() {
         break;
 
     }
-}
-
-
-function show_question(question_num) {
-    let ex_percents = [0, 25, 50, 75, 100];
-    let ques_percents;
-    let modes;
-    switch (sel_quest_circle_mode) {
-        case 'ca':
-        modes = ['ca', 'ca', 'ca', 'ca', 'ca'];
-        ques_percents = [72, 15, 45, 25, 87];
-        break;
-        
-        case 'ca-static':
-        modes = ['ca-static', 'ca-static', 'ca-static', 'ca-static', 'ca-static'];
-        ques_percents = [25, 15, 72, 45, 87];
-        break;
-        
-        case 'blur':
-        modes = ['blur', 'blur', 'blur', 'blur', 'blur'];
-        ques_percents = [87, 25, 45, 72, 15];
-        break;
-        
-        case 'noise':
-        modes = ['noise', 'noise', 'noise', 'noise', 'noise'];
-        ques_percents = [45, 25, 72, 87, 15];
-        break;
-    }
-
-    modes.forEach((mode, indx) => {
-        ex_percents[indx] /= 10;
-        draw_bubble_chart(prop_pred_data, {ex_indx: indx, question_circle_mode: mode, type: 'example', percents: ex_percents});
-    });
-
-    const ques_perc = [ques_percents[question_num-1]/10];
-    draw_bubble_chart(prop_pred_data, {question_circle_mode: sel_quest_circle_mode, circle_for: 'question', percents: ques_perc, question_num});
-
 }
 
 function load_country_dropdown() {

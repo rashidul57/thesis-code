@@ -9,7 +9,6 @@ let bubble_removed = [];
 let bubble_selected = [];
 let global_streams = [];
 let country_streams = [];
-let drill_country;
 let bubble_data;
 const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
 const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroon, fushia
@@ -364,7 +363,7 @@ function draw_stream_graph(params) {
             if (drill_model) {
                 svg
                 .attr("preserveAspectRatio", "none")
-                .attr("viewBox", "0 0 550 130");
+                .attr("viewBox", "0 0 520 130");
             }
         } else {
             return;
@@ -434,7 +433,8 @@ function draw_stream_graph(params) {
         if (!drill_model) {
             svg.append("g").call(xAxis);
         }
-        add_zoom_listener(svg, width, height, 'main-stream-svg');
+        // const container_ = container ? ('.' + container) : ('.' + 'circle-container-' + sel_country_cls);
+        add_zoom_listener(svg, width, height, container);
     }
 }
 
@@ -560,7 +560,7 @@ function show_textures(drill_model) {
     });
 
     function get_count(country_data, side_index) {
-        return country_data['y'] && country_data['y'][side_index]|| 0;
+        return country_data['y_pred'] && country_data['y_pred'][side_index]|| 0;
     }
 
 
@@ -1411,7 +1411,7 @@ function get_rect_change(axis, rgb_indx, uncertainty) {
 }
 
 function draw_bubble_chart(data, params) {
-    const {ex_indx, question_circle_mode, model='mlp', percents, circle_for, question_num} = params || {};
+    const {ex_indx, question_circle_mode, model='mlp', percents, circle_for} = params || {};
     const perc_indx = isNaN(ex_indx) ? 0 : ex_indx;
     const given_dev = percents ? percents[perc_indx] : undefined;
     data = prepare_bubble_data(data, model);
@@ -1609,9 +1609,6 @@ function draw_bubble_chart(data, params) {
                     }
                 })
                 .on('mousedown', function (ev, d) {
-                    if (question_circle_mode) {
-                        return;
-                    }
                     let nameCls = d.data.nameCls;
                     switch (control_mode) {
                         case 'star-fish':
@@ -1689,7 +1686,7 @@ function draw_bubble_chart(data, params) {
                     add_alt_mode(circle, bubble_data[0].deviation, circle_for);
                 }
                 if (circle_for === 'question') {
-                    add_question_n_labels();
+                    add_question_n_labels(svg);
                 }
                 add_country_code(circle);
             }
@@ -1778,58 +1775,6 @@ function draw_bubble_chart(data, params) {
                     add_country_code(circle);
                 }
             }
-
-            function add_question_n_labels() {
-                svg
-                .append("text")
-                .text('Examples in % for user perception:')
-                .attr("y", 50)
-                .attr("x", -350)
-                .attr("font-size", 25);
-
-                svg
-                .append("text")
-                .attr("y", 350)
-                .attr("x", -600)
-                .transition()             
-                .ease(d3.easeLinear)           
-                .duration(500)
-                .attr("x", -350)
-                .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 10% to 100%')
-                .attr("font-size", 25)
-                ;
-
-                svg
-                .append("text")
-                .text('Back')
-                .attr("y", 550)
-                .attr("x", 200)
-                .attr("font-size", 25)
-                .attr("fill", (d) => {
-                    return question_num > 1 ? 'black' : 'gray';
-                })
-                .on('mousedown', function (ev) {
-                    if (question_num > 1) {
-                        show_question(question_num-1);
-                    }
-                });
-
-                svg
-                .append("text")
-                .text('Next')
-                .attr("y", 550)
-                .attr("x", 300)
-                .attr("font-size", 25)
-                .attr("fill", (d) => {
-                    return question_num < 5 ? 'black' : 'gray';
-                })
-                .on('mousedown', function (ev) {
-                    if (question_num < 5) {
-                        show_question(question_num+1);
-                    }
-                });
-            }
-
             
         }
     }
@@ -1848,7 +1793,7 @@ function create_drill_container() {
     .append("div")
     .attr("class", (d) => 'model-row model-row-' + d)
     .append('text')
-    .text(d => d);
+    .text(d => d.toUpperCase());
 
     models.forEach(prop => {
         draw_stream_graph({pred_data: prop_pred_data, drill_model: prop, container: base_selector + ' .model-row-' + prop, sel_country: drill_country, sel_country_cls: nameCls, mode: color_or_texture});
@@ -2243,7 +2188,10 @@ function add_country_code(country_cell, show_aber) {
 }
 
 function add_zoom_listener(svg, width, height, selector) {
-    svg = d3.selectAll('.' + selector)
+    if (!selector.startsWith('.')) {
+        selector = '.' + selector;
+    }
+    svg = d3.selectAll(selector);
     const zoom_level = 10;
     const zoom = d3.zoom()
         .scaleExtent([-5, zoom_level])
