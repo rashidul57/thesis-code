@@ -10,8 +10,20 @@ app.config["DEBUG"] = True
 
 
 @app.route('/')
+def index_def():
+    return render_template('index.html')
+
+@app.route('/index')
 def index():
     return render_template('index.html')
+
+@app.route('/index.html')
+def index_html():
+    return render_template('index.html')
+
+@app.route('/questionnaire')
+def questionnaire():
+    return render_template('questionnaire.html')
 
 
 
