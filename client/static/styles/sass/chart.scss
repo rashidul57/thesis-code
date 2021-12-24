@@ -309,10 +309,8 @@ $height: 750px;
     
     .model-row{
         position: relative;
-        margin-top: 5px;
-        &.model-row-mlp{
-            margin-top: 40px;
-        }
+        margin-top: 10px;
+        
         text{
             position: absolute;
             left: -50px;

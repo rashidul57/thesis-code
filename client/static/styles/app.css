@@ -264,10 +264,7 @@ body.min-size .toolbar, body.min-size .container-box {
 }
 .drill-models-container .model-row {
   position: relative;
-  margin-top: 5px;
-}
-.drill-models-container .model-row.model-row-mlp {
-  margin-top: 40px;
+  margin-top: 10px;
 }
 .drill-models-container .model-row text {
   position: absolute;
