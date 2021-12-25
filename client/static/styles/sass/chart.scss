@@ -320,7 +320,10 @@ $height: 750px;
     .country-stream-svg{
         width: 100%;
     }
+
 }
+
+
 
 // svg.rate-svg{
 //     transform: translateZ(0);
@@ -408,5 +411,9 @@ body.questionnaire{
 
     .txt-opinion{
         width: calc(100% - 20px);
+    }
+
+    .ag-dis-lbl{
+        text-transform: capitalize;
     }
 }

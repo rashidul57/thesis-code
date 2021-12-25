@@ -307,7 +307,7 @@ function load_control_data() {
             if (drill_country) {
                 create_drill_container();
             } else {
-                draw_stream_graph({pred_data: prop_pred_data, container: 'main-stream-chart', ev, mode});
+                draw_stream_graph({pred_data: prop_pred_data, container: 'main-stream-chart', mode});
             }
         } else {
             draw_horizon_chart(prop_pred_data, color_or_texture);
