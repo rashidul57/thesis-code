@@ -87,17 +87,82 @@ function show_question() {
         country_stream_mode = 'Prediction';
         sel_chart_type = chart_types[0];
         drill_country = undefined;
-        draw_stream_graph({pred_data: prop_pred_data, sel_country: 'Russia', mode: 'texture'});
-        draw_stream_graph({pred_data: prop_pred_data, sel_country: 'Argentina', mode: 'texture', q_country_index: 1});
-        // draw_stream_graph({pred_data: prop_pred_data, sel_country: 'Iraq', mode: 'texture'});
-        // draw_stream_graph({pred_data: prop_pred_data, sel_country: 'Italy', mode: 'texture'});
-        // draw_stream_graph({pred_data: prop_pred_data, sel_country: 'Brazil', mode: 'texture'});
-        // draw_stream_graph({pred_data: prop_pred_data, sel_country: 'India', mode: 'texture'});
-        // draw_stream_graph({pred_data: prop_pred_data, sel_country: 'United States', mode: 'texture'});
-        // show_textures();
-        // show_usage_chart_questions();
+        country_streams = [];
+
+        const star_countries = [
+            {name: 'Argentina', x: 155, y: -280},
+            {name: 'Pakistan', x: 590, y: -280},
+            {name: 'Iraq', x: -250, y: 270},
+            {name: 'Indonesia', x: -140, y: -60},
+            {name: 'Japan', x: 480, y: 930},
+            {name: 'Italy', x: 1000, y: 230},
+            {name: 'Georgia', x: 900, y: 780},
+            {name: 'Vietnam', x: -250, y: 700}
+        ];
+        star_countries.forEach(country => {
+            country_streams.push(country.name);
+            draw_stream_graph({pred_data: prop_pred_data, sel_country: country.name, mode: 'texture'});
+        });
+        show_star_fish_questions(star_countries);
     }
 
+}
+
+function show_star_fish_questions(star_countries) {
+    const svg = d3.select('.bubble-svg');
+    let question, options;
+
+    star_countries.forEach((country) => {
+        svg
+        .append('text')
+        .attr('x', country.x)
+        .attr('y', country.y)
+        .attr('width', 100)
+        .attr('height', 20)
+        .text('fill', 'red')
+        .text(country.name)
+        .attr("font-size", 25);
+    });
+
+    switch (question_num) {
+        case 31:
+        question = `Question-${question_num}: What is the maximum uncertainty country/column throught the days?`;
+        options = ['USA', 'IRQ', 'CZE', 'CAN'];
+
+        
+        
+        break;
+
+        case 32:
+        question = `Question-${question_num}: Which cell has maximum uncertainty in the marked area [left-right]?`;
+        options = ['First', 'Second', 'Fourth', 'Fifth'];
+        
+        svg
+        .append('rect')
+        .attr('x', 671)
+        .attr('y', 195)
+        .attr('width', 142)
+        .attr('height', 15)
+        .attr('stroke', 'red')
+        .attr("stroke-width", 1)
+        .attr("fill", "none");
+        break;
+
+        case 33:
+        question = `Question-${question_num}: Which cell has minimum uncertainty in the marked area [top-down]?`;
+        options = ['First', 'Second', 'Third', 'Fourth'];
+        
+        svg
+        .append('rect')
+        .attr('x', 671)
+        .attr('y', 135)
+        .attr('width', 32)
+        .attr('height', 51)
+        .attr('stroke', 'red')
+        .attr("stroke-width", 1)
+        .attr("fill", "none");
+        break;
+    }
 }
 
 function show_usage_chart_questions() {

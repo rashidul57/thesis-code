@@ -230,6 +230,7 @@ function draw_stream_graph(params) {
 
     if (sel_country) {
         if (country_stream_mode === 'Prediction') {
+
             let model_types = drill_model ? [drill_model] : ['mlp'];
             for (let i = 0; i < max; i++) {
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
@@ -377,9 +378,6 @@ function draw_stream_graph(params) {
     }
 
     const stream_countries = drill_country ? [drill_country] : global_streams.concat(country_streams);
-    if (!stream_countries.length && question_mode && !q_country_index) {
-        stream_countries.push(sel_country);
-    }
     if (stream_countries.length && (!drill_country || (drill_country && drill_model === 'mlp'))) {
         def_textures(svg, stream_countries, max);
     }
@@ -465,6 +463,7 @@ function show_textures(drill_model) {
         containers.forEach(container => {
             let cont_g = d3.select(container);
             const paths = cont_g.selectAll('path').nodes();
+
             if (selector.indexOf('country-stream') > -1) {
                 cont_g = cont_g.select('g');
                 cont_g.selectAll('.sel-country-stream-cell').style('display', 'none');
@@ -475,6 +474,9 @@ function show_textures(drill_model) {
             paths.forEach((path_item, country_index) => {
                 let country, cur_model;
                 if (selector.indexOf('country-stream') > -1) {
+                    if (!path_item.parentElement) {
+                        return;
+                    }
                     const country_code = path_item.parentElement.parentElement.previousSibling.textContent;
                     country = mapped_countries[country_code];
                     cur_model = path_item.textContent;
@@ -1614,20 +1616,22 @@ function draw_bubble_chart(data, params) {
             if (!question_circle_mode) {
                 new_circle
                 .on('mouseover', function (event, d) {
-                    if (control_mode === 'star-fish' && !question_circle_mode) {
+                    if (control_mode === 'star-fish' && !question_circle_mode && !question_mode) {
                         reorder_bubbles(this.parentNode, root.leaves());
                         toggle_focus(d.data.nameCls, 'mouseover');
                     }
                 })
                 .on('mouseout', function (event, d) {
-                    if (control_mode === 'star-fish' && !question_circle_mode) {
+                    if (control_mode === 'star-fish' && !question_circle_mode && !question_mode) {
                         toggle_focus(d.data.nameCls, 'mouseout');
                     }
                 })
                 .on('mousedown', function (ev, d) {
-                    if (ev.which !== 1) {
+                    
+                    if (ev.which !== 1 || question_mode) {
                         return;
                     }
+                    
                     let nameCls = d.data.nameCls;
                     switch (control_mode) {
                         case 'star-fish':
@@ -1719,7 +1723,7 @@ function draw_bubble_chart(data, params) {
             }
 
             function do_transition() {
-                if (question_circle_mode === 'ca-static') {
+                if (question_circle_mode === 'ca-static' || question_mode) {
                     new_circle
                     .attr("cx", d => {
                         return get_circle_coord('x', k, d.data.deviation, 0, true);
@@ -2187,7 +2191,7 @@ function add_country_code(country_cell, show_aber) {
     country_cell.append("text")
         .attr('class', 'country-code')
         .attr("y", 5)
-        .attr("x", (d, i, nodes) => {
+        .attr("x", (d) => {
             let shift = -d.data.code.length * 3/bubble_chart_scale;
             if (show_aber) {
                 shift = 0;
@@ -2211,11 +2215,16 @@ function add_zoom_listener(svg, width, height, selector) {
         selector = '.' + selector;
     }
     svg = d3.selectAll(selector);
-    const zoom_level = 10;
+    const zoom_level = 20;
+    const ext_x = -width/zoom_level;
+    let ext_y = -height/zoom_level;
+    if (question_mode) {
+        ext_y += 80;
+    }
     const zoom = d3.zoom()
         .scaleExtent([-5, zoom_level])
         .extent([[-width,-height], [width, height]])
-        .translateExtent([[-width/zoom_level, -height/zoom_level], [width/zoom_level, height/zoom_level]])
+        .translateExtent([[ext_x, ext_y], [width/zoom_level, height/zoom_level]])
         .on("zoom", (event) => {
             if (selector === 'main-stream-svg') {
                 stream_chart_scale = event.transform.k;
@@ -2241,7 +2250,15 @@ function add_zoom_listener(svg, width, height, selector) {
                 return false;
             }
         });
-    svg.call(zoom);
+
+    
+
+    if (question_mode) {
+        svg.call(zoom.translateBy, 0, -80);
+        svg.transition().call(zoom.scaleBy, 0.49);
+    } else {
+        svg.call(zoom);
+    }
 
     let drag = d3.drag()
         .on('start', dragstarted, selector)
