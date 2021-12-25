@@ -211,10 +211,13 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
 
 
 function draw_stream_graph(params) {
-    let {pred_data, container='', sel_country='', sel_country_cls='', drill_model, ev, mode='color'} = params;
+    let {pred_data, container='', sel_country='', sel_country_cls='', drill_model, mode='color', q_country_index} = params;
 
     if (container && !drill_model) {
         d3.select("." + container).selectAll("svg").remove();
+    }
+    if (!sel_country_cls && sel_country) {
+        sel_country_cls = get_name_cls(sel_country);
     }
     let data = [];
     let keys = Object.keys(pred_data);
@@ -227,7 +230,7 @@ function draw_stream_graph(params) {
 
     if (sel_country) {
         if (country_stream_mode === 'Prediction') {
-            let model_types = drill_model ? [drill_model] : ['mlp', 'cnn', 'lstm'];
+            let model_types = drill_model ? [drill_model] : ['mlp'];
             for (let i = 0; i < max; i++) {
                 const date = moment(new Date(pred_data[keys[0]].mlp.start_timestamp)).add('days', i).toDate();
                 const record = {date};
@@ -319,8 +322,6 @@ function draw_stream_graph(params) {
     .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
     .call(g => g.select(".domain").remove());
 
-    
-
     series = d3.stack()
         .keys(keys)
         .offset(d3.stackOffsetWiggle)
@@ -376,6 +377,9 @@ function draw_stream_graph(params) {
     }
 
     const stream_countries = drill_country ? [drill_country] : global_streams.concat(country_streams);
+    if (!stream_countries.length && question_mode && !q_country_index) {
+        stream_countries.push(sel_country);
+    }
     if (stream_countries.length && (!drill_country || (drill_country && drill_model === 'mlp'))) {
         def_textures(svg, stream_countries, max);
     }
@@ -399,7 +403,7 @@ function draw_stream_graph(params) {
             return key;
         });
 
-    if ((!global_streams.length && !drill_country) || mode === 'color') {
+    if ((!global_streams.length && !drill_country && !question_mode) || mode === 'color') {
         stream.attr("fill", ({key}) => {
             return color(key);
         });
@@ -659,7 +663,10 @@ function draw_horizon_chart(pred_data, mode='color') {
 
     const step = 23;
     const margin = ({top: 30, right: 10, bottom: 0, left: 50});
-    const height = data.series.length * (step + 1) + margin.top + margin.bottom;
+    let height = data.series.length * (step + 1) + margin.top + margin.bottom;
+    if (question_mode) {
+        height += 175;
+    }
 
     const y = d3.scaleLinear()
     .domain([0, d3.max(data.series, d => d3.max(d.predictions))])
@@ -974,7 +981,9 @@ function draw_usage_chart() {
         let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
-        // preds = _.take(preds, 40)
+        if (question_mode) {
+            preds = _.take(preds, 25)
+        }
 
         preds.forEach((value, i) => {
             const date = moment(start_date).add('days', i).toDate();
@@ -992,7 +1001,8 @@ function draw_usage_chart() {
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
-    const height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
+    let height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
+
     const width = 954;
     formatCountry = (d) => {
         return d;
@@ -1030,7 +1040,7 @@ function draw_usage_chart() {
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg')
-        .attr("viewBox", [0, 15, width, height])
+        .attr("viewBox", [0, 15, width, height + (question_mode ? 175 : 0)])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
@@ -1535,7 +1545,7 @@ function draw_bubble_chart(data, params) {
         
         draw_circles();
 
-        if (!question_circle_mode) {
+        if (!question_circle_mode && !question_mode) {
             draw_percentages(root.leaves());
         }
         
@@ -1615,6 +1625,9 @@ function draw_bubble_chart(data, params) {
                     }
                 })
                 .on('mousedown', function (ev, d) {
+                    if (ev.which !== 1) {
+                        return;
+                    }
                     let nameCls = d.data.nameCls;
                     switch (control_mode) {
                         case 'star-fish':
@@ -1626,7 +1639,7 @@ function draw_bubble_chart(data, params) {
                                 }
                                 d3.selectAll('.circle-container-' + nameCls + ' .country-stream-svg').remove();
                                 set_color_mode();
-                                draw_stream_graph({pred_data: prop_pred_data, sel_country: d.data.name, sel_country_cls: nameCls, ev});
+                                draw_stream_graph({pred_data: prop_pred_data, sel_country: d.data.name, sel_country_cls: nameCls});
                             }
                             break;
 

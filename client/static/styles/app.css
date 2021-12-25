@@ -326,5 +326,8 @@ body.questionnaire .toolbar {
 body.questionnaire .txt-opinion {
   width: calc(100% - 20px);
 }
+body.questionnaire .ag-dis-lbl {
+  text-transform: capitalize;
+}
 
 /*# sourceMappingURL=app.css.map */
