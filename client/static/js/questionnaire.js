@@ -20,6 +20,7 @@ function show_question() {
     } else if (question_num >= 16 && question_num <= 20) {
         sel_quest_circle_mode = sel_questions[3];
     } else if (question_num >= 21 && question_num <= 24) {
+        question_num = 21;
         sel_quest_circle_mode = 'drill-models';
     } else if (question_num >= 25 && question_num <= 27) {
         sel_quest_circle_mode = 'horizon-chart';
@@ -32,6 +33,10 @@ function show_question() {
     }
 
     if (sel_questions.indexOf(sel_quest_circle_mode) > -1) {
+        d3.selectAll('.container-box').classed('whole-width', true);
+        d3.selectAll('.left-chart-container svg').remove();
+        d3.select('.drill-models-container').style('display', 'none');
+
         switch (sel_quest_circle_mode) {
             case 'ca':
             modes = ['ca', 'ca', 'ca', 'ca', 'ca'];
@@ -68,17 +73,24 @@ function show_question() {
         control_mode = 'drill-models';
         country_stream_mode = country_stream_modes[0];
         sel_chart_type = chart_types[0];
+        
+        d3.selectAll('.container-box').classed('whole-width', false);
+
         create_drill_container();
         add_drill_models_questions();
     } else if (sel_quest_circle_mode === 'horizon-chart') {
+        d3.select('.drill-models-container').style('display', 'none');
         color_or_texture = 'texture';
         sel_chart_type = chart_types[2];
-        change_layout();
+        
+        d3.selectAll('.container-box').classed('whole-width', true);
+
         draw_horizon_chart(prop_pred_data, color_or_texture);
         show_horizon_chart_questions();
     } else if (sel_quest_circle_mode === 'usage-chart') {
-        d3.selectAll('.left-chart-container svg').remove();
-        change_layout();
+        sel_chart_type = chart_types[4];
+        d3.selectAll('.left-chart-container .inner-container, .left-chart-container svg').remove();
+        d3.selectAll('.container-box').classed('whole-width', true);
         draw_usage_chart();
         show_usage_chart_questions();
     } else if (sel_quest_circle_mode === 'star-fish') {
@@ -92,16 +104,17 @@ function show_question() {
             {name: 'Georgia', x: 900, y: 780},
             {name: 'Vietnam', x: -250, y: 700}
         ];
+        country_stream_mode = 'Prediction';
+        sel_chart_type = chart_types[0];
+        drill_country = undefined;
+        
+
         if (question_num === 31) {
             d3.selectAll('.left-chart-container svg').remove();
-            change_layout();
+            d3.selectAll('.container-box').classed('whole-width', true);
             draw_bubble_chart(prop_pred_data, {model: sel_model});
-        
-            country_stream_mode = 'Prediction';
-            sel_chart_type = chart_types[0];
-            drill_country = undefined;
+            
             country_streams = [];
-
             star_countries.forEach(country => {
                 country_streams.push(country.name);
                 draw_stream_graph({pred_data: prop_pred_data, sel_country: country.name, mode: 'texture'});
@@ -189,10 +202,10 @@ function show_star_fish_questions(star_countries) {
             break;
 
         case 34:
-            question = `Thank you for taking part in survey. Please Submit to Finish.`;
+            question = `Thank you for your participation. Please Submit to Finish.`;
             break;
     }
-        
+
     const q_left = 150;
     if (question) {
         svg
@@ -201,7 +214,7 @@ function show_star_fish_questions(star_countries) {
         .attr("y", y+700)
         .text(question)
         .attr("font-size", question_num === 34 ? 50 : 35)
-        .attr('fill', question_num === 34 ? 'blue' : 'black');
+        .attr('fill', 'black');
 
         if (Array.isArray(options)) {
             options.forEach((value, indx) => {
@@ -213,7 +226,8 @@ function show_star_fish_questions(star_countries) {
                 .attr("width", w)
                 .attr("height", 55)
                 .html(function(d) {
-                    return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk'>
+                    const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
+                    return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
                             <label for="${value}"  class='ag-dis-lbl'>${value}</label>`;
                 })
                 .on('mousedown', function (ev) {
@@ -255,7 +269,7 @@ function show_star_fish_questions(star_countries) {
             return;
         }
         if (question_num === 34) {
-            alert('Your response sent.');
+            alert('Your response saved.');
             document.body.remove();
         } else {
             let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
@@ -367,7 +381,8 @@ function show_usage_chart_questions() {
         .attr("height", 25)
         .attr("font-size", 15)
         .html(function(d) {
-            return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk'>
+            const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
+            return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
                     <label for="${value}"  class='ag-dis-lbl'>${value}</label>`;
         })
         .on('mousedown', function (ev) {
@@ -584,7 +599,7 @@ function add_drill_models_questions() {
     let x = 30, y = 50;
     svg
     .append("text")
-    .text('Predictive Model outcomes for ' + drill_country)
+    .text('Model predictions for ' + drill_country)
     .attr("x", x)
     .attr("y", y)
     .attr("font-size", 22);
