@@ -665,9 +665,12 @@ function draw_horizon_chart(pred_data, mode='color') {
 
     const step = 23;
     const margin = ({top: 30, right: 10, bottom: 0, left: 50});
+    if (question_mode) {
+        margin.top = 60;
+    }
     let height = data.series.length * (step + 1) + margin.top + margin.bottom;
     if (question_mode) {
-        height += 175;
+        height += 145;
     }
 
     const y = d3.scaleLinear()
@@ -1003,6 +1006,9 @@ function draw_usage_chart() {
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
+    if (question_mode) {
+        margin.top = 65;
+    }
     let height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
 
     const width = 954;
@@ -1042,7 +1048,7 @@ function draw_usage_chart() {
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg')
-        .attr("viewBox", [0, 15, width, height + (question_mode ? 175 : 0)])
+        .attr("viewBox", [0, 15, width, height + (question_mode ? 105 : 0)])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
@@ -1709,7 +1715,7 @@ function draw_bubble_chart(data, params) {
                     add_alt_mode(circle, bubble_data[0].deviation, circle_for);
                 }
                 if (circle_for === 'question') {
-                    add_question_n_labels(svg);
+                    show_circle_questions(svg);
                 }
                 add_country_code(circle);
             }
@@ -2077,10 +2083,11 @@ function def_textures(svg, keys, max) {
             // For number of alternative colors
             for (let c = 0; c < 3; c++) {
                 let fill_color, texture_id;
-                if (first_two_col_indexs.indexOf(c) > -1) {
-                    fill_color = bubble_colors1[k];
-                } else {
+                if (first_two_col_indexs.indexOf(c) > -1 && !question_mode) {
                     fill_color = bubble_colors2[k];
+                } else {
+                    fill_color = bubble_colors1[k];
+                    
                 }
                 // number of deviation scales
                 for (let dev = 0; dev < 10; dev++) {
@@ -2251,7 +2258,6 @@ function add_zoom_listener(svg, width, height, selector) {
             }
         });
 
-    
 
     if (question_mode) {
         svg.call(zoom.translateBy, 0, -80);

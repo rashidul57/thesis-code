@@ -329,5 +329,17 @@ body.questionnaire .txt-opinion {
 body.questionnaire .ag-dis-lbl {
   text-transform: capitalize;
 }
+body.questionnaire .bubble-chart foreignObject {
+  overflow: visible;
+  white-space: nowrap;
+}
+body.questionnaire .bubble-chart input[type=checkbox] {
+  transform: scale(2.5);
+  width: 47px;
+  height: 15px;
+}
+body.questionnaire .bubble-chart .ag-dis-lbl {
+  font-size: 30px;
+}
 
 /*# sourceMappingURL=app.css.map */
