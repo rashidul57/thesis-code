@@ -492,7 +492,7 @@ function hide_items() {
 
 
 function change_layout() {
-    if (sel_chart_type === 'Bubble Chart') {
+    if (sel_chart_type === 'Bubble Chart' && !question_mode) {
         d3.selectAll('.container-box').classed('whole-width', false);
     } else {
         d3.selectAll('.left-chart-container svg.rate-svg').remove();
