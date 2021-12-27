@@ -341,5 +341,24 @@ body.questionnaire .bubble-chart input[type=checkbox] {
 body.questionnaire .bubble-chart .ag-dis-lbl {
   font-size: 30px;
 }
+body.questionnaire .impact-question-g .impact-chart-title {
+  font-size: 6px !important;
+}
+body.questionnaire .impact-question-g text {
+  font-size: 5px !important;
+}
+body.questionnaire .impact-question-g input[type=checkbox] {
+  transform: scale(0.35);
+}
+body.questionnaire .impact-question-g .ag-dis-lbl {
+  margin: 7px 0 0 -5px;
+  position: absolute;
+  font-size: 5px;
+}
+body.questionnaire .save-msg {
+  margin: 150px 200px;
+  position: absolute;
+  font-size: 50px;
+}
 
 /*# sourceMappingURL=app.css.map */

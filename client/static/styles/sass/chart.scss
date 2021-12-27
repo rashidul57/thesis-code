@@ -431,4 +431,28 @@ body.questionnaire{
             font-size: 30px;
         }
     }
+    .impact-question-g{
+        .impact-chart-title{
+            font-size: 6px!important;
+        }
+        text{
+            font-size: 5px!important;
+        }
+        input[type="checkbox"]{
+            transform: scale(.35);
+        }
+        .ag-dis-lbl{
+            margin: 7px 0 0 -5px;
+            position: absolute;
+            font-size: 5px;
+        }
+    }
+
+    .save-msg{
+        margin: 150px 200px;
+        position: absolute;
+        font-size: 50px;
+    }
+
+
 }

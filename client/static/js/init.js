@@ -97,14 +97,15 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    sel_chart_type = chart_types[0];
+    sel_chart_type = chart_types[3];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
     .data(chart_types)
     .enter()
     .append('option')
     .text((d) => { return d; })
-    .attr("value", (d) => { return d; });
+    .attr("value", (d) => { return d; })
+    .property("selected", (d) => d===sel_chart_type);;
 
     d3.selectAll("#drp-chart-types")
     .on("change", function(ev) {
