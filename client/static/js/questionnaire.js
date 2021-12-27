@@ -1,8 +1,9 @@
 const answers = {};
 const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
 let sel_quest_circle_mode;
-let question_num = 1, sel_country_num;
-let empty_pass = true;
+let question_num = 33, sel_country_num;
+let empty_pass = false;
+let cur_quest_perc;
 
 
 function show_question() {
@@ -19,16 +20,15 @@ function show_question() {
         sel_quest_circle_mode = sel_questions[2];
     } else if (question_num >= 16 && question_num <= 20) {
         sel_quest_circle_mode = sel_questions[3];
-    } else if (question_num >= 21 && question_num <= 24) {
-        question_num = 21;
+    } else if (question_num >= 21 && question_num <= 23) {
         sel_quest_circle_mode = 'drill-models';
-    } else if (question_num >= 25 && question_num <= 27) {
+    } else if (question_num >= 24 && question_num <= 26) {
         sel_quest_circle_mode = 'horizon-chart';
-    } else if (question_num >= 28 && question_num <= 30) {
+    } else if (question_num >= 27 && question_num <= 29) {
         sel_quest_circle_mode = 'usage-chart';
-    } else if (question_num >= 31 && question_num <= 33) {
+    } else if (question_num >= 30 && question_num <= 32) {
         sel_quest_circle_mode = 'impact-chart';
-    } else if (question_num >= 34 && question_num <= 37) {
+    } else if (question_num >= 33 && question_num <= 36) {
         sel_quest_circle_mode = 'star-fish';
     } else {
         return;
@@ -68,7 +68,8 @@ function show_question() {
 
         const indx = (question_num-1)%5;
         // console.log(question_num, indx, ques_percents[indx])
-        const ques_perc = [ques_percents[indx]/10];
+        cur_quest_perc = ques_percents[indx];
+        const ques_perc = [cur_quest_perc/10];
         draw_bubble_chart(prop_pred_data, {question_circle_mode: sel_quest_circle_mode, circle_for: 'question', percents: ques_perc});
 
     } else if (sel_quest_circle_mode === 'drill-models') {
@@ -123,7 +124,7 @@ function show_question() {
         sel_chart_type = chart_types[0];
         drill_country = undefined;
         
-        if (question_num === 34) {
+        if (question_num === 33) {
             d3.selectAll('.left-chart-container svg').remove();
             d3.selectAll('.container-box').classed('whole-width', true);
             draw_bubble_chart(prop_pred_data, {model: sel_model});
@@ -141,8 +142,8 @@ function show_question() {
 }
 
 function show_star_fish_questions(star_countries) {
-    d3.select('.question-section').remove();
-    const svg = d3.select('.bubble-svg').append('g').attr('class', 'question-section');
+    d3.select('.star-fish-questions').remove();
+    const svg = d3.select('.bubble-svg').append('g').attr('class', 'star-fish-questions');
     let question, options;
 
     svg
@@ -169,7 +170,7 @@ function show_star_fish_questions(star_countries) {
 
     let x = 1300, y = -220;
     
-    if ([32, 33].indexOf(question_num) > -1) {
+    if ([33, 34, 35].indexOf(question_num) > -1) {
         const texts = [
             'Hints:',
             'Uncertainty is',
@@ -184,17 +185,19 @@ function show_star_fish_questions(star_countries) {
             .text(text)
             .attr("x", x)
             .attr("y", y + 40*(indx+1))
-            .attr("font-size", 30);
+            .attr("font-size", 35);
         });
     }
 
+    const submit_num = 36;
+
     switch (question_num) {
-        case 34:
+        case 33:
             question = `Question-${question_num}: The layout is easy representation of multiple country Uncertainties.`;
             options = ['Agree', 'Disagree', 'Partially Agree'];
             break;
 
-        case 35:
+        case 34:
             question = `Question-${question_num}: Uncertainties for Iraq, Indonesia and Pakistan are same for marked area?`;
             options = ['Agree', 'Disagree', 'Partially Agree'];
             const country_polys = [
@@ -210,35 +213,33 @@ function show_star_fish_questions(star_countries) {
             });
             break;
 
-        case 36:
+        case 35:
             question = `Question-${question_num}: Which country exposes maximum variation of uncertainty?`;
             options = ['Vietnam', 'Japan', 'Georgia', 'Italy'];
             break;
 
-        case 37:
+        case submit_num:
             question = `Thank you for your participation. Please Submit to Finish.`;
             break;
     }
 
-    const submit_num = 37;
-
-    const q_left = 150;
+    const q_left = 170;
     if (question) {
         svg
         .append("text")
         .attr("x", x-q_left)
         .attr("y", y+700)
         .text(question)
-        .attr("font-size", question_num === submit_num ? 50 : 35)
+        .attr("font-size", question_num === submit_num ? 50 : 40)
         .attr('fill', 'black');
 
         if (Array.isArray(options)) {
             options.forEach((value, indx) => {
-                const w = 240;
+                const w = 360;
                 svg
                 .append("foreignObject")
-                .attr("x", x + indx*w + 20 - q_left)
-                .attr("y", y + 725)
+                .attr("x", x + indx*w - q_left)
+                .attr("y", y + 735)
                 .attr("width", w)
                 .attr("height", 55)
                 .html(function(d) {
@@ -263,7 +264,7 @@ function show_star_fish_questions(star_countries) {
     .text('Back')
     .attr("x", x)
     .attr("y", y+1300)
-    .attr("font-size", 40)
+    .attr("font-size", 45)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -279,7 +280,7 @@ function show_star_fish_questions(star_countries) {
     .text(text)
     .attr("x", x+680)
     .attr("y", y+1300)
-    .attr("font-size", 40)
+    .attr("font-size", 45)
     .on('mousedown', function (ev) {
         if (ev.which !== 1) {
             return;
@@ -333,42 +334,40 @@ function show_impact_chart_questions() {
     .text('Impact Chart')
     .attr('class', 'impact-chart-title');
 
-    if (question_num >= 31) {
-        svg
-        .append('rect')
-        .attr('x', 148)
-        .attr('y', 44)
-        .attr('width', 8)
-        .attr('height', 7)
-        .attr('stroke', 'green')
-        .attr("stroke-width", 0.4)
-        .attr("fill", "none");
+    svg
+    .append('rect')
+    .attr('x', 148)
+    .attr('y', 44)
+    .attr('width', 8)
+    .attr('height', 7)
+    .attr('stroke', '#ec7af1')
+    .attr("stroke-width", 0.4)
+    .attr("fill", "none");
 
-        svg
-        .append('line')
-        .style("stroke", "green")
-        .style("stroke-width", 0.4)
-        .attr("x1", 140)
-        .attr("y1", 15)
-        .attr("x2", 150)
-        .attr("y2", 44);
+    svg
+    .append('line')
+    .style("stroke", "#ec7af1")
+    .style("stroke-width", 0.4)
+    .attr("x1", 140)
+    .attr("y1", 15)
+    .attr("x2", 150)
+    .attr("y2", 44);
 
-        svg
-        .append('text')
-        .attr("x", 110)
-        .attr("y", 12)
-        .attr("fill", "green")
-        .text("Cell has 100% uncertainty");
-    }
+    svg
+    .append('text')
+    .attr("x", 110)
+    .attr("y", 12)
+    .attr("fill", "#ec7af1")
+    .text("Cell has 100% uncertainty");
 
     switch (question_num) {
 
-        case 31:
+        case 30:
         question = `Question-${question_num}: This representation clearly make sense?`;
         options = ['Yes', 'No', 'Partially'];
         break;
 
-        case 32:
+        case 31:
         question = `Question-${question_num}: What is the uncertainty of the red marked cell?`;
         options = ['68%', '76%', '84%', '92%'];
 
@@ -384,7 +383,7 @@ function show_impact_chart_questions() {
         
         break;
 
-        case 33:
+        case 32:
         question = `Question-${question_num}: Which cell has maximum uncertainty in the marked area [left-right]?`;
         options = ['First', 'Second', 'Third', 'Fourth'];
         
@@ -409,17 +408,17 @@ function show_impact_chart_questions() {
     .attr("x", x)
     .attr("y", y)
     .text(question)
-    .attr("font-size", 15);
+    .attr("font-size", 18);
 
     options.forEach((value, indx) => {
         const w = 50;
         svg
         .append("foreignObject")
         .attr("x", x + indx*w)
-        .attr("y", y+1)
+        .attr("y", y-2)
         .attr("width", w)
-        .attr("height", 16)
-        .attr("font-size", 7)
+        .attr("height", 18)
+        .attr("font-size", 9)
         .html(function(d) {
             const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
             return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
@@ -433,14 +432,14 @@ function show_impact_chart_questions() {
                 }
             });
         });
-    })
+    });
 
     svg
     .append("text")
     .text('Back')
     .attr("x", x)
     .attr("y", y+45)
-    .attr("font-size", 15)
+    .attr("font-size", 20)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -455,7 +454,7 @@ function show_impact_chart_questions() {
     .text('Next')
     .attr("x", x+80)
     .attr("y", y+45)
-    .attr("font-size", 15)
+    .attr("font-size", 20)
     .on('mousedown', function (ev) {
         let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
         chkboxes.forEach(chk => {
@@ -482,12 +481,14 @@ function show_impact_chart_questions() {
 }
 
 function show_usage_chart_questions() {
-    const svg = d3.select('.rate-svg');
+    const svg = d3.select('.rate-svg')
+        .append('g')
+        .attr('class', 'usage-questions');
     
     let question, options;
 
     switch (question_num) {
-        case 28:
+        case 27:
         question = `Question-${question_num}: What is the maximum uncertainty country/column throught the days?`;
         options = ['USA', 'IRQ', 'CZE', 'CAN'];
 
@@ -506,7 +507,7 @@ function show_usage_chart_questions() {
         
         break;
 
-        case 29:
+        case 28:
         question = `Question-${question_num}: Which cell has maximum uncertainty in the marked area [left-right]?`;
         options = ['First', 'Second', 'Fourth', 'Fifth'];
         
@@ -521,7 +522,7 @@ function show_usage_chart_questions() {
         .attr("fill", "none");
         break;
 
-        case 30:
+        case 29:
         question = `Question-${question_num}: Which cell has minimum uncertainty in the marked area [top-down]?`;
         options = ['First', 'Second', 'Third', 'Fourth'];
         
@@ -636,12 +637,12 @@ function show_horizon_chart_questions() {
     .attr("x", 20)
     .attr("y", 25)
     .text('Horizon Chart')
-    .attr("font-size", 15);
+    .attr("font-size", 17);
     
     let rect_x, rect_y, rect_w, rect_h, question, options;
 
     switch (question_num) {
-        case 25:
+        case 24:
         rect_x = 558;
         rect_y = 60;
         rect_w = 17;
@@ -650,7 +651,7 @@ function show_horizon_chart_questions() {
         options = ['Agree', 'Disagree', 'Partially Agree'];
         break;
 
-        case 26:
+        case 25:
         rect_x = 453;
         rect_y = 115;
         rect_w = 17;
@@ -659,7 +660,7 @@ function show_horizon_chart_questions() {
         options = ['Brazil', 'United Kingdom', 'Russia', 'Africa'];
         break;
 
-        case 27:
+        case 26:
         rect_x = 463;
         rect_y = 206;
         rect_w = 105;
@@ -686,7 +687,7 @@ function show_horizon_chart_questions() {
     .attr("x", x)
     .attr("y", y)
     .text(question)
-    .attr("font-size", 15);
+    .attr("font-size", 17);
 
     options.forEach((value, indx) => {
         const w = 140;
@@ -696,7 +697,7 @@ function show_horizon_chart_questions() {
         .attr("y", y+16)
         .attr("width", w)
         .attr("height", 25)
-        .attr("font-size", 15)
+        .attr("font-size", 17)
         .html(function(d) {
             const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
             return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
@@ -717,7 +718,7 @@ function show_horizon_chart_questions() {
     .text('Back')
     .attr("x", x)
     .attr("y", y+90)
-    .attr("font-size", 15)
+    .attr("font-size", 17)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -732,7 +733,7 @@ function show_horizon_chart_questions() {
     .text('Next')
     .attr("x", x+220)
     .attr("y", y+90)
-    .attr("font-size", 15)
+    .attr("font-size", 17)
     .on('mousedown', function (ev) {
         let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
         chkboxes.forEach(chk => {
@@ -750,7 +751,7 @@ function show_horizon_chart_questions() {
             .append("text")
             .text('Please Select a Country.')
             .attr("x", x)
-            .attr("y", y + 70)
+            .attr("y", y + 55)
             .attr("font-size", 13)
             .attr("fill", 'red');
         }
@@ -762,22 +763,57 @@ function add_drill_models_questions() {
     d3.select('.left-chart-container').selectAll('svg, .inner-container').remove();
 
     const chart_svgs = d3.select('.drill-models-container').selectAll('svg').nodes();
-    chart_svgs.forEach(svg => {
-        d3.select(svg)
-        .append('rect')
-        .attr('x', 240)
-        .attr('y', 5)
-        .attr('width', 6.5)
-        .attr('height', 125)
-        .attr('stroke', 'blue')
-        .attr("stroke-width", 1)
-        .attr("fill", "none");
+    chart_svgs.forEach((svg, indx) => {
+        svg = d3.select(svg);
+        if (indx === 0) {
+            const hints = [
+                {x: 19, y: 15, text: 5},
+                {x: 59, y: 15, text: 7},
+                {x: 79, y: 15, text: 8},
+                {x: 134, y: 15, text: 9},
+                {x: 159, y: 15, text: 4},
+                {x: 184, y: 15, text: 6},
+                {x: 250, y: 15, text: 3},
+                {x: 284.5, y: 15, text: 2},
+                {x: 404, y: 15, text: 1},
+            ];
+            hints.forEach(hint => {
+                svg.append('text')
+                .attr("x", hint.x)
+                .attr("y", hint.y - 5)
+                .attr('fill', 'blue')
+                .attr("font-size", 10)
+                .text(hint.text);
+
+                svg
+                .append('rect')
+                .attr('x', hint.x)
+                .attr('y', hint.y)
+                .attr('width', 8)
+                .attr('height', 105)
+                .attr('stroke', 'blue')
+                .attr("stroke-width", 1)
+                .attr("fill", "none");
+            });
+            
+        } else {
+            svg
+            .append('rect')
+            .attr('x', 240)
+            .attr('y', 5)
+            .attr('width', 6.5)
+            .attr('height', 125)
+            .attr('stroke', 'blue')
+            .attr("stroke-width", 1)
+            .attr("fill", "none");
+        }
     });
 
     const svg = d3.select('.left-chart-container')
         .append('svg')
         .attr('height', '100%')
-        .attr('width', '100%');
+        .attr('width', '100%')
+        .attr('class', 'drill-questions');
 
     let x = 30, y = 50;
     svg
@@ -800,48 +836,68 @@ function add_drill_models_questions() {
         .text(text)
         .attr("x", x)
         .attr("y", y + 25*(indx+1))
-        .attr("font-size", 15);
+        .attr("font-size", 18);
     });
-    
 
     y += 90;
 
-    models.forEach((model, k) => {
-        const model_name = model.toUpperCase();
-        svg
-        .append("text")
-        .attr("x", x)
-        .attr("y", y+100*(k+1))
-        .text(`Question-${question_num+k}: What is the uncertainty for marked column of '${model_name}'?`)
-        .attr("font-size", 18);
-        
-        svg
-        .append("text")
-        .attr("x", x)
-        .attr("y", y+100*(k+1) + 35)
-        .attr("width", 150)
-        .attr("height", 25)
-        .text('Answer: ');
+    let model_name, options;
+    switch (question_num) {
+        case 21:
+        model_name = 'cnn';
+        options = [4, 5, 6, 7];
+        break;
 
-        const value = answers[question_num+k] || '';
+        case 22:
+        model_name = 'lstm';
+        options = [0, 1, 2, 3];
+        break;
+
+        case 23:
+        model_name = 'arima';
+        options = [6, 7, 8, 9];
+        break;
+    }
+
+    const uc_model = model_name.toUpperCase();
+    svg
+    .append("text")
+    .attr("x", x)
+    .attr("y", y + 235)
+    .text(`Question-${question_num}: What is the uncertainty for marked column of '${uc_model}'?`)
+    .attr("font-size", 20);
+    
+    svg
+    .append("text")
+    .attr("x", x)
+    .attr("y", y+282)
+    .attr("width", 150)
+    .attr("height", 5)
+    .attr("font-size", 20)
+    .text('Answer: ');
+
+    options.forEach((value, indx) => {
+        const w = 100;
         svg
         .append("foreignObject")
-        .attr("x", x+80)
-        .attr("y", y+100*(k+1) + 18)
-        .attr("width", 45)
-        .attr("height", 25)
+        .attr("x", x + indx*w + 90)
+        .attr("y", y+255)
+        .attr("width", w)
+        .attr("height", 35)
+        .attr("font-size", 25)
         .html(function(d) {
-            return `<input type='text' class='txt-opinion' value="${value}"/>`;
+            const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
+            return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
+                    <label for="${value}"  class='ag-dis-lbl'>${value}</label>`;
+        })
+        .on('mousedown', function (ev) {
+            const chks = d3.selectAll('.ag-dis-chk').nodes();
+            chks.forEach(chk => {
+                if (chk !== ev.target) {
+                    d3.select(chk).property("checked", false);;
+                }
+            });
         });
-
-        svg
-        .append("text")
-        .attr("x", x+120)
-        .attr("y", y+100*(k+1) + 35)
-        .attr("width", 150)
-        .attr("height", 25)
-        .text('Range [0-9]')
-        .attr("font-size", 13);
     });
 
     svg
@@ -849,7 +905,7 @@ function add_drill_models_questions() {
     .text('Back')
     .attr("x", x)
     .attr("y", y+580)
-    .attr("font-size", 25)
+    .attr("font-size", 22)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -864,69 +920,50 @@ function add_drill_models_questions() {
     .text('Next')
     .attr("x", x+220)
     .attr("y", y+580)
-    .attr("font-size", 25)
-    // .attr("fill", (d) => {
-    //     return question_num < 5 ? 'black' : 'gray';
-    // })
+    .attr("font-size", 22)
     .on('mousedown', function (ev) {
-        let ans = d3.select('.txt-opinion').property("value");
-        ans = Number(ans) || 11;
-        if (ans >= 10 || empty_pass) {
-            answers[question_num] = ans;
-            question_num += 4;
+        let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
+        chkboxes.forEach(chk => {
+            const el = d3.select(chk);
+            const is_checked = el.property('checked');
+            if (is_checked) {
+                answers[question_num] = Number(el.property('id'));
+            }
+        });
+        
+        if (answers[question_num] || empty_pass) {
+            question_num += 1;
             show_question(question_num);
         } else {
             svg
             .append("text")
-            .text('Please Enter a valid Number.')
+            .text('Please Enter Numbers in each input field.')
             .attr("x", x)
-            .attr("y", y + 30)
-            .attr("font-size", 13)
+            .attr("y", y + 470)
+            .attr("font-size", 15)
             .attr("fill", 'red');
         }
     });
 }
 
 function show_circle_questions(svg) {
+    svg.select('.circle-questions').remove();
+
+    svg = svg
+        .append('g')
+        .attr('class', 'circle-questions');
+
     svg
     .append("text")
-    .text('User perception examples in %:')
+    .text("'" + sel_quest_circle_mode + "' perceptual examples:")
     .attr("y", 50)
     .attr("x", -350)
     .attr("font-size", 25);
 
-    let x = 380, y = 425;
     svg
     .append("text")
-    .attr("x", x+20)
-    .attr("y", y)
-    .attr("width", 150)
-    .attr("height", 25)
-    .text('Answer: ');
-
-    const value = answers[question_num] || '';
-    svg
-    .append("foreignObject")
-    .attr("x", x+100)
-    .attr("y", y-18)
-    .attr("width", 45)
-    .attr("height", 25)
-    .html(function(d) {
-      return `<input type='text' class='txt-opinion' value="${value}"/>`;
-    });
-
-    svg
-    .append("text")
-    .attr("x", x+138)
-    .attr("y", y)
-    .attr("width", 80)
-    .attr("height", 25)
-    .text('%');
-
-    svg
-    .append("text")
-    .attr("y", 350)
     .attr("x", -600)
+    .attr("y", 350)
     .transition()             
     .ease(d3.easeLinear)           
     .duration(500)
@@ -934,11 +971,66 @@ function show_circle_questions(svg) {
     .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 10% to 100%')
     .attr("font-size", 25);
 
+    let x = -150, y = 550;
+    svg
+    .append("text")
+    .attr("x", x)
+    .attr("y", y + 10)
+    .attr("width", 150)
+    .attr("height", 25)
+    .attr("font-size", 20)
+    .text('Answer: ');
+
+    // const value = answers[question_num] || '';
+    // svg
+    // .append("foreignObject")
+    // .attr("x", x+100)
+    // .attr("y", y-18)
+    // .attr("width", 45)
+    // .attr("height", 25)
+    // .html(function(d) {
+    //   return `<input type='text' class='txt-opinion' value="${value}"/>`;
+    // });
+
+    // svg
+    // .append("text")
+    // .attr("x", x+138)
+    // .attr("y", y)
+    // .attr("width", 80)
+    // .attr("height", 25)
+    // .text('%');
+
+    const options = get_perc_options(cur_quest_perc);
+
+    options.forEach((value, indx) => {
+        const w = 150;
+        svg
+        .append("foreignObject")
+        .attr("x", x + indx*w + 80)
+        .attr("y", y - 7)
+        .attr("width", w)
+        .attr("height", 25)
+        .attr("font-size", 10)
+        .html(function(d) {
+            const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
+            return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
+                    <label for="${value}"  class='ag-dis-lbl'>${value}%</label>`;
+        })
+        .on('mousedown', function (ev) {
+            const chks = d3.selectAll('.ag-dis-chk').nodes();
+            chks.forEach(chk => {
+                if (chk !== ev.target) {
+                    d3.select(chk).property("checked", false);;
+                }
+            });
+        });
+    })
+
     svg
     .append("text")
     .text('Back')
-    .attr("x", 200)
-    .attr("y", 700)
+    .attr("x", x+50)
+    .attr("y", y + 165)
     .attr("font-size", 25)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
@@ -952,14 +1044,20 @@ function show_circle_questions(svg) {
     svg
     .append("text")
     .text('Next')
-    .attr("x", 500)
-    .attr("y", 700)
+    .attr("x", x + 350)
+    .attr("y", y + 165)
     .attr("font-size", 25)
     .on('mousedown', function (ev) {
-        let ans = d3.select('.txt-opinion').property("value");
-        ans = Number(ans);
-        if (ans >= 10 || empty_pass) {
-            answers[question_num] = ans;
+        let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
+        chkboxes.forEach(chk => {
+            const el = d3.select(chk);
+            const is_checked = el.property('checked');
+            if (is_checked) {
+                answers[question_num] = Number(el.property('id'));
+            }
+        });
+
+        if (answers[question_num] || empty_pass) {
             show_question(++question_num);
         } else {
             svg
@@ -971,4 +1069,25 @@ function show_circle_questions(svg) {
             .attr("fill", 'red');
         }
     });
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min);
+}
+
+function get_perc_options(quest_perc) {
+    const factors = [-1, 1, -1];
+    const numbers = [];
+    factors.forEach((fact, indx) => {
+        let change = (5 * fact * (indx+1));
+        const num = quest_perc + change;
+        numbers.push(num);
+    });
+    
+    const loc = getRandomInt(0, 3);
+    numbers.splice(loc, 0, quest_perc);
+    // console.log(loc, quest_perc, numbers)
+    return numbers;
 }
