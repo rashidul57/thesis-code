@@ -1204,6 +1204,9 @@ function draw_usage_chart() {
 function draw_impact_chart(pred_data, model='mlp') {
 
     let countries = Object.keys(pred_data)
+    if (question_mode) {
+        countries = _.take(countries, 15);
+    }
     let num_dates = 0;
     let start_date;
     countries.forEach(country => {
@@ -1221,6 +1224,7 @@ function draw_impact_chart(pred_data, model='mlp') {
     });
 
     const dates = [];
+
     for (let i = 0; i < num_dates; i++) {
         const date = moment(start_date).add('days', i).toDate();
         dates.push(date);
@@ -1248,7 +1252,7 @@ function draw_impact_chart(pred_data, model='mlp') {
             cp_values.push(pred);
             cl_values.push(lower_value);
             cu_values.push(upper_value);
-            c_uncerts.push(perc_unc/2);
+            c_uncerts.push(perc_unc);
         }
         predictions.push(cp_values);
         lower_values.push(cl_values);
@@ -1269,9 +1273,13 @@ function draw_impact_chart(pred_data, model='mlp') {
     };
 
     const margin = {top: 20, right: 1, bottom: 40, left: 35};
+    if (question_mode) {
+        margin.top = 30;
+    }
     const height = 5;
     const width = chart_data.dates.length * 6 + margin.left + margin.right;
-    const innerHeight = height * chart_data.names.length;
+    let innerHeight = height * chart_data.names.length;
+
     const date = (i) => {
         return moment(start_date).add('days', i).format('ll');
     };
@@ -1325,10 +1333,16 @@ function draw_impact_chart(pred_data, model='mlp') {
     .rangeRound([margin.left, width - margin.right]);
 
     // set svg shape/size
+    if (question_mode) {
+        innerHeight += 100;
+    }
+
+    const v_w = question_mode ? 900 : width;
+
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'rate-svg impact-chart-svg')
-        .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
+        .attr("viewBox", [0, 0, v_w, innerHeight + margin.top + margin.bottom])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
     
@@ -1338,7 +1352,6 @@ function draw_impact_chart(pred_data, model='mlp') {
     svg.append("g")
         .call(yAxis);
 
-    for (let k = 0; k < 3; k++) {
         let row_count = 0;
         svg.append("g")
         .selectAll("g")
@@ -1348,60 +1361,59 @@ function draw_impact_chart(pred_data, model='mlp') {
         .selectAll("rect")
         .data(d => d)
         .join("rect")
+        .attr('class', (d) => {
+            return 'impact-rect';
+        })
+        .attr('d', d => d)
         .attr("x", (d, i) => {
             const dt_indx = i%date_count;
             let x_pos = x_base = x(chart_data.dates[dt_indx]);
-            let width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
-
-            const change = get_rect_change('x', k, d*width/100);
-            x_pos += change;
-
-            if (x_pos < x_base) {
-                x_pos = x_base;
-            }
             return x_pos;
         })
         .attr("width", (d, i) => {
             const dt_indx = i%date_count;
-            let width = base_width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]) - 1;
-            const change = get_rect_change('x', k, d*width/100);
-            width = width - Math.abs(change);
-            if (width > base_width) {
-                width = base_width;
-            }
+            let width = base_width = x(moment(chart_data.dates[dt_indx]).add('days', 1).toDate()) - x(chart_data.dates[dt_indx]);
             return width;
         })
         .attr("y", (d, i) => {
             const indx = (i % row_count === 0) ? (row_count++) : row_count;
-            let y_pos = base_y = y(chart_data.names[indx]) - margin.top; //y(moment(new Date(d.date)).format('L')) || 0;
-            let height = y.bandwidth() - 2;
-            const change = get_rect_change('y', k, d*height/100);
-            y_pos += change;
-
-            if (y_pos < base_y) {
-                y_pos = base_y;
-            }
-
+            let y_pos = base_y = y(chart_data.names[indx]) - margin.top;
             return y_pos;
         })
         .attr("height", (d, i) => {
-            let height = base_height = y.bandwidth() - 1;
-            const change = get_rect_change('y', k, d*height/100);
-            height = height - Math.abs(change);
-            if (height > base_height) {
-                height = base_height;
-            }
+            let height = base_height = y.bandwidth();
             return height;
         })
-        .attr("fill-opacity", (d) => {
-            return 0.33;
-        })
-        .attr("fill", (d, i) => {
-            return bubble_colors[k];
-        })
-        .append("title")
-        .text((d, i) => `Uncertainty: ${format(d)}%`);
-    }
+        .attr("fill", 'transparent')
+        .attr('stroke', '#e3e3e3')
+        .attr("stroke-width", 0.1);
+
+        const rects = d3.selectAll('.impact-rect').nodes();
+        rects.forEach(rect => {
+            const rect_el = d3.select(rect);
+            const row_g = d3.select(rect.parentElement);
+            const x = Number(rect_el.attr('x'));
+            const y = Number(rect_el.attr('y'));
+            const w = Number(rect_el.attr('width'));
+            const h = Number(rect_el.attr('height'));
+            const d = Number(rect_el.attr('d'));
+            
+            for (let k = 0; k < 3; k++) {
+                const factor = 3.5;
+                const change_x = get_rect_change('x', k, d*w/(factor*100));
+                const change_y = get_rect_change('y', k, d*h/(factor*100));
+
+                row_g
+                    .append("circle")
+                    .attr("r", h/factor)
+                    .attr('cx', x + w/2 + change_x)
+                    .attr('cy', y + h/2 + change_y - 0.2)
+                    .attr("fill-opacity", 0.33)
+                    .attr("fill", bubble_colors[k])
+                    .append("title")
+                    .text(`Uncertainty: ${format(d)}%`);
+            }
+        });
 }
 
 function get_rect_change(axis, rgb_indx, uncertainty) {
