@@ -198,7 +198,7 @@ function show_star_fish_questions(star_countries) {
             break;
 
         case 34:
-            question = `Question-${question_num}: Uncertainties for Iraq, Indonesia and Pakistan are same for marked area?`;
+            question = `Question-${question_num}: Uncertainties for Iraq, Indonesia and Pakistan are same for marked areas?`;
             options = ['Agree', 'Disagree', 'Partially Agree'];
             const country_polys = [
                 "-40,-37 3,-10 -88,110 -130,83", // indonesia
@@ -214,7 +214,7 @@ function show_star_fish_questions(star_countries) {
             break;
 
         case 35:
-            question = `Question-${question_num}: Which country exposes maximum variation of uncertainty?`;
+            question = `Question-${question_num}: Which country exposes maximum variations of uncertainty?`;
             options = ['Vietnam', 'Japan', 'Georgia', 'Italy'];
             break;
 
@@ -223,7 +223,7 @@ function show_star_fish_questions(star_countries) {
             break;
     }
 
-    const q_left = 170;
+    const q_left = 300;
     if (question) {
         svg
         .append("text")
@@ -238,7 +238,7 @@ function show_star_fish_questions(star_countries) {
                 const w = 360;
                 svg
                 .append("foreignObject")
-                .attr("x", x + indx*w - q_left)
+                .attr("x", x + indx*w - q_left + 80)
                 .attr("y", y + 735)
                 .attr("width", w)
                 .attr("height", 55)
