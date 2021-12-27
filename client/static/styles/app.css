@@ -341,19 +341,52 @@ body.questionnaire .bubble-chart input[type=checkbox] {
 body.questionnaire .bubble-chart .ag-dis-lbl {
   font-size: 30px;
 }
+body.questionnaire .star-fish-questions input[type=checkbox] {
+  transform: scale(3.45);
+  margin-top: 20px;
+}
+body.questionnaire .star-fish-questions .ag-dis-lbl {
+  font-size: 40px;
+  margin: 0px 0 0 15px;
+  position: absolute;
+}
 body.questionnaire .impact-question-g .impact-chart-title {
-  font-size: 6px !important;
+  font-size: 7px !important;
 }
 body.questionnaire .impact-question-g text {
-  font-size: 5px !important;
+  font-size: 6px !important;
 }
 body.questionnaire .impact-question-g input[type=checkbox] {
-  transform: scale(0.35);
+  transform: scale(0.45);
 }
 body.questionnaire .impact-question-g .ag-dis-lbl {
-  margin: 7px 0 0 -5px;
+  margin: 6px 0 0 -5px;
   position: absolute;
-  font-size: 5px;
+  font-size: 6px;
+}
+body.questionnaire .circle-questions input[type=checkbox] {
+  transform: scale(1.65);
+}
+body.questionnaire .circle-questions .ag-dis-lbl {
+  font-size: 25px;
+  position: absolute;
+  margin: -8px 0 0 -5px;
+}
+body.questionnaire .usage-questions input[type=checkbox], body.questionnaire .horizon-questions input[type=checkbox] {
+  transform: scale(1.15);
+}
+body.questionnaire .usage-questions .ag-dis-lbl, body.questionnaire .horizon-questions .ag-dis-lbl {
+  font-size: 16px;
+  position: absolute;
+  margin: 1px 0 0 4px;
+}
+body.questionnaire .drill-questions input[type=checkbox] {
+  transform: scale(1.65);
+}
+body.questionnaire .drill-questions .ag-dis-lbl {
+  font-size: 25px;
+  position: absolute;
+  margin: 3px 0 0 10px;
 }
 body.questionnaire .save-msg {
   margin: 150px 200px;

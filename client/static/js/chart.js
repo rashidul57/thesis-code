@@ -395,11 +395,14 @@ function draw_stream_graph(params) {
         .attr('class', ({key}) => {
             const nameCls = get_name_cls(key);
             return sel_country ? 'sel-country-stream-cell' : ('main-stream-cell stream-cell-' + nameCls);
-        })
-        .append("title")
+        });
+
+    // if (!question_mode) {
+        stream.append("title")
         .text(({key}) => {
             return key;
         });
+    // }
 
     if ((!global_streams.length && !drill_country && !question_mode) || mode === 'color') {
         stream.attr("fill", ({key}) => {

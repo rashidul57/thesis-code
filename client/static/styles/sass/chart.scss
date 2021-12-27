@@ -431,20 +431,66 @@ body.questionnaire{
             font-size: 30px;
         }
     }
-    .impact-question-g{
-        .impact-chart-title{
-            font-size: 6px!important;
-        }
-        text{
-            font-size: 5px!important;
-        }
+
+    .star-fish-questions{
         input[type="checkbox"]{
-            transform: scale(.35);
+            transform: scale(3.45);
+            margin-top: 20px;
         }
         .ag-dis-lbl{
-            margin: 7px 0 0 -5px;
+            font-size: 40px;
+            margin: 0px 0 0 15px;
             position: absolute;
-            font-size: 5px;
+        }
+    }
+
+    .impact-question-g{
+        .impact-chart-title{
+            font-size: 7px!important;
+        }
+        text{
+            font-size: 6px!important;
+        }
+        input[type="checkbox"]{
+            transform: scale(.45);
+        }
+        .ag-dis-lbl{
+            margin: 6px 0 0 -5px;
+            position: absolute;
+            font-size: 6px;
+        }
+    }
+
+    .circle-questions{
+        input[type="checkbox"]{
+            transform: scale(1.65);
+        }
+        .ag-dis-lbl{
+            font-size: 25px;
+            position: absolute;
+            margin: -8px 0 0 -5px;
+        }
+    }
+
+    .usage-questions, .horizon-questions{
+        input[type="checkbox"]{
+            transform: scale(1.15);
+        }
+        .ag-dis-lbl{
+            font-size: 16px;
+            position: absolute;
+            margin: 1px 0 0 4px;
+        }
+    }
+
+    .drill-questions{
+        input[type="checkbox"]{
+            transform: scale(1.65);
+        }
+        .ag-dis-lbl{
+            font-size: 25px;
+            position: absolute;
+            margin: 3px 0 0 10px;
         }
     }
 
