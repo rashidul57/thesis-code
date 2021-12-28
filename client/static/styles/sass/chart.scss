@@ -438,7 +438,7 @@ body.questionnaire{
             margin-top: 20px;
         }
         .ag-dis-lbl{
-            font-size: 40px;
+            font-size: 37px;
             margin: 0px 0 0 15px;
             position: absolute;
         }
@@ -494,11 +494,14 @@ body.questionnaire{
         }
     }
 
-    .save-msg{
-        margin: 150px 200px;
-        position: absolute;
-        font-size: 50px;
-    }
+    .save-container{
+        text-align: center;
+        width: 100%;
+        margin-top: 200px;
+        .save-msg{
+            font-size: 50px;
+        }
+}
 
 
 }

@@ -346,7 +346,7 @@ body.questionnaire .star-fish-questions input[type=checkbox] {
   margin-top: 20px;
 }
 body.questionnaire .star-fish-questions .ag-dis-lbl {
-  font-size: 40px;
+  font-size: 37px;
   margin: 0px 0 0 15px;
   position: absolute;
 }
@@ -388,9 +388,12 @@ body.questionnaire .drill-questions .ag-dis-lbl {
   position: absolute;
   margin: 3px 0 0 10px;
 }
-body.questionnaire .save-msg {
-  margin: 150px 200px;
-  position: absolute;
+body.questionnaire .save-container {
+  text-align: center;
+  width: 100%;
+  margin-top: 200px;
+}
+body.questionnaire .save-container .save-msg {
   font-size: 50px;
 }
 

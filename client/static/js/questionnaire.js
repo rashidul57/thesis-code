@@ -154,7 +154,7 @@ function show_star_fish_questions(star_countries) {
     .attr('height', 20)
     .text('fill', 'red')
     .text('Star Fish Layout')
-    .attr("font-size", 35);
+    .attr("font-size", 50);
 
     star_countries.forEach((country) => {
         svg
@@ -184,7 +184,7 @@ function show_star_fish_questions(star_countries) {
             .append("text")
             .text(text)
             .attr("x", x)
-            .attr("y", y + 40*(indx+1))
+            .attr("y", y + 45*(indx+1))
             .attr("font-size", 35);
         });
     }
@@ -288,9 +288,13 @@ function show_star_fish_questions(star_countries) {
         if (question_num === submit_num) {
             d3.selectAll('.left-chart-container .inner-container').remove();
             d3.select('.left-chart-container')
+                .append('div')
+                .attr('class', 'save-container')
                 .append('text')
                 .attr('class', 'save-msg')
-                .text('Your response has been saved.');
+                .text('Your response has been saved. Please contact md313724@dal.ca for any query.');
+           
+                
         } else {
             let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
             chkboxes.forEach(chk => {
