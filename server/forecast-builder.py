@@ -44,7 +44,7 @@ for k in range(len(props)):
 		test, predictions, ranges = model_service.train_n_forecast(data, n_test, config, 'cnn')
 		cnn = {"y": test, "y_pred": predictions, "ranges": ranges, "start_timestamp": start_timestamp}
 
-		config = [36, 50, 100, 100, 12]
+		config = [36, 50, 100, 100, 12] #n_input, n_nodes, n_epochs, n_batch, n_diff
 		test, predictions, ranges = model_service.train_n_forecast(data, n_test, config, 'lstm')
 		lstm = {"y": test, "y_pred": predictions, "ranges": ranges, "start_timestamp": start_timestamp}
 
