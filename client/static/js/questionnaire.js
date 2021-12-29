@@ -1,8 +1,8 @@
 const answers = {};
 const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
 let sel_quest_circle_mode;
-let question_num = 1, sel_country_num;
-let empty_pass = false;
+let question_num = 24, sel_country_num;
+let empty_pass = true;
 let cur_quest_perc;
 
 
@@ -688,10 +688,15 @@ function show_horizon_chart_questions() {
 
     svg
     .append("text")
-    .attr("x", x)
+    .attr("x", -800)
     .attr("y", y)
+    .attr("font-size", 17)
+    .transition()             
+    .ease(d3.easeLinear)           
+    .duration(300)
+    .attr("x", x)
     .text(question)
-    .attr("font-size", 17);
+    ;
 
     options.forEach((value, indx) => {
         const w = 140;
@@ -866,8 +871,12 @@ function add_drill_models_questions() {
     const uc_model = model_name.toUpperCase();
     svg
     .append("text")
-    .attr("x", x)
+    .attr("x", -400)
     .attr("y", y + 235)
+    .transition()             
+    .ease(d3.easeLinear)           
+    .duration(100)
+    .attr("x", x)
     .text(`Question-${question_num}: What is the uncertainty for marked column of '${uc_model}'?`)
     .attr("font-size", 20);
     
