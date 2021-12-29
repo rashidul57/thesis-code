@@ -8,7 +8,6 @@ from pandas import concat
 from pandas import read_csv
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
-from keras.layers import Dense
 from matplotlib import pyplot
 import pandas
 import pandas as pd
@@ -68,6 +67,8 @@ def measure_rmse(actual, predicted):
 def mlp_model_fit(train, config):
 	# unpack config
 	n_input, n_nodes, n_epochs, n_batch = config
+	#number of outputs
+	no_out = 1
 	# prepare data
 	data = series_to_supervised(train, n_in=n_input)
 	# print(data.shape, n_input)
@@ -77,7 +78,7 @@ def mlp_model_fit(train, config):
 	# define model
 	model = Sequential()
 	model.add(Dense(n_nodes, activation='relu', input_dim=n_input))
-	model.add(Dense(1))
+	model.add(Dense(no_out))
 	model.compile(loss='mse', optimizer='adam')
 	# train model
 	model.fit(train_x, train_y, epochs=n_epochs, batch_size=n_batch, verbose=0)
@@ -87,6 +88,8 @@ def mlp_model_fit(train, config):
 def cnn_model_fit(train, config):
 	# unpack config
 	n_input, n_filters, n_kernel, n_epochs, n_batch = config
+	#number of outputs
+	no_out = 1
 	# prepare data
 	data = series_to_supervised(train, n_in=n_input)
 	train_x, train_y = data[:, :-1], data[:, -1]
@@ -99,7 +102,7 @@ def cnn_model_fit(train, config):
 	model.add(Conv1D(filters=n_filters, kernel_size=n_kernel, activation='relu'))
 	model.add(MaxPooling1D(pool_size=2))
 	model.add(Flatten())
-	model.add(Dense(1))
+	model.add(Dense(no_out))
 	model.compile(loss='mse', optimizer='adam')
 	# fit
 	model.fit(train_x, train_y, epochs=n_epochs, batch_size=n_batch, verbose=0)
@@ -108,6 +111,8 @@ def cnn_model_fit(train, config):
 def lstm_model_fit(train, config):
 	# unpack config
 	n_input, n_nodes, n_epochs, n_batch, n_diff = config
+	#number of outputs
+	no_out = 1
 	# prepare data
 	if n_diff > 0:
 		train = difference(train, n_diff)
@@ -118,7 +123,7 @@ def lstm_model_fit(train, config):
 	model = Sequential()
 	model.add(LSTM(n_nodes, activation='relu', input_shape=(n_input, 1)))
 	model.add(Dense(n_nodes, activation='relu'))
-	model.add(Dense(1))
+	model.add(Dense(no_out))
 	model.compile(loss='mse', optimizer='adam')
 	# fit
 	model.fit(train_x, train_y, epochs=n_epochs, batch_size=n_batch, verbose=0)
@@ -166,14 +171,25 @@ def train_n_forecast(data, n_test, config, alg_name):
 		model1 = mlp_model_fit(train, config)
 		model2 = mlp_model_fit(train, config)
 		model3 = mlp_model_fit(train, config)
+		model4 = mlp_model_fit(train, config)
+		model5 = mlp_model_fit(train, config)
+		model6 = mlp_model_fit(train, config)
+
 	if (alg_name == 'cnn'):
 		model1 = cnn_model_fit(train, config)
 		model2 = cnn_model_fit(train, config)
 		model3 = cnn_model_fit(train, config)
+		model4 = cnn_model_fit(train, config)
+		model5 = cnn_model_fit(train, config)
+		model6 = cnn_model_fit(train, config)
+
 	if (alg_name == 'lstm'):
 		model1 = lstm_model_fit(train, config)
 		model2 = lstm_model_fit(train, config)
 		model3 = lstm_model_fit(train, config)
+		model4 = lstm_model_fit(train, config)
+		model5 = lstm_model_fit(train, config)
+		model6 = lstm_model_fit(train, config)
 
 	# seed history with training dataset
 	history = [x for x in train]
@@ -183,8 +199,11 @@ def train_n_forecast(data, n_test, config, alg_name):
 		# fit model and make forecast for history
 		yhat1 = model_predict(model1, history, config, alg_name)
 		yhat2 = model_predict(model2, history, config, alg_name)
-		yhat3 = model_predict(model2, history, config, alg_name)
-		yhat = np.array([yhat1, yhat2, yhat3])
+		yhat3 = model_predict(model3, history, config, alg_name)
+		yhat4 = model_predict(model4, history, config, alg_name)
+		yhat5 = model_predict(model5, history, config, alg_name)
+		yhat6 = model_predict(model6, history, config, alg_name)
+		yhat = np.array([yhat1, yhat2, yhat3, yhat4, yhat5, yhat6])
 		lower, yhat, upper = get_uncertainty(yhat)
 
 		# store forecast in list of predictions

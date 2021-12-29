@@ -1,20 +1,5 @@
 
-# # ARIMA example
-# from statsmodels.tsa.arima.model import ARIMA
-# from random import random
-# # contrived dataset
-# data = [x + random() for x in range(1, 100)]
-# print(data)
-# # fit model
-# model = ARIMA(data, order=(1, 1, 1))
-# model_fit = model.fit()
-# # make prediction
-# yhat = model_fit.predict(len(data), len(data), typ='levels')
-# print(yhat)
-
-
-
-# code source https://www.machinelearningplus.com/time-series/arima-model-time-series-forecasting-python/
+# https://www.machinelearningplus.com/time-series/arima-model-time-series-forecasting-python/
 from statsmodels.tsa.arima_model import ARIMA
 import pmdarima as pm
 import pandas as pd
@@ -47,7 +32,7 @@ def predict_usage_data(data, n_periods):
     fc, confint = model.predict(n_periods=n_periods, return_conf_int=True)
     index_of_fc = np.arange(len(df.values), len(df.values)+n_periods)
 
-    # make series for plotting purpose
+    # make series for calculating ranges
     fc_series = pd.Series(fc, index=index_of_fc).to_numpy()
     lower_series = pd.Series(confint[:, 0], index=index_of_fc).array
     upper_series = pd.Series(confint[:, 1], index=index_of_fc).array
