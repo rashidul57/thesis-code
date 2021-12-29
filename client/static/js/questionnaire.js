@@ -985,24 +985,6 @@ function show_circle_questions(svg) {
     .attr("font-size", 20)
     .text('Answer: ');
 
-    // const value = answers[question_num] || '';
-    // svg
-    // .append("foreignObject")
-    // .attr("x", x+100)
-    // .attr("y", y-18)
-    // .attr("width", 45)
-    // .attr("height", 25)
-    // .html(function(d) {
-    //   return `<input type='text' class='txt-opinion' value="${value}"/>`;
-    // });
-
-    // svg
-    // .append("text")
-    // .attr("x", x+138)
-    // .attr("y", y)
-    // .attr("width", 80)
-    // .attr("height", 25)
-    // .text('%');
 
     const options = get_perc_options(cur_quest_perc);
 
@@ -1068,7 +1050,7 @@ function show_circle_questions(svg) {
             .append("text")
             .text('Please Enter a valid Number.')
             .attr("x", x)
-            .attr("y", y + 30)
+            .attr("y", y + 40)
             .attr("font-size", 13)
             .attr("fill", 'red');
         }
