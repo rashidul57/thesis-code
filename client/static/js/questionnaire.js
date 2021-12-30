@@ -1,7 +1,7 @@
 const answers = {};
 const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
 let sel_quest_circle_mode;
-let question_num = 24, sel_country_num;
+let question_num = 33, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 
@@ -185,7 +185,7 @@ function show_star_fish_questions(star_countries) {
             .text(text)
             .attr("x", x)
             .attr("y", y + 45*(indx+1))
-            .attr("font-size", 35);
+            .attr("font-size", 37);
         });
     }
 
@@ -198,7 +198,7 @@ function show_star_fish_questions(star_countries) {
             break;
 
         case 34:
-            question = `Question-${question_num}: Uncertainties for Iraq, Indonesia and Pakistan are same for marked areas?`;
+            question = `Question-${question_num}: Iraq, Indonesia, Pakistan have same uncertainties in marked areas?`;
             options = ['Agree', 'Disagree', 'Partially Agree'];
             const country_polys = [
                 "-40,-37 3,-10 -88,110 -130,83", // indonesia
@@ -223,23 +223,26 @@ function show_star_fish_questions(star_countries) {
             break;
     }
 
-    const q_left = 300;
+    const q_left = 350;
+    const svg_g = svg.append('g');
     if (question) {
-        svg
+
+        svg_g
         .append("text")
         .attr("x", x-q_left)
         .attr("y", y+700)
         .text(question)
-        .attr("font-size", question_num === submit_num ? 50 : 40)
+        .attr("font-size", question_num === submit_num ? 50 : 45)
         .attr('fill', 'black');
 
         if (Array.isArray(options)) {
             options.forEach((value, indx) => {
                 const w = 360;
-                svg
+                svg_g
                 .append("foreignObject")
                 .attr("x", x + indx*w - q_left + 80)
                 .attr("y", y + 735)
+                .attr("font-size", 45)
                 .attr("width", w)
                 .attr("height", 55)
                 .html(function(d) {
@@ -259,12 +262,15 @@ function show_star_fish_questions(star_countries) {
         }
     }
 
+    transition_question(svg_g, 2800);
+
+
     svg
     .append("text")
     .text('Back')
     .attr("x", x)
     .attr("y", y+1300)
-    .attr("font-size", 45)
+    .attr("font-size", 47)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -280,7 +286,7 @@ function show_star_fish_questions(star_countries) {
     .text(text)
     .attr("x", x+680)
     .attr("y", y+1300)
-    .attr("font-size", 45)
+    .attr("font-size", 47)
     .on('mousedown', function (ev) {
         if (ev.which !== 1) {
             return;
@@ -406,8 +412,9 @@ function show_impact_chart_questions() {
 
 
     let x = 15, y = 117;
+    const svg_g = svg.append('g');
 
-    svg
+    svg_g
     .append("text")
     .attr("x", x)
     .attr("y", y)
@@ -416,7 +423,7 @@ function show_impact_chart_questions() {
 
     options.forEach((value, indx) => {
         const w = 50;
-        svg
+        svg_g
         .append("foreignObject")
         .attr("x", x + indx*w)
         .attr("y", y-2)
@@ -437,6 +444,8 @@ function show_impact_chart_questions() {
             });
         });
     });
+
+    transition_question(svg_g, -800);
 
     svg
     .append("text")
@@ -544,6 +553,7 @@ function show_usage_chart_questions() {
 
 
     let x = 30, y = 390;
+    const svg_g = svg.append('g');
 
     svg
     .append("text")
@@ -552,22 +562,22 @@ function show_usage_chart_questions() {
     .text('Usage Chart')
     .attr("font-size", 15);
 
-    svg
+    svg_g
     .append("text")
     .attr("x", x)
     .attr("y", y)
     .text(question)
-    .attr("font-size", 15);
+    .attr("font-size", 17);
 
     options.forEach((value, indx) => {
         const w = 140;
-        svg
+        svg_g
         .append("foreignObject")
         .attr("x", x + indx*w + 20)
         .attr("y", y+16)
         .attr("width", w)
         .attr("height", 25)
-        .attr("font-size", 15)
+        .attr("font-size", 17)
         .html(function(d) {
             const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
             return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
@@ -583,12 +593,14 @@ function show_usage_chart_questions() {
         });
     })
 
+    transition_question(svg_g, -800);
+
     svg
     .append("text")
     .text('Back')
     .attr("x", x)
     .attr("y", y+80)
-    .attr("font-size", 15)
+    .attr("font-size", 18)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -603,7 +615,7 @@ function show_usage_chart_questions() {
     .text('Next')
     .attr("x", x+220)
     .attr("y", y+80)
-    .attr("font-size", 15)
+    .attr("font-size", 18)
     .on('mousedown', function (ev) {
         let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
         chkboxes.forEach(chk => {
@@ -686,21 +698,19 @@ function show_horizon_chart_questions() {
 
     let x = 30, y = 390;
 
-    svg
+    const svg_g = svg.append('g');
+
+    svg_g
     .append("text")
-    .attr("x", -800)
+    .attr("x", x)
     .attr("y", y)
     .attr("font-size", 17)
-    .transition()             
-    .ease(d3.easeLinear)           
-    .duration(300)
-    .attr("x", x)
     .text(question)
     ;
 
     options.forEach((value, indx) => {
         const w = 140;
-        svg
+        svg_g
         .append("foreignObject")
         .attr("x", x + indx*w + 20)
         .attr("y", y+16)
@@ -720,7 +730,9 @@ function show_horizon_chart_questions() {
                 }
             });
         });
-    })
+    });
+
+    transition_question(svg_g, -800);
 
     svg
     .append("text")
@@ -868,8 +880,10 @@ function add_drill_models_questions() {
         break;
     }
 
+    const svg_g = svg.append('g');
+
     const uc_model = model_name.toUpperCase();
-    svg
+    svg_g
     .append("text")
     .attr("x", -400)
     .attr("y", y + 235)
@@ -878,26 +892,26 @@ function add_drill_models_questions() {
     .duration(100)
     .attr("x", x)
     .text(`Question-${question_num}: What is the uncertainty for marked column of '${uc_model}'?`)
-    .attr("font-size", 20);
+    .attr("font-size", 22);
     
-    svg
+    svg_g
     .append("text")
     .attr("x", x)
     .attr("y", y+282)
     .attr("width", 150)
     .attr("height", 5)
-    .attr("font-size", 20)
+    .attr("font-size", 22)
     .text('Answer: ');
 
     options.forEach((value, indx) => {
-        const w = 100;
-        svg
+        const w = 115;
+        svg_g
         .append("foreignObject")
-        .attr("x", x + indx*w + 90)
-        .attr("y", y+255)
+        .attr("x", x + indx*w + 110)
+        .attr("y", y+258)
         .attr("width", w)
         .attr("height", 35)
-        .attr("font-size", 25)
+        .attr("font-size", 22)
         .html(function(d) {
             const checked = answers[question_num] && answers[question_num] === value ? 'checked' : '';
             return `<input type="checkbox" class='ag-dis-chk' id="${value}" name='ag-dis-chk' ${checked}>
@@ -913,12 +927,14 @@ function add_drill_models_questions() {
         });
     });
 
+    transition_question(svg_g, -800);
+
     svg
     .append("text")
     .text('Back')
     .attr("x", x)
     .attr("y", y+580)
-    .attr("font-size", 22)
+    .attr("font-size", 24)
     .attr("fill", (d) => {
         return question_num > 1 ? 'black' : 'gray';
     })
@@ -933,7 +949,7 @@ function add_drill_models_questions() {
     .text('Next')
     .attr("x", x+220)
     .attr("y", y+580)
-    .attr("font-size", 22)
+    .attr("font-size", 24)
     .on('mousedown', function (ev) {
         let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
         chkboxes.forEach(chk => {
@@ -973,19 +989,17 @@ function show_circle_questions(svg) {
     .attr("x", -350)
     .attr("font-size", 25);
 
-    svg
+    const svg_g = svg.append('g');
+
+    svg_g
     .append("text")
-    .attr("x", -600)
-    .attr("y", 350)
-    .transition()             
-    .ease(d3.easeLinear)           
-    .duration(500)
     .attr("x", -350)
+    .attr("y", 350)
     .text('Question-' + question_num + ': Estimate the uncertainty for the following circle in the range 10% to 100%')
     .attr("font-size", 25);
 
     let x = -150, y = 550;
-    svg
+    svg_g
     .append("text")
     .attr("x", x)
     .attr("y", y + 10)
@@ -999,7 +1013,7 @@ function show_circle_questions(svg) {
 
     options.forEach((value, indx) => {
         const w = 150;
-        svg
+        svg_g
         .append("foreignObject")
         .attr("x", x + indx*w + 80)
         .attr("y", y - 7)
@@ -1019,7 +1033,9 @@ function show_circle_questions(svg) {
                 }
             });
         });
-    })
+    });
+
+    transition_question(svg_g, -800);
 
     svg
     .append("text")
@@ -1064,6 +1080,15 @@ function show_circle_questions(svg) {
             .attr("fill", 'red');
         }
     });
+}
+
+function transition_question(svg_g, start_x) {
+    svg_g
+    .attr("transform", `translate(${start_x}, 0)`)
+    .transition()             
+    .ease(d3.easeLinear)           
+    .duration(500)
+    .attr("transform", 'translate(0, 0)');
 }
 
 function getRandomInt(min, max) {
