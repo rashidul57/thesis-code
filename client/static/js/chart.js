@@ -54,7 +54,7 @@ function draw_predicted_lines(data, sel_country='United States') {
     let lower_data = [_.cloneDeep(last_actual_row)];
     let upper_data = [_.cloneDeep(last_actual_row)];
     let lo_sum = 0, up_sum = 0, prd_sum = 0;
-    const slice_len = 10;
+    const slice_len = 5;
     ranges.forEach((range, index) => {
         lo_sum += range[0];
         up_sum += range[1];
@@ -98,7 +98,7 @@ function draw_predicted_lines(data, sel_country='United States') {
     .append('polygon')
     .attr('points', range_poly)
     .attr('fill-opacity', 0.33)
-    .attr('fill', 'grey');
+    .attr('fill', '#efc4c4');
 
 
     svg
@@ -112,7 +112,7 @@ function draw_predicted_lines(data, sel_country='United States') {
     .append("text")
     .text('Prediction Range')
     .attr("x", 752)
-    .attr("y", 598)
+    .attr("y", 615)
     .attr("font-size", 15);
 
     svg
