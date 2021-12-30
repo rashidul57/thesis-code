@@ -100,6 +100,21 @@ function draw_predicted_lines(data, sel_country='United States') {
     .attr('fill-opacity', 0.33)
     .attr('fill', 'grey');
 
+
+    svg
+    .append("text")
+    .text('Actual occurrences')
+    .attr("x", 180)
+    .attr("y", 528)
+    .attr("font-size", 15);
+
+    svg
+    .append("text")
+    .text('Prediction Range')
+    .attr("x", 752)
+    .attr("y", 598)
+    .attr("font-size", 15);
+
     svg
     .append("text")
     .text('Number of cases')
