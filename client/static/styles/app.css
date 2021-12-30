@@ -38,6 +38,10 @@ body {
 }
 body.min-size .toolbar, body.min-size .container-box {
   width: calc(960px - 5px);
+  padding-left: 0px;
+}
+body.min-size .toolbar .left-items, body.min-size .container-box .left-items {
+  margin-left: 5px;
 }
 
 .hideable-item {
@@ -318,6 +322,13 @@ svg g.tick line {
 
 .y-axis text, .x-axis text {
   font-size: 12px;
+}
+
+.lines-chart {
+  height: calc(100% - 30px);
+  width: calc(100% - 40px);
+  margin: 10px 10px 30px 50px;
+  overflow: visible;
 }
 
 body.questionnaire .toolbar {

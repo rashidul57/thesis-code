@@ -11,7 +11,7 @@ let mapped_countries = {};
 let color_mappings = {};
 let question_mode;
 let drill_country;
-const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart'];
+const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart'];
 const country_stream_modes = ['Prediction', 'By Properties'];
 
 window.onload = init;
@@ -97,7 +97,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    sel_chart_type = chart_types[3];
+    sel_chart_type = chart_types[5];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
     .data(chart_types)
@@ -383,20 +383,11 @@ function refresh_container() {
     change_layout();
 
     switch (sel_chart_type) {
-        // case "Line":
-        // d3.selectAll(".countries-item").style("display", "inline-block");
-        // draw_predicted_lines(prop_pred_data, undefined);
-        // $('body').addClass('min-size');
-        // break;
-
-        // case "Stream Graphs":
-        // d3.selectAll(".models-item, .country-stream-type").style("display", "inline-block");
-        // break;
-
-        // case 'Questionnaire':
-        // d3.selectAll(".ca-options, .questions-item").style("display", "inline-block");
-        // show_question(1);
-        // break;
+        case "Line Chart":
+        d3.selectAll(".countries-item").style("display", "inline-block");
+        draw_predicted_lines(prop_pred_data, undefined);
+        $('body').addClass('min-size');
+        break;
 
         case 'Bubble Chart':
         d3.selectAll(".models-item, .clear-fish-graph, .country-stream-type, .main-stream-chart, .apply-third-prop, .toggle-texture, .right-items").style("display", "inline-block");
