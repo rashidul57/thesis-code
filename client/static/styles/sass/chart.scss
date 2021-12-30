@@ -49,6 +49,10 @@ body {
     &.min-size{
         .toolbar, .container-box{
             width: calc(960px - 5px);
+            padding-left: 0px;
+            .left-items{
+                margin-left: 5px;
+            }
         }
     }
 }
@@ -387,6 +391,13 @@ svg{
     font-size: 12px;
 }
 
+.lines-chart{
+    height: calc(100% - 30px);
+    width: calc(100% - 40px);
+    margin: 10px 10px 30px 50px;
+    overflow: visible;
+}
+
 
 
 // :root {
@@ -501,7 +512,7 @@ body.questionnaire{
         .save-msg{
             font-size: 50px;
         }
-}
+    }
 
 
 }

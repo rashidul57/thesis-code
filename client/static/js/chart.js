@@ -15,6 +15,7 @@ const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroo
 const bubble_colors2 = {0: '#008080	', 1: '#0000FF', 2: '#000080'}; //teal, blue, navy: https://en.wikipedia.org/wiki/Web_colors
 const rgb_indexes = {'0': 'r', '1': 'g', '2': 'b'};
 
+
 function draw_predicted_lines(data, sel_country='United States') {
 
     let num_dates = 0;
@@ -23,37 +24,118 @@ function draw_predicted_lines(data, sel_country='United States') {
             num_dates = data[country].mlp.y_pred.length;
         } 
     });
-    const line_data = {}
-    countries.forEach(country => {
-        const mlps = [];
-        const cnns = [];
-        const lstms = [];
-        const actuals = [];
-        for (let i = 0; i < num_dates; i++) {
-            const date = moment(new Date(data[countries[0]].mlp.start_timestamp)).add('days', i).toDate();
-            const mlp = data[country].mlp.y_pred[i] || 0;
-            const cnn = data[country].cnn.y_pred[i] || 0;
-            const lstm = data[country].lstm.y_pred[i] || 0;
-            const actual = data[country].cnn.y[i] && data[country].cnn.y[i] || 0;
-            mlps.push({date, count: mlp});
-            cnns.push({date, count: cnn});
-            lstms.push({date, count: lstm});
-            actuals.push({date, count: actual});
+
+    const width = 895; // 955 - margin-x: 50 + 10
+    const height = 710; // 750 - margin-y: 10 + 30
+    const mlp_data = prop_pred_data[sel_country]['mlp'];
+    const all_data = all_covid_data[sel_country];
+    const ranges = mlp_data['ranges'];
+    let preds = mlp_data['y_pred'];
+    const total_num_of_days = all_data.length;
+    const range_len = ranges.length;
+    const svg = d3.select('.left-chart-container')
+        .append('svg')
+        .attr('class', 'lines-chart');
+    
+    let actuals = [];
+    const pred_start = (total_num_of_days  - range_len);
+    all_data.forEach((row, index) => {
+        let count;
+        let rec;
+        if (index < pred_start) {
+            count = row['new_cases'] || 0;
+            rec = [index, count];
+            actuals.push(rec);
         }
-        line_data[country] = {mlps, cnns, lstms, actuals};
+    });
+    
+    const last_actual_row = _.cloneDeep(actuals[actuals.length-1]);
+    let pred_data = [_.cloneDeep(last_actual_row)];
+    let lower_data = [_.cloneDeep(last_actual_row)];
+    let upper_data = [_.cloneDeep(last_actual_row)];
+    let lo_sum = 0, up_sum = 0, prd_sum = 0;
+    const slice_len = 10;
+    ranges.forEach((range, index) => {
+        lo_sum += range[0];
+        up_sum += range[1];
+        prd_sum += preds[index];
+        if (index%slice_len === 0 && index > 0) {
+            lower_data.push([pred_start+index, lo_sum/slice_len]);
+            upper_data.push([pred_start+index, up_sum/slice_len]);
+            pred_data.push([pred_start+index, prd_sum/slice_len]);
+            lo_sum = 0;
+            up_sum = 0;
+            prd_sum = 0;
+        }
     });
 
-    const types = [
-        {name: 'actuals', label: 'Actual'},
-        {name: 'mlps', label: 'MLP Prediction'},
-        {name: 'cnns', label: 'CNN Prediction'},
-        {name: 'lstms', label: 'LSTM Prediction'}
-    ];
-    for (var k = 0; k<types.length; k++) {
-        const l_data = line_data[sel_country][types[k].name];
-        draw_a_line(".left-chart-container", l_data, 'count', types[k].label, k, '');
+    let max_y = -99999999;
+    const all_line_data = _.concat(actuals, lower_data, upper_data, pred_data);
+    all_line_data.forEach(rec => {
+        if (rec[1] > max_y) {
+            max_y = rec[1];
+        }
+    });
+
+    const actual_line_str = get_line_str(actuals);
+    const lower_line_str = get_line_str(lower_data);
+    const upper_line_str = get_line_str(upper_data);
+    const range_data = [_.cloneDeep(last_actual_row)].concat(upper_data).concat(lower_data.reverse());
+    const range_poly = range_data.map(rec => rec.join(',')).join(' ');
+
+    const pred_line_str = get_line_str(pred_data);
+
+    // const actual_line_str = 'M' + actuals.join('L');
+    const axis_line_str = 'M0,0L0,' + height + 'L' + width + ',' + height;
+    
+    draw_line(axis_line_str, 'black', 'axis', 1);
+    draw_line(actual_line_str, 'black', 'actual', 1);
+    // draw_line(lower_line_str, bubble_colors[1], 'lower');
+    // draw_line(upper_line_str, bubble_colors[2], 'upper');
+    draw_line(pred_line_str, bubble_colors[0], 'pred', 1);
+
+    svg
+    .append('polygon')
+    .attr('points', range_poly)
+    .attr('fill-opacity', 0.33)
+    .attr('fill', 'grey');
+
+    svg
+    .append("text")
+    .text('Number of cases')
+    .attr("x", 20)
+    .attr("y", 400)
+    .attr("font-size", 15)
+    .attr('transform', 'translate(-410,400) rotate(-90)');
+
+
+    svg
+    .append("text")
+    .text('Date')
+    .attr("x", 380)
+    .attr("y", 728)
+    .attr("font-size", 15);
+
+
+    function get_line_str(data) {
+        data = data.map(rec => {
+            rec[0] = rec[0] * width/total_num_of_days;
+            rec[1] = (max_y - rec[1]) * height/max_y;
+            return rec.join(',');
+        });
+        return 'M' + data.join('L');
     }
+
+    function draw_line(line_str, color, type, stroke_width) {
+        svg.append("path")
+        .attr("class", "line line-" + type)
+        .attr("d", line_str)
+        .attr("stroke", color)
+        .attr("stroke-width", stroke_width);
+    }
+
 }
+
 
 function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legend_title) {
     const mappedData = _.keyBy(dataset, 'date');
@@ -164,19 +246,19 @@ function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legen
     });
 
     // Draw line for country in legend
-    clip.append('path')
-    .attr("class", "legend-line")
-    .style('stroke', country_colors[indx%11])
-    .attr("stroke-width", 2)
-    .attr('d', `M20,${27+indx*22},L60,${27+indx*22}`);
+    // clip.append('path')
+    // .attr("class", "legend-line")
+    // .style('stroke', country_colors[indx%11])
+    // .attr("stroke-width", 2)
+    // .attr('d', `M20,${27+indx*22},L60,${27+indx*22}`);
 
     // Add text of country name in legend
-    clip.append('text')
-    .attr("class", "legend-text")
-    .attr('fill', country_colors[indx%11])
-    .attr("x", 65)
-    .attr("y", 33+indx*22)
-    .html(leg_label);
+    // clip.append('text')
+    // .attr("class", "legend-text")
+    // .attr('fill', country_colors[indx%11])
+    // .attr("x", 65)
+    // .attr("y", 33+indx*22)
+    // .html(leg_label);
 
     // Draw peripherals
     if (!axesExists) {
