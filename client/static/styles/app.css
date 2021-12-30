@@ -357,8 +357,8 @@ body.questionnaire .star-fish-questions input[type=checkbox] {
   margin-top: 20px;
 }
 body.questionnaire .star-fish-questions .ag-dis-lbl {
-  font-size: 37px;
-  margin: 0px 0 0 15px;
+  font-size: 44px;
+  margin: 6px 0 0 15px;
   position: absolute;
 }
 body.questionnaire .impact-question-g .impact-chart-title {
@@ -392,12 +392,13 @@ body.questionnaire .usage-questions .ag-dis-lbl, body.questionnaire .horizon-que
   margin: 1px 0 0 4px;
 }
 body.questionnaire .drill-questions input[type=checkbox] {
-  transform: scale(1.65);
+  transform: scale(1.8);
+  margin: 0 0 0 7px;
 }
 body.questionnaire .drill-questions .ag-dis-lbl {
   font-size: 25px;
   position: absolute;
-  margin: 3px 0 0 10px;
+  margin: 0 0 0 14px;
 }
 body.questionnaire .save-container {
   text-align: center;
