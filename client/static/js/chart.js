@@ -1570,6 +1570,7 @@ function draw_bubble_chart(data, params) {
         bubble_data = _.take(bubble_data, 50);
     }
 
+
     // scale deviation by a factor so that in every case something might be visible
     const max_dev = _.maxBy(bubble_data, 'deviation');
     if (max_dev.deviation < 10) {
@@ -1579,6 +1580,8 @@ function draw_bubble_chart(data, params) {
             return item;
         });
     }
+
+    
 
     if (!isNaN(given_dev)) {
         bubble_data[0].deviation = given_dev;
