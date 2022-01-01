@@ -367,6 +367,9 @@ body.questionnaire .impact-question-g .impact-chart-title {
 body.questionnaire .impact-question-g text {
   font-size: 6px !important;
 }
+body.questionnaire .impact-question-g .perc-hint {
+  font-size: 4px !important;
+}
 body.questionnaire .impact-question-g input[type=checkbox] {
   transform: scale(0.45);
 }

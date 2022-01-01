@@ -1,8 +1,8 @@
 const answers = {};
 const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
 let sel_quest_circle_mode;
-let question_num = 33, sel_country_num;
-let empty_pass = true;
+let question_num = 1, sel_country_num;
+let empty_pass = false;
 let cur_quest_perc;
 
 
@@ -346,6 +346,34 @@ function show_impact_chart_questions() {
 
     svg
     .append('rect')
+    .attr('x', 82)
+    .attr('y', 39)
+    .attr('width', 8)
+    .attr('height', 7)
+    .attr('stroke', '#ec7af1')
+    .attr("stroke-width", 0.4)
+    .attr("fill", "none");
+
+    svg
+    .append('line')
+    .style("stroke", "#ec7af1")
+    .style("stroke-width", 0.4)
+    .attr("x1", 90)
+    .attr("y1", 23)
+    .attr("x2", 88)
+    .attr("y2", 39);
+
+    svg
+    .append('text')
+    .attr("x", 85)
+    .attr("y", 22)
+    .attr("fill", "#ec7af1")
+    .attr('class', 'perc-hint')
+    .text("5% uncertainty");
+
+
+    svg
+    .append('rect')
     .attr('x', 148)
     .attr('y', 44)
     .attr('width', 8)
@@ -358,22 +386,23 @@ function show_impact_chart_questions() {
     .append('line')
     .style("stroke", "#ec7af1")
     .style("stroke-width", 0.4)
-    .attr("x1", 140)
-    .attr("y1", 15)
-    .attr("x2", 150)
+    .attr("x1", 155)
+    .attr("y1", 23)
+    .attr("x2", 154)
     .attr("y2", 44);
 
     svg
     .append('text')
-    .attr("x", 110)
-    .attr("y", 12)
+    .attr("x", 145)
+    .attr("y", 22)
     .attr("fill", "#ec7af1")
-    .text("Cell has 100% uncertainty");
+    .attr('class', 'perc-hint')
+    .text("100% uncertainty");
 
     switch (question_num) {
 
         case 30:
-        question = `Question-${question_num}: This representation clearly make sense?`;
+        question = `Question-${question_num}: This uncertainty representation clearly make sense?`;
         options = ['Yes', 'No', 'Partially'];
         break;
 
@@ -550,6 +579,40 @@ function show_usage_chart_questions() {
         .attr("fill", "none");
         break;
     }
+
+    svg
+    .append('line')
+    .style("stroke", "#ec7af1")
+    .style("stroke-width", 0.4)
+    .attr("x1", 200)
+    .attr("y1", 38)
+    .attr("x2", 185)
+    .attr("y2", 75);
+
+    svg
+    .append('text')
+    .attr("x", 185)
+    .attr("y", 35)
+    .attr("fill", "#ec7af1")
+    .attr("font-size", 11)
+    .text("2% uncertainty");
+
+    svg
+    .append('line')
+    .style("stroke", "#ec7af1")
+    .style("stroke-width", 0.4)
+    .attr("x1", 565)
+    .attr("y1", 48)
+    .attr("x2", 549)
+    .attr("y2", 75);
+
+    svg
+    .append('text')
+    .attr("x", 525)
+    .attr("y", 45)
+    .attr("fill", "#ec7af1")
+    .attr("font-size", 11)
+    .text("96% uncertainty");
 
 
     let x = 30, y = 390;
@@ -966,7 +1029,7 @@ function add_drill_models_questions() {
         } else {
             svg
             .append("text")
-            .text('Please Enter Numbers in each input field.')
+            .text('Please select an option.')
             .attr("x", x)
             .attr("y", y + 470)
             .attr("font-size", 15)
@@ -1073,7 +1136,7 @@ function show_circle_questions(svg) {
         } else {
             svg
             .append("text")
-            .text('Please Enter a valid Number.')
+            .text('Please select an option.')
             .attr("x", x)
             .attr("y", y + 40)
             .attr("font-size", 13)

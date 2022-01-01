@@ -10,7 +10,7 @@ let bubble_selected = [];
 let global_streams = [];
 let country_streams = [];
 let bubble_data;
-const bubble_colors = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
+const bubble_colors = {0: '#64ffff', 1: '#ff95ff', 2: '#ffffB4'};
 const bubble_colors1 = {0: '#ff0000', 1: '#800000', 2: '#FF00FF'}; // red, maroon, fushia
 const bubble_colors2 = {0: '#008080	', 1: '#0000FF', 2: '#000080'}; //teal, blue, navy: https://en.wikipedia.org/wiki/Web_colors
 const rgb_indexes = {'0': 'r', '1': 'g', '2': 'b'};
@@ -682,7 +682,8 @@ function show_textures(drill_model) {
         cont_g.append('path')
             .attr('class', 'texture-sec-path path-' + country)
             .attr("fill", 'url(#texture_country' + country_index + '-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
-            .attr('fill-opacity', 0.33)
+            // .attr('fill-opacity', 0.33)
+            .style("mix-blend-mode", "darken")
             .attr('d', d_str)
             .append('title')
             .text('Uncertainty: ' + deviation);
@@ -1179,15 +1180,13 @@ function draw_usage_chart() {
         .attr("x", (d, i) => {
             let x_pos = x_base = x(d.iso_code);
             if (k===3) {
-                return max_x[i]; //x_pos + max_x_change;
+                return max_x[i];
             } else {
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
                 if (!max_x[i]) {
                     max_x[i] = -9999;
                 }
-                // if (i ===111) {
-                //     console.log('k:', k, '  change:', change, 'x_pos:', x_pos);
-                // }
+
                 if (change >= 0) {
                     x_pos = x_pos + change;
                 } else {
@@ -1206,8 +1205,7 @@ function draw_usage_chart() {
             } else {
                 let width = base_width = x.bandwidth();
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
-                // console.log('k:', k, '  w=', change);
-                // width = width - ca_space + change;
+
                 if (change >= 0) {
                     width = width - 2*ca_space - change;
                 } else {
@@ -1221,10 +1219,6 @@ function draw_usage_chart() {
                     min_w[i] = width;
                 }
 
-                // console.log(base_width, width)
-                // if (width > base_width) {
-                //     width = base_width;
-                // }
                 return width;
             }
         })
@@ -1234,9 +1228,6 @@ function draw_usage_chart() {
                 return max_y[i]; // y_pos + max_y_change;
             } else {
                 const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
-                // if (i ===111) {
-                //     console.log('k:', k, '  change:', change, 'y_pos: ', y_pos);
-                // }
                 if (!max_y[i]) {
                     max_y[i] = -999999;
                 }
@@ -1278,8 +1269,10 @@ function draw_usage_chart() {
             }
         })
         .attr('fill-opacity', () => {
-            return k===3 ? 1 : 0.33;
+            // return k===3 ? 1 : 0.33;
+            return 1;
         })
+        .style("mix-blend-mode", "darken")
         .attr("fill", (d) => {
             if (k===3) {
                 return '#888';
@@ -1294,7 +1287,6 @@ function draw_usage_chart() {
         //     const stroke_color = k===3 ? '#121214' : 'none';
         //     return stroke_color;
         // })
-        // .attr("mix-blend-mode", "lighten")
         // .attr("stroke-width", 0.1)
         .append("title")
         .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
@@ -1508,7 +1500,8 @@ function draw_impact_chart(pred_data, model='mlp') {
                     .attr("r", h/factor)
                     .attr('cx', x + w/2 + change_x)
                     .attr('cy', y + h/2 + change_y - 0.2)
-                    .attr("fill-opacity", 0.33)
+                    // .attr("fill-opacity", 0.33)
+                    .style("mix-blend-mode", "darken")
                     .attr("fill", bubble_colors[k])
                     .append("title")
                     .text(`Uncertainty: ${format(d)}%`);
@@ -1713,9 +1706,10 @@ function draw_bubble_chart(data, params) {
                 .attr('center-point', (d) => {
                     return d.x + ',' + d.y;
                 })
-                .attr("fill-opacity", (d) => {
-                    return 0.33;
-                })
+                // .attr("fill-opacity", (d) => {
+                //     return 0.33;
+                // })
+                .style("mix-blend-mode", "darken")
                 .attr('class', ()=> {
                     let cls;
                     if (question_circle_mode) {
@@ -1728,9 +1722,9 @@ function draw_bubble_chart(data, params) {
                 })
                 .attr("fill", (d) => {
                     let color = bubble_colors[k];
-                    if (question_circle_mode === 'trans') {
-                        color = color + '80';
-                    }
+                    // if (question_circle_mode === 'trans') {
+                    //     color = color + '80';
+                    // }
                     return color;
                 });
 
@@ -1844,7 +1838,7 @@ function draw_bubble_chart(data, params) {
             }
 
             function do_transition() {
-                if (question_circle_mode === 'ca-static' || question_mode) {
+                if (question_circle_mode === 'ca-static' || sel_quest_circle_mode === 'star-fish') {
                     new_circle
                     .attr("cx", d => {
                         return get_circle_coord('x', k, d.data.deviation, 0, true);
@@ -2011,9 +2005,11 @@ function draw_percentages(leaves) {
                 .attr("fill", d => {
                     return bubble_colors[k];
                 })
-                .attr("fill-opacity", (d) => {
-                    return 0.33;
-                });
+                // .attr("fill-opacity", (d) => {
+                //     return 0.33;
+                // })
+                .style("mix-blend-mode", "darken")
+                ;
 
                 // percentage label
                 const label = (i*25) + '%';
@@ -2409,7 +2405,8 @@ function dragended(ev, d, selector) {
     if (control_mode === 'pan') {
         const diff_x = ev.sourceEvent.clientX - drag_start.clientX;
         const diff_y = ev.sourceEvent.clientY - drag_start.clientY;
-        const svg = d3.selectAll('.' + selector)
+        selector = selector.startsWith('.') ? selector : ('.' + selector);
+        const svg = d3.selectAll(selector)
         const trans_str = svg.attr("transform") || '';
         const parts = trans_str.split(' ');
         var points = parts[0].replace(/[(translate\()\)]/g, '').split(',');

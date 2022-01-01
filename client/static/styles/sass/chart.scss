@@ -462,6 +462,9 @@ body.questionnaire{
         text{
             font-size: 6px!important;
         }
+        .perc-hint{
+            font-size: 4px!important;
+        }
         input[type="checkbox"]{
             transform: scale(.45);
         }
