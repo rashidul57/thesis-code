@@ -47,17 +47,17 @@ function show_question() {
             
             case 'ca-static':
             modes = ['ca-static', 'ca-static', 'ca-static', 'ca-static', 'ca-static'];
-            ques_percents = [25, 15, 72, 45, 87];
+            ques_percents = [23, 18, 70, 40, 85];
             break;
             
             case 'blur':
             modes = ['blur', 'blur', 'blur', 'blur', 'blur'];
-            ques_percents = [87, 25, 45, 72, 15];
+            ques_percents = [80, 30, 15, 65, 50];
             break;
             
             case 'noise':
             modes = ['noise', 'noise', 'noise', 'noise', 'noise'];
-            ques_percents = [45, 25, 72, 87, 15];
+            ques_percents = [40, 75, 30, 55, 15];
             break;
         }
 
@@ -1165,12 +1165,16 @@ function get_perc_options(quest_perc) {
     const numbers = [];
     factors.forEach((fact, indx) => {
         let change = (5 * fact * (indx+1));
-        const num = quest_perc + change;
+        let num = quest_perc + change;
+        if (num === 0) {
+            num = quest_perc * 3;
+        }
         numbers.push(num);
     });
     
     const loc = getRandomInt(0, 3);
     numbers.splice(loc, 0, quest_perc);
+    
     // console.log(loc, quest_perc, numbers)
     return numbers;
 }
