@@ -1,4 +1,5 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
+let sel_quest_circle_mode;
 let sel_property = 'new_cases';
 let control_mode = 'star-fish';
 const models = ['mlp', 'cnn', 'lstm', 'arima'];
