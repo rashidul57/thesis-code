@@ -1143,9 +1143,10 @@ function show_vsup_questions() {
     // Question sections
     x = 30;
     y = 30;
+
     svg
     .append("text")
-    .text('VSUP Pallete')
+    .text('VSUP Palette')
     .attr("x", x)
     .attr("y", y)
     .attr("font-size", 22);
