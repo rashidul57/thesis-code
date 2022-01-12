@@ -1838,7 +1838,7 @@ function draw_bubble_chart(data, params) {
             }
 
             function do_transition() {
-                if (question_circle_mode === 'ca-static' || sel_quest_circle_mode === 'star-fish') {
+                if (question_circle_mode === 'ca-static' || sel_quest_category === 'star-fish') {
                     new_circle
                     .attr("cx", d => {
                         return get_circle_coord('x', k, d.data.deviation, 0, true);
