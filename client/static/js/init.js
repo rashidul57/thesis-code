@@ -1,5 +1,5 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
-let sel_quest_circle_mode;
+let sel_quest_category;
 let sel_property = 'new_cases';
 let control_mode = 'star-fish';
 const models = ['mlp', 'cnn', 'lstm', 'arima'];
@@ -324,11 +324,11 @@ function load_control_data() {
     // .append('option')
     // .text((d) => { return d; })
     // .attr("value", (d) => { return d; })
-    // .property("selected", (d) => d===sel_quest_circle_mode);
+    // .property("selected", (d) => d===sel_quest_category);
 
     // d3.selectAll('#drp-question-options')
     // .on("change", function(ev) {
-    //     sel_quest_circle_mode = d3.select(this).property("value");
+    //     sel_quest_category = d3.select(this).property("value");
     //     show_question(1);
     // });
 

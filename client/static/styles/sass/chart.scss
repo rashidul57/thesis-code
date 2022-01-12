@@ -518,5 +518,20 @@ body.questionnaire{
         }
     }
 
+    .vsup-svg{
+        g.tick {
+            font-size: 11px;
+        }
+        input[type="checkbox"]{
+            transform: scale(1.80);
+            margin: 0 0 0 7px;
+        }
+        .ag-dis-lbl{
+            font-size: 25px;
+            position: absolute;
+            margin: 0 0 0 14px;
+        }
+    }
+
 
 }
