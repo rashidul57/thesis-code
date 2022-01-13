@@ -279,6 +279,14 @@ body.min-size .toolbar .left-items, body.min-size .container-box .left-items {
   width: 100%;
 }
 
+.usage-rect, .horizon-flow, .parallel-coords, .texture-sec-path, .circle-container circle, .percent-row circle {
+  mix-blend-mode: lighten;
+  will-change: transform;
+}
+.usage-rect.noise-circle, .horizon-flow.noise-circle, .parallel-coords.noise-circle, .texture-sec-path.noise-circle, .circle-container circle.noise-circle, .percent-row circle.noise-circle {
+  mix-blend-mode: hard-light;
+}
+
 .clear-fish-graph, .apply-third-prop, .toggle-texture {
   font-size: 13px;
   color: #2d88fd;

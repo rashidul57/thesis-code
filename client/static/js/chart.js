@@ -1089,6 +1089,8 @@ function draw_usage_chart() {
 
         if (question_mode) {
             preds = _.take(preds, 25)
+        } else {
+            preds = _.take(preds, 50); // to smooth rendering
         }
 
         preds.forEach((value, i) => {
@@ -1298,6 +1300,8 @@ function draw_impact_chart(pred_data, model='mlp') {
     let countries = Object.keys(pred_data)
     if (question_mode) {
         countries = _.take(countries, 15);
+    } else {
+        countries = _.take(countries, 33);
     }
     let num_dates = 0;
     let start_date;
@@ -1316,6 +1320,7 @@ function draw_impact_chart(pred_data, model='mlp') {
     });
 
     const dates = [];
+    num_dates = 130; // to smooth rendering
 
     for (let i = 0; i < num_dates; i++) {
         const date = moment(start_date).add('days', i).toDate();
