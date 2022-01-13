@@ -1,7 +1,7 @@
 const answers = {};
 const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 1, sel_country_num;
+let question_num = 33, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 
