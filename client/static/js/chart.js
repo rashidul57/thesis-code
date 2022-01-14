@@ -92,13 +92,13 @@ function draw_predicted_lines(data, sel_country='United States') {
     draw_line(actual_line_str, 'black', 'actual', 1);
     // draw_line(lower_line_str, bubble_colors[1], 'lower');
     // draw_line(upper_line_str, bubble_colors[2], 'upper');
-    draw_line(pred_line_str, bubble_colors[0], 'pred', 1);
+    draw_line(pred_line_str, 'red', 'pred', 1);
 
     svg
     .append('polygon')
     .attr('points', range_poly)
     .attr('fill-opacity', 0.33)
-    .attr('fill', '#efc4c4');
+    .attr('fill', 'grey');
 
 
     svg
