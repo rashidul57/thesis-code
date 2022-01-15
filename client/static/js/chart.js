@@ -850,6 +850,7 @@ function draw_horizon_chart(pred_data, mode='color') {
         .attr("x", 4)
         .attr("y", step / 2)
         .attr("dy", "0.35em")
+        .attr('fill', 'black')
         .text(d => d.name);
 
     svg.append("g")
@@ -1055,12 +1056,14 @@ function draw_parallel_coords() {
     
 
     function draw_polys(polygon_data, k) {
+        const colors  = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
         svg.selectAll('polygon-'+ k)
         .data(polygon_data)
         .enter()
         .append('polygon')
         .attr('points', d=> d)
-        .attr('fill-opacity', 0.33)
+        // .attr('fill-opacity', 0.33)
+        .style("mix-blend-mode", "darken")
         .attr('fill', bubble_colors[k])
         .attr('class', 'parallel-coords')
         .append('title')
