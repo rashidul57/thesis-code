@@ -1056,7 +1056,6 @@ function draw_parallel_coords() {
     
 
     function draw_polys(polygon_data, k) {
-        const colors  = {0: '#ff0000', 1: '#00ff00', 2: '#0000ff'};
         svg.selectAll('polygon-'+ k)
         .data(polygon_data)
         .enter()
