@@ -68,8 +68,6 @@ async function init() {
         });
     });
 
-    console.log(prop_pred_data)
-
     const excl_regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America', 'High income', 'Upper middle income', 'Lower middle income'];
     let cov_data = await $.get("/get-covid-data");
     cov_data = JSON.parse(cov_data);
