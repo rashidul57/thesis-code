@@ -1306,7 +1306,7 @@ function draw_world_map() {
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'world-map')
-        .attr("viewBox", [0, -90, width, height])
+        .attr("viewBox", [0, -103, width, height])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
 
@@ -1378,10 +1378,35 @@ function draw_world_map() {
                 if (!country) {
                     console.log(name);
                 }
-                let deviation = country ? country.deviation : .5;
+                let deviation = country ? country.deviation : .01;
                 
                 if (name === 'Antarctica') {
                     deviation = 0.01;
+                }
+                // if (name === 'Poland') {
+                //     debugger
+                // }
+
+                if (deviation < 3 && deviation >=1) {
+                    deviation *= 1.5;
+                } else if (deviation < 1 && deviation >=0.5) {
+                    deviation *= 2.5;
+                } else if (deviation < 0.5 && deviation >=0.4) {
+                    deviation *= 5;
+                } else if (deviation < 0.4 && deviation >=0.3) {
+                    deviation *= 7;
+                }  else if (deviation < 0.3 && deviation >=0.2) {
+                    deviation *= 10;
+                }  else if (deviation < 0.2 && deviation >=0.1) {
+                    deviation *= 15;
+                } else if (deviation < 0.1 && deviation >=0.05) {
+                    deviation *= 20;
+                } else if (deviation < 0.05 && deviation >=0.01) {
+                    deviation *= 35;
+                } else if (deviation < 0.01 && deviation >=0.001) {
+                    deviation *= 300;
+                } else if (deviation < 0.001) {
+                    deviation *= 1000;
                 }
 
                 const x = get_circle_coord('x', k, deviation, p[0], true);
