@@ -1435,7 +1435,7 @@ function draw_world_map() {
         }
         const texts = [`<div><div class='country'>${country.location}</div>`];
         num_props.forEach(prop => {
-            texts.push(`<div class='prop'>${prop}: ${format(country[prop], 0)}</div>`)
+            texts.push(`<div class='prop'>${prop}: ${format(country[prop], 0)}</div>`);
         });
         
         const dev = mapped_preds[name] ? mapped_preds[name].deviation : def_dev;
