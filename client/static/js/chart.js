@@ -1306,13 +1306,13 @@ function draw_world_map() {
     const svg = d3.select('.left-chart-container')
         .append("svg")
         .attr('class', 'world-map')
-        .attr("viewBox", [0, 0, width, height])
+        .attr("viewBox", [0, -90, width, height])
         .attr("font-family", "sans-serif")
         .attr("font-size", 15);
 
     var projection = d3.geoMercator()
         .center([0,0])
-        .scale(100)
+        .scale(120)
         .rotate([0,0]);
 
 
@@ -1369,14 +1369,24 @@ function draw_world_map() {
             .attr("transform",function(d) {                 
                 // const p = projection(d3.geoCentroid(d)); //<-- centroid is the center of the path, projection maps it to pixel positions
                 const p = path.centroid(d);
-                const name = d.properties.name;
+                let name = d.properties.name;
+                
+                if (name === 'USA') {
+                    name = 'United States';
+                }
                 const country = mapped_data[name];
+                if (!country) {
+                    console.log(name);
+                }
                 let deviation = country ? country.deviation : .5;
+                
+                if (name === 'Antarctica') {
+                    deviation = 0.01;
+                }
 
                 const x = get_circle_coord('x', k, deviation, p[0], true);
                 const y = get_circle_coord('y', k, deviation, p[1], true);
                 return "translate(" + x + ',' + y + ")";
-                // return 'translate(' +  + ')';
             })
             .append("title")
             .text((d) => {
