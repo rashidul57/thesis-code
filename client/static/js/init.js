@@ -1,7 +1,7 @@
 let forecast_data, prop_pred_data, countries, sel_chart_type, all_covid_data, top_country_data, country_stream_mode;
 let sel_quest_category;
 let sel_property = 'new_cases';
-let control_mode = 'star-fish';
+let control_mode = 'pan';
 const models = ['mlp', 'cnn', 'lstm', 'arima'];
 let sel_model;
 let country_list_show = false;
@@ -12,7 +12,7 @@ let mapped_countries = {};
 let color_mappings = {};
 let question_mode;
 let drill_country;
-const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart'];
+const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart', 'World Map'];
 const country_stream_modes = ['Prediction', 'By Properties'];
 
 window.onload = init;
@@ -98,7 +98,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    sel_chart_type = chart_types[0];
+    sel_chart_type = chart_types[6];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
     .data(chart_types)
@@ -413,6 +413,10 @@ function refresh_container() {
 
         case 'Usage Chart':
         draw_usage_chart();
+        break;
+
+        case 'World Map':
+        draw_world_map();
         break;
 
     }

@@ -65,7 +65,7 @@ function show_question() {
 
         modes.forEach((mode, indx) => {
             ex_percents[indx] /= 10;
-            draw_bubble_chart(prop_pred_data, {ex_indx: indx, question_circle_mode: mode, type: 'example', percents: ex_percents});
+            draw_bubble_chart(prop_pred_data, {ques_mode_indx: indx, question_circle_mode: mode, type: 'example', percents: ex_percents});
         });
 
         const indx = (question_num-1)%5;

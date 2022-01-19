@@ -536,7 +536,7 @@ function draw_stream_graph(params) {
             svg.append("g").call(xAxis);
         }
         // const container_ = container ? ('.' + container) : ('.' + 'circle-container-' + sel_country_cls);
-        add_zoom_listener(svg, width, height, container);
+        add_zoom_listener(svg, width, height, 'main-stream-svg');
     }
 }
 
@@ -571,7 +571,7 @@ function show_textures(drill_model) {
             }
 
             let num_of_days = 3;
-            paths.forEach((path_item, country_index) => {
+            paths.forEach((path_item, path_index) => {
                 let country, cur_model;
                 if (selector.indexOf('country-stream') > -1) {
                     if (!path_item.parentElement) {
@@ -661,7 +661,7 @@ function show_textures(drill_model) {
                     // .attr('d', d_str);
 
                     for (let k = 0; k < 3; k++) {
-                        add_texture_layer(k, deviation, cont_g, d_str, country, country_index, selector);
+                        add_texture_layer(k, deviation, cont_g, d_str, country, path_index, selector);
                     }
                 }
             });
@@ -673,15 +673,15 @@ function show_textures(drill_model) {
     }
 
 
-    function add_texture_layer(k, deviation, cont_g, d_str, country, country_index, selector) {
+    function add_texture_layer(k, deviation, cont_g, d_str, country, path_index, selector) {
         const nameCls = get_name_cls(country);
         if (selector.indexOf('main') > -1 || selector.indexOf('rate-svg') > -1) {
-            country_index = country_index%2 === 0 ? color_mappings[country][0] : color_mappings[country][2];
+            path_index = path_index%2 === 0 ? color_mappings[country][0] : color_mappings[country][2];
         }
 
         cont_g.append('path')
             .attr('class', 'texture-sec-path path-' + country)
-            .attr("fill", 'url(#texture_country' + country_index + '-' + nameCls + '-' + rgb_indexes[k] + '-' + deviation + ')')
+            .attr("fill", 'url(#pat-' + nameCls + '-' + path_index + '-'+ rgb_indexes[k] + '-' + deviation + ')')
             // .attr('fill-opacity', 0.33)
             .style("mix-blend-mode", "darken")
             .attr('d', d_str)
@@ -710,6 +710,8 @@ function draw_horizon_chart(pred_data, mode='color') {
     const width = 1000;
     if (question_mode) {
         countries = _.take(countries, 12);
+    } else {
+        countries = _.take(countries, 20);
     }
     countries.forEach(country => {
         if (pred_data[country][sel_model].y_pred.length > num_dates) {
@@ -1297,6 +1299,106 @@ function draw_usage_chart() {
     }
 }
 
+function draw_world_map() {
+    var width = 1000,
+    height = 600;
+
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'world-map')
+        .attr("viewBox", [0, 0, width, height])
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 15);
+
+    var projection = d3.geoMercator()
+        .center([0,0])
+        .scale(100)
+        .rotate([0,0]);
+
+
+    var path = d3.geoPath()
+        .projection(projection);
+
+    var g = svg.append("g");
+
+    // load and display the World
+    d3.json("world-map").then(function(topology) {
+
+        g.selectAll("path")
+        .data(topology.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        // .attr("transform", "translate(0,0)")
+        .attr('name', (d) => {
+            return d.properties.name;
+        })
+        .attr('class', 'world-map-path')
+        // .on('mouseover',function(e, d, f, g){
+        //     console.log(d.properties.name);
+        // })
+        .append("title")
+        .text((d) => {
+            return d.properties.name;
+        });
+
+        const data = prepare_bubble_data(prop_pred_data, sel_model);
+        const mapped_data = _.keyBy(data, 'name');
+
+        for (let k = 0; k < 3; k++) {
+            add_world_map_circles(k);
+        }
+
+        control_mode = 'pan';
+        add_zoom_listener(svg, width, height, 'world-map');
+
+        function add_world_map_circles(k) {
+            g.selectAll(".dots")
+            .data(topology.features)
+            .enter()
+            .append("circle")
+            .attr('class', 'world-map-circle')
+            .attr('r', function (d) {
+                return Math.sqrt(path.area(d) * 0.25 / Math.PI);
+            })
+            .attr('name', (d) => {
+                return d.properties.name;
+            })
+            .attr("fill", bubble_colors[k])
+            .style("mix-blend-mode", "darken")
+            .attr("transform",function(d) {                 
+                // const p = projection(d3.geoCentroid(d)); //<-- centroid is the center of the path, projection maps it to pixel positions
+                const p = path.centroid(d);
+                const name = d.properties.name;
+                const country = mapped_data[name];
+                let deviation = country ? country.deviation : .5;
+
+                const x = get_circle_coord('x', k, deviation, p[0], true);
+                const y = get_circle_coord('y', k, deviation, p[1], true);
+                return "translate(" + x + ',' + y + ")";
+                // return 'translate(' +  + ')';
+            })
+            .append("title")
+            .text((d) => {
+                return d.properties.name;
+            });
+        }
+
+    });
+}
+
+function make_point(element, xy) {
+    // console.log(element);
+    var matrix = element.getCTM();
+    // var matrix = element.getScreenCTM();
+    var p = element.nearestViewportElement.createSVGPoint();
+    // var matrix = element.getTransformToElement(element.nearestViewportElement);
+    p.x = xy[0];
+    p.y = xy[1];
+    var sp = p.matrixTransform(matrix);
+    return sp;
+}
+
 function draw_impact_chart(pred_data, model='mlp') {
 
     let countries = Object.keys(pred_data)
@@ -1547,8 +1649,8 @@ function get_rect_change(axis, rgb_indx, uncertainty) {
 }
 
 function draw_bubble_chart(data, params) {
-    const {ex_indx, question_circle_mode, model='mlp', percents, circle_for} = params || {};
-    const perc_indx = isNaN(ex_indx) ? 0 : ex_indx;
+    const {ques_mode_indx, question_circle_mode, model='mlp', percents, circle_for} = params || {};
+    const perc_indx = isNaN(ques_mode_indx) ? 0 : ques_mode_indx;
     const given_dev = percents ? percents[perc_indx] : undefined;
     data = prepare_bubble_data(data, model);
     if (control_mode === 'bubble-select' && bubble_selected.length) {
@@ -1610,7 +1712,7 @@ function draw_bubble_chart(data, params) {
     const root = pack(bubble_data);
 
     // clear chart container
-    if (!question_circle_mode || (question_circle_mode && ex_indx === 0)) {
+    if (!question_circle_mode || (question_circle_mode && ques_mode_indx === 0)) {
         d3.selectAll('.left-chart-container .inner-container').remove();
         d3.select('.left-chart-container')
         .append('div')
@@ -1623,7 +1725,7 @@ function draw_bubble_chart(data, params) {
         .attr('class', 'percent-row');
     }
 
-    if (!question_circle_mode || (question_circle_mode && ex_indx === 0)) {
+    if (!question_circle_mode || (question_circle_mode && ques_mode_indx === 0)) {
         d3.select('.inner-container')
         .append('div')
         .attr('class', 'bubble-chart');
@@ -1698,7 +1800,7 @@ function draw_bubble_chart(data, params) {
                     xx = 200;
                     yy = 370;
                 } else {
-                    xx = question_circle_mode ? ((ex_indx+1)*170) : 0;
+                    xx = question_circle_mode ? ((ques_mode_indx+1)*170) : 0;
                     yy = question_circle_mode ? 80 : 0;
                 }
                 return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
@@ -2194,11 +2296,11 @@ function def_textures(svg, keys, max) {
         const first_two_col_indexs = [color_orders[0].index, color_orders[1].index]; 
         color_mappings[key] = color_orders.map(item => item.index);
         
-        // For number of aberration points
+        // For number of alternative colors
         for (let k = 0; k < 3; k++) {
             const nameCls = get_name_cls(key);
 
-            // For number of alternative colors
+            // For number of aberration points
             for (let c = 0; c < 3; c++) {
                 let fill_color, texture_id;
                 if (first_two_col_indexs.indexOf(c) > -1 && !question_mode) {
@@ -2213,7 +2315,7 @@ function def_textures(svg, keys, max) {
                     const cx_change = get_circle_coord('x', k, fract_dev, 1+(-1*2/(dev+1)), true);
                     const cy_change = get_circle_coord('y', k, fract_dev, 1+(-1*2/(dev+1)), true);
 
-                    texture_id = 'texture_country' + c + '-' + nameCls + '-' + rgb_indexes[k] + '-' + dev;
+                    texture_id = 'pat-' + nameCls + '-' + c + '-' + rgb_indexes[k] + '-' + dev;
                     // console.log('defs:', texture_id)
                     let w = 5;
                     const base_h = 4.5;
@@ -2336,10 +2438,9 @@ function add_country_code(country_cell, show_aber) {
 }
 
 function add_zoom_listener(svg, width, height, selector) {
-    if (!selector.startsWith('.')) {
-        selector = '.' + selector;
-    }
-    svg = d3.selectAll(selector);
+    selector = selector.replace('.', '');
+    svg = d3.selectAll('.' + selector);
+
     const zoom_level = 20;
     const ext_x = -width/zoom_level;
     let ext_y = -height/zoom_level;
@@ -2353,12 +2454,13 @@ function add_zoom_listener(svg, width, height, selector) {
         .on("zoom", (event) => {
             if (selector === 'main-stream-svg') {
                 stream_chart_scale = event.transform.k;
-            } else {
+            } else if (selector === 'bubble-svg') {
                 bubble_chart_scale = event.transform.k;
                 d3.selectAll('.circle-container text').remove();
                 const circles = d3.selectAll('.circle-container');
                 add_country_code(circles, undefined)
             }
+        
             // console.log(event.sourceEvent.type, event.transform);
             if (!event.sourceEvent || event.sourceEvent.type === 'wheel') {
                 const trans_str = svg.attr("transform") || '';
@@ -2390,9 +2492,18 @@ function add_zoom_listener(svg, width, height, selector) {
         .on('end', (ev, data)=> {
             dragended(ev, data, selector);
         });
-    const item_sel = selector === 'main-stream-svg' ? 'main-stream-g' : 'circle-container';
-    svg.selectAll('.' + item_sel)
-    .call(drag);
+    
+    
+    let item_sel = selector;
+    if (selector.indexOf('bubble-svg') > -1) {
+        item_sel = 'circle-container';
+    }
+    if (selector.indexOf('world-map') > -1) {
+        svg.selectAll('.world-map-path').call(drag);
+        item_sel = 'world-map-circle';
+    }
+
+    svg.selectAll('.' + item_sel).call(drag);
     
 }
 
@@ -2432,7 +2543,7 @@ function toggle_focus(nameCls, _event) {
     const selectors = [
         ".circle-container-" + nameCls + ' .country-stream-svg',
         ".main-stream-chart" + ' .stream-cell-' + nameCls
-    ]
+    ];
     selectors.forEach(selector => {
         const el = d3.select(selector);
         if (el.size()) {

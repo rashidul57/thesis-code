@@ -39,6 +39,12 @@ def get_arima_forecasts():
         data = json.load(json_file)
         return jsonify(data)
 
+@app.route('/world-map', methods=['GET'])
+def get_world_map_json():
+    with open('world-map.json') as json_file:
+        data = json.load(json_file)
+        return jsonify(data)
+
 @app.route('/get-covid-data', methods=['GET'])
 def get_covid_data():
     df = model_service.load_all_data()
