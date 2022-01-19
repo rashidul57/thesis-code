@@ -313,6 +313,14 @@ body.min-size .toolbar .left-items, body.min-size .container-box .left-items {
   border-radius: 4px;
   pointer-events: none;
 }
+.d3-tip .country {
+  font-size: 20px;
+  font-weight: bold;
+}
+.d3-tip .prop {
+  font-size: 16px;
+  padding: 5px 0;
+}
 
 .line {
   fill: none;

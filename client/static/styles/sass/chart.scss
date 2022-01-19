@@ -367,6 +367,15 @@ $height: 750px;
     border: 1px solid lightgray;
     border-radius: 4px;
     pointer-events: none;
+
+    .country{
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .prop{
+        font-size: 16px;
+        padding: 5px 0;
+    }
 }
 
 

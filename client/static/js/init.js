@@ -3,6 +3,7 @@ let sel_quest_category;
 let sel_property = 'new_cases';
 let control_mode = 'pan';
 const models = ['mlp', 'cnn', 'lstm', 'arima'];
+const num_props = ['hosp_patients', 'icu_patients', 'new_cases', 'new_deaths', 'new_tests', 'new_vaccinations', 'total_cases'];
 let sel_model;
 let country_list_show = false;
 let selected_countries = [];
@@ -10,6 +11,7 @@ let show_polygon = true;
 let color_or_texture = 'color';
 let mapped_countries = {};
 let color_mappings = {};
+let mapped_all_countries;
 let question_mode;
 let drill_country;
 const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart', 'World Map'];
@@ -82,8 +84,25 @@ async function init() {
         }
         covid_data.push(rec);
     });
-    
+
     all_covid_data = _.groupBy(covid_data, 'location');
+
+    // props
+    mapped_all_countries = {};
+    
+    for (let c in all_covid_data) {
+        let rec;
+        all_covid_data[c].forEach((datedItem, indx) => {
+            if (indx === 0) {
+                rec = datedItem;
+            } else {
+                num_props.forEach(prop => {
+                    rec[prop] += datedItem[prop] || 0;
+                });
+            }
+        });
+        mapped_all_countries[rec.location] = rec;
+    }
 
     if (question_mode) {
         show_question();

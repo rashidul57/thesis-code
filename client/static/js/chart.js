@@ -1324,26 +1324,35 @@ function draw_world_map() {
     // load and display the World
     d3.json("world-map").then(function(topology) {
 
+        const data = prepare_bubble_data(prop_pred_data, sel_model);
+        const mapped_preds = _.keyBy(data, 'name');
+        const def_dev = .001;
+
+        var tip = d3.tip().attr('class', 'd3-tip').html((EVENT,d)=> {
+            return d.tip_text;
+        });
+
+    
+        /* Invoke the tip in the context of your visualization */
+        svg.call(tip)
+
         g.selectAll("path")
         .data(topology.features)
         .enter()
         .append("path")
         .attr("d", path)
-        // .attr("transform", "translate(0,0)")
         .attr('name', (d) => {
             return d.properties.name;
         })
-        .attr('class', 'world-map-path')
-        // .on('mouseover',function(e, d, f, g){
-        //     console.log(d.properties.name);
-        // })
-        .append("title")
-        .text((d) => {
-            return d.properties.name;
+        .attr('class', (d) => {
+            return 'world-map-path ' + d.properties.name;
+        })
+        .on('mouseover',function(e, d){
+            show_tip(e, this, d, tip, mapped_preds, def_dev);
         });
+        
 
-        const data = prepare_bubble_data(prop_pred_data, sel_model);
-        const mapped_data = _.keyBy(data, 'name');
+        
 
         for (let k = 0; k < 3; k++) {
             add_world_map_circles(k);
@@ -1357,7 +1366,9 @@ function draw_world_map() {
             .data(topology.features)
             .enter()
             .append("circle")
-            .attr('class', 'world-map-circle')
+            .attr('class', (d) => {
+                return 'world-map-circle ' + d.properties.name;
+            })
             .attr('r', function (d) {
                 return Math.sqrt(path.area(d) * 0.25 / Math.PI);
             })
@@ -1369,57 +1380,83 @@ function draw_world_map() {
             .attr("transform",function(d) {                 
                 // const p = projection(d3.geoCentroid(d)); //<-- centroid is the center of the path, projection maps it to pixel positions
                 const p = path.centroid(d);
-                let name = d.properties.name;
+                let name = get_country_name(d);
                 
-                if (name === 'USA') {
-                    name = 'United States';
-                }
-                const country = mapped_data[name];
-                if (!country) {
-                    console.log(name);
-                }
-                let deviation = country ? country.deviation : .01;
+                const country = mapped_preds[name];
+                let deviation = country ? country.deviation : def_dev;
                 
-                if (name === 'Antarctica') {
-                    deviation = 0.01;
-                }
-                // if (name === 'Poland') {
-                //     debugger
+                // if (name === 'Argentina') {
+                //     // debugger
                 // }
 
                 if (deviation < 3 && deviation >=1) {
                     deviation *= 1.5;
                 } else if (deviation < 1 && deviation >=0.5) {
-                    deviation *= 2.5;
+                    deviation *= 2;
                 } else if (deviation < 0.5 && deviation >=0.4) {
-                    deviation *= 5;
+                    deviation *= 3;
                 } else if (deviation < 0.4 && deviation >=0.3) {
-                    deviation *= 7;
+                    deviation *= 5;
                 }  else if (deviation < 0.3 && deviation >=0.2) {
-                    deviation *= 10;
+                    deviation *= 7;
                 }  else if (deviation < 0.2 && deviation >=0.1) {
-                    deviation *= 15;
+                    deviation *= 10;
                 } else if (deviation < 0.1 && deviation >=0.05) {
-                    deviation *= 20;
+                    deviation *= 15;
                 } else if (deviation < 0.05 && deviation >=0.01) {
-                    deviation *= 35;
+                    deviation *= 25;
                 } else if (deviation < 0.01 && deviation >=0.001) {
-                    deviation *= 300;
+                    deviation *= 100;
                 } else if (deviation < 0.001) {
-                    deviation *= 1000;
+                    deviation *= 500;
                 }
 
                 const x = get_circle_coord('x', k, deviation, p[0], true);
                 const y = get_circle_coord('y', k, deviation, p[1], true);
                 return "translate(" + x + ',' + y + ")";
             })
-            .append("title")
-            .text((d) => {
-                return d.properties.name;
+            
+            .on('mouseover',function(e, d){
+                show_tip(e, this, d, tip, mapped_preds, def_dev);
             });
         }
-
     });
+
+    function show_tip(e, ref, d, tip, mapped_preds, def_dev) {
+        let name = get_country_name(d);
+        const country = mapped_all_countries[name];
+        if (!country) {
+            return;
+        }
+        const format = (d, dc) => {
+            const fmt = dc ? ('.' + dc + 'f') : ",d";
+            const f = d3.format(fmt);
+            return `${f(d)}`;
+        }
+        const texts = [`<div><div class='country'>${country.location}</div>`];
+        num_props.forEach(prop => {
+            texts.push(`<div class='prop'>${prop}: ${format(country[prop], 0)}</div>`)
+        });
+        
+        const dev = mapped_preds[name] ? mapped_preds[name].deviation : def_dev;
+        texts.push(`<div class='prop'>Uncertainty: ${format(dev, 3)}</div>`);
+        
+        const tip_text = texts.join('') + '</div>';
+        tip.show(e, {tip_text});
+
+        d3.select(ref)
+        .style("opacity", 1)
+        .style("stroke","white")
+        .style("stroke-width",3);
+    }
+
+    function get_country_name(d) {
+        let name = d.properties.name;
+        if (name === 'USA') {
+            name = 'United States';
+        }
+        return name;
+    }
 }
 
 function make_point(element, xy) {
