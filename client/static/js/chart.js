@@ -1345,11 +1345,12 @@ function draw_world_map() {
             return d.properties.name;
         })
         .attr('class', (d) => {
-            return 'world-map-path ' + d.properties.name;
+            return 'world-map-path ' + d.properties.name.replace(/\s/g, '-');
         })
-        .on('mouseover',function(e, d){
-            show_tip(e, this, d, tip, mapped_preds, def_dev);
-        });
+        // .on('mouseover',function(e, d){
+        //     show_tip(e, this, d, tip, mapped_preds, def_dev);
+        // })
+        // .on('mouseout', tip.hide);
         
 
         
@@ -1367,7 +1368,7 @@ function draw_world_map() {
             .enter()
             .append("circle")
             .attr('class', (d) => {
-                return 'world-map-circle ' + d.properties.name;
+                return 'world-map-circle ' + d.properties.name.replace(/\s/g, '-');
             })
             .attr('r', function (d) {
                 return Math.sqrt(path.area(d) * 0.25 / Math.PI);
@@ -1411,13 +1412,40 @@ function draw_world_map() {
                     deviation *= 500;
                 }
 
-                const x = get_circle_coord('x', k, deviation, p[0], true);
-                const y = get_circle_coord('y', k, deviation, p[1], true);
+                let x = get_circle_coord('x', k, deviation, p[0], true);
+                let y = get_circle_coord('y', k, deviation, p[1], true);
+                switch (name) {
+                    case 'United States':
+                    x += 35;
+                    y += 30;
+                    break;
+                
+                    case 'Canada':
+                    x -= 10;
+                    y += 30;
+                    break;
+
+                    case 'France':
+                    x += 7;
+                    y -= 7;
+                    break;
+
+                }
                 return "translate(" + x + ',' + y + ")";
             })
             
-            .on('mouseover',function(e, d){
+            .on('click',function(e, d){
                 show_tip(e, this, d, tip, mapped_preds, def_dev);
+            })
+            .on('mouseover',function(e, d){
+                const path_el = d3.select('.world-map-path.' + d.properties.name.replace(/\s/g, '-'));
+                path_el.classed('highlight', true);
+
+            })
+            .on('mouseout', (e, d) => {
+                tip.hide();
+                const path_el = d3.select('.world-map-path.' + d.properties.name.replace(/\s/g, '-'));
+                path_el.classed('highlight', false);
             });
         }
     });

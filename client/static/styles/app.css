@@ -353,6 +353,9 @@ svg g.tick line {
   stroke-width: 0.2;
   opacity: 0.8;
 }
+.world-map path.world-map-path.highlight {
+  fill: #0edd7950;
+}
 
 body.questionnaire .toolbar {
   display: none;
