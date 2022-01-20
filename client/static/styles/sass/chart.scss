@@ -415,6 +415,7 @@ svg{
         opacity: 0.8;
         &.world-map-path.highlight{
             fill: #0edd7950;
+            stroke:  #05bb6dff;
         }
     }
 
@@ -490,6 +491,11 @@ body.questionnaire{
             font-size: 25px;
             position: absolute;
             margin: -8px 0 0 -5px;
+        }
+    }
+    .usage-svg{
+        g.tick {
+            font-size: 9px;
         }
     }
 

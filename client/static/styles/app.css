@@ -355,6 +355,7 @@ svg g.tick line {
 }
 .world-map path.world-map-path.highlight {
   fill: #0edd7950;
+  stroke: #05bb6dff;
 }
 
 body.questionnaire .toolbar {
@@ -411,6 +412,9 @@ body.questionnaire .circle-questions .ag-dis-lbl {
   font-size: 25px;
   position: absolute;
   margin: -8px 0 0 -5px;
+}
+body.questionnaire .usage-svg g.tick {
+  font-size: 9px;
 }
 body.questionnaire .usage-questions input[type=checkbox], body.questionnaire .horizon-questions input[type=checkbox] {
   transform: scale(1.15);

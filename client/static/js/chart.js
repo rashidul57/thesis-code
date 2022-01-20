@@ -1115,6 +1115,7 @@ function draw_usage_chart() {
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
     if (question_mode) {
         margin.top = 65;
+        margin.left = 55;
     }
     let height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
 
@@ -1346,11 +1347,7 @@ function draw_world_map() {
         })
         .attr('class', (d) => {
             return 'world-map-path ' + d.properties.name.replace(/\s/g, '-');
-        })
-        // .on('mouseover',function(e, d){
-        //     show_tip(e, this, d, tip, mapped_preds, def_dev);
-        // })
-        // .on('mouseout', tip.hide);
+        });
         
 
         
@@ -1386,9 +1383,6 @@ function draw_world_map() {
                 const country = mapped_preds[name];
                 let deviation = country ? country.deviation : def_dev;
                 
-                // if (name === 'Argentina') {
-                //     // debugger
-                // }
 
                 if (deviation < 3 && deviation >=1) {
                     deviation *= 1.5;
@@ -1436,6 +1430,7 @@ function draw_world_map() {
             
             .on('click',function(e, d){
                 show_tip(e, this, d, tip, mapped_preds, def_dev);
+                return false;
             })
             .on('mouseover',function(e, d){
                 const path_el = d3.select('.world-map-path.' + d.properties.name.replace(/\s/g, '-'));
@@ -1471,11 +1466,6 @@ function draw_world_map() {
         
         const tip_text = texts.join('') + '</div>';
         tip.show(e, {tip_text});
-
-        d3.select(ref)
-        .style("opacity", 1)
-        .style("stroke","white")
-        .style("stroke-width",3);
     }
 
     function get_country_name(d) {
@@ -1782,8 +1772,6 @@ function draw_bubble_chart(data, params) {
             return item;
         });
     }
-
-    
 
     if (!isNaN(given_dev)) {
         bubble_data[0].deviation = given_dev;

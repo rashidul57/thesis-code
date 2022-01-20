@@ -1,7 +1,7 @@
 const answers = {};
-const sel_questions = ['ca', 'ca-static', 'blur', 'noise'];
+const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 33, sel_country_num;
+let question_num = 30, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 
@@ -13,18 +13,19 @@ function show_question() {
     let ques_percents;
     let modes;
     if (question_num >= 1 && question_num <= 5) {
-        sel_quest_category = sel_questions[0];
+        sel_quest_category = question_types[0];
     } else if (question_num >= 6 && question_num <= 10) {
-        sel_quest_category = sel_questions[1];
+        sel_quest_category = question_types[1];
     } else if (question_num >= 11 && question_num <= 15) {
-        sel_quest_category = sel_questions[2];
+        sel_quest_category = question_types[2];
     } else if (question_num >= 16 && question_num <= 20) {
-        sel_quest_category = sel_questions[3];
+        sel_quest_category = question_types[3];
     } else if (question_num >= 21 && question_num <= 23) {
         sel_quest_category = 'vsup';
     } else if (question_num >= 24 && question_num <= 26) {
         sel_quest_category = 'drill-models';
-    } else if (question_num >= 27 && question_num <= 29) {
+    }
+    else if (question_num >= 27 && question_num <= 29) {
         sel_quest_category = 'horizon-chart';
     } else if (question_num >= 30 && question_num <= 32) {
         sel_quest_category = 'usage-chart';
@@ -36,7 +37,7 @@ function show_question() {
         return;
     }
 
-    if (sel_questions.indexOf(sel_quest_category) > -1) {
+    if (question_types.indexOf(sel_quest_category) > -1) {
         d3.selectAll('.container-box').classed('whole-width', true);
         d3.selectAll('.left-chart-container svg').remove();
         d3.select('.drill-models-container').style('display', 'none');
@@ -531,6 +532,7 @@ function show_impact_chart_questions() {
 }
 
 function show_usage_chart_questions() {
+    d3.select('.rate-svg').classed('usage-svg', true);
     const svg = d3.select('.rate-svg')
         .append('g')
         .attr('class', 'usage-questions');
@@ -539,10 +541,10 @@ function show_usage_chart_questions() {
 
     switch (question_num) {
         case 30:
-        question = `Question-${question_num}: What is the maximum uncertainty country/column throught the days?`;
+        question = `Question-${question_num}: What is the maximum uncertainty country/column throughout the days?`;
         options = ['USA', 'IRQ', 'CZE', 'CAN'];
 
-        const rect_starts = [58, 702, 757, 787];
+        const rect_starts = [63, 707, 762, 792];
         rect_starts.forEach((rect_x) => {
             svg
             .append('rect')
@@ -563,7 +565,7 @@ function show_usage_chart_questions() {
         
         svg
         .append('rect')
-        .attr('x', 671)
+        .attr('x', 676)
         .attr('y', 225)
         .attr('width', 142)
         .attr('height', 15)
@@ -578,7 +580,7 @@ function show_usage_chart_questions() {
         
         svg
         .append('rect')
-        .attr('x', 671)
+        .attr('x', 676)
         .attr('y', 165)
         .attr('width', 32)
         .attr('height', 51)
@@ -592,14 +594,14 @@ function show_usage_chart_questions() {
     .append('line')
     .style("stroke", "#ec7af1")
     .style("stroke-width", 0.4)
-    .attr("x1", 200)
+    .attr("x1", 205)
     .attr("y1", 38)
-    .attr("x2", 185)
+    .attr("x2", 190)
     .attr("y2", 75);
 
     svg
     .append('text')
-    .attr("x", 185)
+    .attr("x", 190)
     .attr("y", 35)
     .attr("fill", "#ec7af1")
     .attr("font-size", 11)
@@ -609,14 +611,14 @@ function show_usage_chart_questions() {
     .append('line')
     .style("stroke", "#ec7af1")
     .style("stroke-width", 0.4)
-    .attr("x1", 565)
+    .attr("x1", 570)
     .attr("y1", 48)
-    .attr("x2", 549)
+    .attr("x2", 554)
     .attr("y2", 75);
 
     svg
     .append('text')
-    .attr("x", 525)
+    .attr("x", 530)
     .attr("y", 45)
     .attr("fill", "#ec7af1")
     .attr("font-size", 11)
