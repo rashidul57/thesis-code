@@ -369,16 +369,16 @@ body.questionnaire .bubble-chart input[type=checkbox] {
 body.questionnaire .bubble-chart .ag-dis-lbl {
   font-size: 30px;
 }
-body.questionnaire .rate-svg {
+body.questionnaire .rate-svg, body.questionnaire svg {
   overflow: visible;
 }
-body.questionnaire .rate-svg g.tick {
+body.questionnaire .rate-svg g.tick, body.questionnaire svg g.tick {
   font-size: 16px;
 }
-body.questionnaire .rate-svg g.tick line {
+body.questionnaire .rate-svg g.tick line, body.questionnaire svg g.tick line {
   display: none;
 }
-body.questionnaire .rate-svg text {
+body.questionnaire .rate-svg text, body.questionnaire svg text {
   font-family: "Open Sans", sans-serif;
 }
 body.questionnaire .bubble-ca-question-g input[type=checkbox] {
