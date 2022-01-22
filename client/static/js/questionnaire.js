@@ -1,11 +1,12 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 1, sel_country_num;
+let question_num = 25, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 let question_per_sec = 2;
 let bubble_quest_countries;
+let vsup_quest_color;
 
 
 function show_question() {
@@ -18,7 +19,202 @@ function show_question() {
         draw_bubble_chart_questions();
     } else if (question_num > 8 && question_num <= 16) {
         draw_usage_chart_questions();
+    } else if (question_num > 16 && question_num <= 24) {
+        draw_usage_chart_questions();
+    } else if (question_num > 24 && question_num <= 32) {
+        show_vsup_questions();
     }
+
+}
+
+function show_vsup_questions() {
+    const mlp_data = forecast_data["new_cases"]["Canada"]["mlp"];
+    const ranges = mlp_data.ranges;
+    const preds = mlp_data['y_pred'];
+    const cell_width = 56;
+    const num_of_days = 10;
+    let data = ranges.map((range, indx) => {
+        const uncertainty = (range[1] - range[0]) * 3.25/100;
+        const pred = preds[indx]*5/100;
+        const num_cases = preds[indx];
+        let day_of_count = parseInt((indx)/num_of_days);
+        const rec = {pred, num_cases, uncertainty, day_of_count};
+        return rec;
+    });
+    
+    d3.select('.vsup-svg').remove();
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr("width", 900)
+        .attr("height", 900)
+        .attr('class', 'vsup-svg');
+
+    var vDom = d3.extent(data.map(function(d) { return d.pred; }));
+    var uDom = d3.extent(data.map(function(d) { return d.uncertainty; }));
+
+    var quantization = vsup.quantization().branching(2).layers(4).valueDomain(vDom).uncertaintyDomain(uDom);
+    var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
+
+    var w = 560;
+    var h = 500;
+
+    var x = d3.scaleBand().range([0, w]).domain(data.map(function(d) { return d.num_cases; }));
+    var y = d3.scaleBand().range([0, h]).domain(data.map(function(d) { return d.day_of_count; }));
+
+    // special scales for axes
+    // var xAxis = d3.scalePoint().range([0, w]).domain([0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
+    var xAxis = d3.scaleLinear().range([0, w]).domain(d3.extent(data.map(function(d) { return d.num_cases; })));
+    const y_domain = [];
+    for (let k=1; k<=num_of_days; k++) {
+        y_domain.push(k*2);
+    }
+    var yAxis = d3.scaleBand().range([0, h]).domain(y_domain);
+
+    var heatmap = svg
+        .attr("width", w + 940)
+        .attr("height", h + 250).append("g")
+        .attr("transform", "translate(30,50)");
+    
+    heatmap.selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i) {
+            const row = i%num_of_days;
+            return row*cell_width;
+        })
+        .attr("y", function(d) { return y(d.day_of_count); })
+        .attr("width", cell_width)
+        .attr("height", y.bandwidth())
+        .attr("title", JSON.stringify)
+        .attr("fill", function(d) { return scale(d.pred, d.uncertainty); })
+        .on('mousedown', function (ev) {
+            if (ev.which !== 1) {
+                return;
+            }
+            const fill_color = d3.select(this).attr('fill');
+            console.log(vsup_quest_color === fill_color);
+            show_question(++question_num);
+        });
+
+    // axes
+    heatmap.append("g")
+        .attr("transform", "translate(0," + h + ")")
+        .call(d3.axisBottom(xAxis));
+
+    heatmap.append("text")
+        .style("text-anchor", "middle")
+        .style("font-size", 13)
+        .attr("transform", "translate(" + (w / 2) + ", " + (h + 40) + ")")
+        .text("Predicted New Cases")
+
+    heatmap.append("g")
+        .attr("transform", "translate(" + w + ", 0)")
+        .call(d3.axisRight(yAxis));
+
+    heatmap.append("text")
+        .style("text-anchor", "middle")
+        .style("font-size", 13)
+        .attr("transform", "translate(" + (w + 40) + ", " + (h / 2) + ")rotate(90)")
+        .text("Days (Each row 10 days)");
+
+    // legend
+    var legend = vsup.legend.arcmapLegend();
+
+    legend
+        .scale(scale)
+        .size(160)
+        // .x(w + 140)
+        // .y(60)
+        .vtitle("Prediction")
+        .utitle("Uncertainty");
+
+    svg.append("g").call(legend);
+    d3.select('.legend').attr("transform", "translate(960 130)")
+
+
+    // Question sections
+    x = 30;
+    y = 30;
+
+    svg
+    .append("text")
+    .text('VSUP Palette')
+    .attr("x", x)
+    .attr("y", y)
+    .attr("font-size", 22);
+
+    svg
+    .append("text")
+    .text('Legend')
+    .attr("x", x + 960)
+    .attr("y", y + 20)
+    .attr("font-size", 18);
+
+
+    let uncertainty, prediction;
+    switch (question_num) {
+        case 25:
+        uncertainty = 15;
+        prediction = 200;
+        vsup_quest_color = 'rgb(38, 130, 142)';
+        break;
+
+        case 26:
+        uncertainty = 18;
+        prediction = 115;
+        vsup_quest_color = 'rgb(51, 99, 141)';
+        break;
+
+        case 27:
+        uncertainty = 10;
+        prediction = 230;
+        vsup_quest_color = 'rgb(31, 160, 136)';
+        break;
+
+        case 28:
+        uncertainty = 24;
+        prediction = 339;
+        vsup_quest_color = 'rgb(132, 212, 75)';
+        break;
+
+        case 29:
+        uncertainty = 2;
+        prediction = 337;
+        vsup_quest_color = 'rgb(63, 188, 115)';
+        break;
+
+        case 30:
+        uncertainty = 41;
+        prediction = 279;
+        vsup_quest_color = 'rgb(109, 195, 158)';
+        break;
+
+        case 31:
+        uncertainty = 29;
+        prediction = 220;
+        vsup_quest_color = 'rgb(103, 147, 169)';
+        break;
+
+        case 32:
+        uncertainty = 31;
+        prediction = 441;
+        vsup_quest_color = 'rgb(197, 229, 109)';
+        break;
+    }
+    
+
+    const svg_g = svg.append('g');
+
+    svg_g
+    .append("text")
+    .attr("x", x + 700)
+    .attr("y", y + 400)
+    .text(`Question-${question_num}: Click a grid-cell with Prediction=${prediction} and Uncertainty=${uncertainty}`)
+    .attr("font-size", 22);
+
+    transition_question(svg_g, 3000);
+
 
 }
 
@@ -437,7 +633,7 @@ function draw_bubble_chart_questions() {
 
         const radius = radiis[question_num-1];
         bubble_quest_countries = question_data.filter(item => item.r === radius);
-        
+
 
         question = `Question-${question_num}: Click on a Country where "Value=${format_num(radius)}" and "CA=${format_num(bubble_quest_countries[0].deviation)}".`;
 
