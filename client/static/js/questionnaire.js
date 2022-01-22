@@ -1,7 +1,7 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 25, sel_country_num;
+let question_num = 9, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 let question_per_sec = 2;
@@ -16,18 +16,18 @@ function show_question() {
     d3.selectAll('.left-chart-container svg').remove();
 
     if (question_num <= 8) {
-        draw_bubble_chart_questions();
+        draw_ca_bubble_questions();
     } else if (question_num > 8 && question_num <= 16) {
-        draw_usage_chart_questions();
+        draw_ca_grid_questions();
     } else if (question_num > 16 && question_num <= 24) {
-        draw_usage_chart_questions();
+        draw_vsup_bubble_questions();
     } else if (question_num > 24 && question_num <= 32) {
-        show_vsup_questions();
+        draw_vsup_grid_questions();
     }
 
 }
 
-function show_vsup_questions() {
+function draw_vsup_grid_questions() {
     const mlp_data = forecast_data["new_cases"]["Canada"]["mlp"];
     const ranges = mlp_data.ranges;
     const preds = mlp_data['y_pred'];
@@ -120,17 +120,14 @@ function show_vsup_questions() {
 
     // legend
     var legend = vsup.legend.arcmapLegend();
-
     legend
         .scale(scale)
         .size(160)
-        // .x(w + 140)
-        // .y(60)
         .vtitle("Prediction")
         .utitle("Uncertainty");
 
     svg.append("g").call(legend);
-    d3.select('.legend').attr("transform", "translate(960 130)")
+    d3.select('.legend').attr("transform", "translate(960 130)");
 
 
     // Question sections
@@ -218,14 +215,333 @@ function show_vsup_questions() {
 
 }
 
-function draw_usage_chart_questions() {
+function draw_vsup_bubble_questions() {
+    const width = 650;
+    const height = 585;
+
+    let data = prepare_bubble_data(prop_pred_data, sel_model);
+    data = _.orderBy(data, ['deviation'], ['desc']);
+    const bubble_data = [];
+    data.forEach(item => {
+        if (item.deviation < .5 && bubble_data.length < 25) {
+            item.deviation *= 20;
+            bubble_data.push(item);
+        }
+    });
+
+    const radius_reduce_factor = 0.8;
+
+
+    // Quantization
+    const dev_groups = 4;
+    const max_deviation = _.maxBy(bubble_data, 'deviation').deviation;
+    const min_deviation = _.minBy(bubble_data, 'deviation').deviation;
+    const dev_factor = (max_deviation - min_deviation) / dev_groups;
+
+    const val_groups = 8;
+    const max_value = _.maxBy(bubble_data, 'count').count;
+    const min_value = _.minBy(bubble_data, 'count').count;
+    const value_factor = (max_value - min_value) / val_groups;
+
+    // for deviation
+    for (let d = 0; d < dev_groups; d++) {
+        const group_min = min_deviation + d*dev_factor;
+        let group_max = min_deviation + (d + 1)*dev_factor;
+        if (d < (dev_groups-1)) {
+            group_max -= 0.00000001
+        }
+
+        bubble_data.forEach(item => {
+            if (item.deviation >= group_min && item.deviation <= group_max) {
+                item.deviation = (group_max + group_min) / 2;
+            }
+        });
+    }
+    
+    // for values
+    for (let d = 0; d < val_groups; d++) {
+        const group_min = min_value + d*value_factor;
+        let group_max = min_value + (d + 1)*value_factor;
+        if (d < (val_groups-1)) {
+            group_max -= 0.00000001
+        }
+
+        bubble_data.forEach(item => {
+            if (item.count >= group_min && item.count <= group_max) {
+                item.count = (group_max + group_min) / 2;
+            }
+        });
+    }
+
+    // used for legend drawing
+    const dev_conf = {groups: dev_groups, type: 'ca-legend', legend_caption: 'CA'};
+    const val_conf = {groups: val_groups, type: 'value-legend', legend_caption: 'Value'};
+   
+    const leaves = get_bubble_leaves(bubble_data);
+    const question_data = leaves.map(item => {
+        return Object.assign({r: item.r * radius_reduce_factor}, item.data);
+    });
+
+    var vDom = d3.extent(question_data.map(function(d) { return d.r; }));
+    var uDom = d3.extent(question_data.map(function(d) { return d.deviation; }));
+    var quantization = vsup.quantization().branching(2).layers(4).valueDomain(vDom).uncertaintyDomain(uDom);
+    var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
+    
+
+    // for (let k = 0; k < 3; k++) {
+        draw_chart(0, leaves);
+    // }
+    const svg = d3.select('.bubble-svg');
+
+    var legend = vsup.legend.arcmapLegend();
+    legend
+        .scale(scale)
+        .size(160)
+        .vtitle("")
+        .utitle("Uncertainty");
+    svg.append("g").call(legend);
+    d3.select('.legend').attr("transform", "translate(960 230)");
+
+    dev_conf.radiis = Array(dev_groups).fill(35);
+    dev_conf.deviations = bubble_data.map(item => item.deviation);
+    dev_conf.deviations = _.sortBy(_.uniq(dev_conf.deviations));
+
+    val_conf.radiis = leaves.map(item => {
+        return item.r * radius_reduce_factor;
+    });
+    val_conf.radiis = _.sortBy(_.uniq(val_conf.radiis));
+    val_conf.deviations = Array(val_groups).fill(0);
+
+    const max_radius = _.max(val_conf.radiis);
+
+    draw_legend(svg, val_conf, max_radius);
+    // draw_legend(svg, dev_conf, max_radius);
+
+    const legend_comp = d3.select('.legend');
+    const g_tags = legend_comp.selectAll("g").filter(function() { 
+        return this.parentNode == legend_comp.node();
+    });
+
+    // remove pred scale 
+    d3.select(g_tags.nodes()[1]).remove();
+    
+    draw_question(svg, 700, 450, question_data, val_conf.radiis, dev_conf.deviations);
+
+    // show_nav(svg, 1000, 710, 200, 25);
+
+
+    function get_bubble_leaves(bubble_data) {
+        const pack = data => d3.pack()
+        .size([width, height])(d3.hierarchy({children: bubble_data})
+        .sum(d => d.count));
+        const root = pack(bubble_data);
+        const leaves = root.leaves();
+        return leaves;
+    }
+
+    function draw_chart(k, leaves) {
+        let svg;
+        if (k === 0) {
+            svg = d3.select('.left-chart-container')
+            .append("svg")
+            .attr('class', 'bubble-svg')
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height]);
+
+            svg
+            .append("text")
+            .text('CA + Bubble')
+            .attr("x", 20)
+            .attr("y", 40)
+            .attr("font-size", 25)
+            .attr("fill", 'black');
+        } else {
+            svg = d3.select('.bubble-svg');
+        }
+
+        const circle_g = svg.selectAll("g")
+        .data(leaves)
+        .join("g")
+        .attr('class', (d) => {
+            const nameCls = d && d.data.nameCls || '';
+            let cls = 'circle-container circle-container-' + nameCls;
+            return cls;
+        })
+        .attr("transform", d => {
+            let xx = -100, yy = 150;
+            return `translate(${d.x + 1 + xx},${d.y + 1 + yy})`
+        });
+    
+        circle_g
+            .append("circle")
+            .attr("id", d => (d.data.name + '-' + d.data.count))
+            .attr("r", d => d.r * radius_reduce_factor)
+            .attr('info', (d) => {
+                return 'value=' + d.r + ', unc=' + d.data.deviation;
+            })
+            .style("mix-blend-mode", "darken")
+            .attr('class', ()=> {
+                return 'abberation';
+            })
+            // .attr("fill", (d) => {
+            //     let color = bubble_colors[k];
+            //     return color;
+            // })
+            .attr("fill", function(d) { return scale(d.r, d.data.deviation); })
+            .attr("cx", d => {
+                return get_circle_coord('x', k, d.data.deviation, 0, true);
+            })
+            .attr("cy", d => {
+                return get_circle_coord('y', k, d.data.deviation, 0, true);
+            })
+            .on('mousedown', function (ev, d) {
+                if (ev.which !== 1) {
+                    return;
+                }
+
+                bubble_quest_countries.forEach(country => {
+                    if (country.name === d.data.name) {
+                        answers[question_num] = true;
+                    }
+                });
+                if (!answers[question_num]) {
+                    answers[question_num] = false;
+                }
+
+                show_question(++question_num);
+
+            });
+            if (k === 0) {
+                add_country_code(circle_g, false, true, '#fff');
+            }
+    }
+
+    function draw_legend(svg, conf, max_radius) {
+        const {groups, type, radiis, deviations, legend_caption} = conf;
+        const format_num = d3.format(",.1f");
+
+        let data = [];
+        let legend_left_start = 480;
+        let leg_top_start = max_radius + 10;
+
+        if (type === 'ca-legend') {
+            leg_top_start = 2*max_radius + 80;
+            legend_left_start += 160;
+        }
+
+        let padding_left = legend_left_start + 20;
+
+        for (let k = 0; k < groups; k++) {
+            const radius = radiis[k];
+            padding_left += 2 * radius + 10;
+            const deviation = deviations[k];
+            const label = type === 'value-legend' ? format_num(radius) : format_num(deviation);
+            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label});
+        }
+    
+        // Draw circles
+        data.forEach((dev_rec, i) => {
+            const circle_g = svg.append('g');
+            for(let k = 0; k < 3; k++) {
+                add_legend_circle(circle_g, dev_rec, i, k);
+            }
+        });
+
+        function add_legend_circle(circle_g, dev_rec, i, k) {
+            
+            const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label} = dev_rec;
+            const label_top = 20;
+
+            if (i === 0 && k === 0) {
+                let dx = legend_left_start;
+                if (type === 'ca-legend') {
+                    dx += 30;
+                }
+                circle_g
+                .append('text')
+                .attr('dx', dx)
+                .attr('dy', leg_top_start + label_top)
+                .html(legend_caption);
+            }
+    
+            circle_g
+                .append('circle')
+                .attr("r", radius)
+                .attr("fill", d => bubble_colors[k])
+                .attr('class', 'legend-circle-' + label.replace('.', '-'))
+                .attr('cx', () => {
+                    let cx = get_circle_coord('x', k, deviation, padding_left, true);
+                    if (type === 'ca-legend') {
+                        cx += i*20;
+                    }
+                    return cx;
+                })
+                .attr('cy', () => {
+                    let cy = get_circle_coord('y', k, deviation, leg_top_start, true) + 15;
+                    return cy;
+                })
+                .style("mix-blend-mode", "darken");
+    
+                if (k === 0) {
+                    circle_g
+                    .append('text')
+                    .attr('dx', () => {
+                        let dx = padding_left - label.length * 4;
+                        if (type === 'ca-legend') {
+                            dx += i*20 ;
+                        }
+                        return dx;
+                    })
+                    .attr('dy', () => {
+                        let dy = leg_top_start + label_top;
+                        return dy;
+                    })
+                    .attr("font-size", 18)
+                    .attr("font-weight", 'bold')
+                    .attr("fill", '#2b1089')
+                    .html(label);
+                }
+        }
+    
+    }
+
+    function draw_question(svg, x, y, question_data, radiis) {
+        const question_g_sel = 'bubble-ca-question-g';
+        d3.select('.' + question_g_sel).remove();
+
+        const svg_g = svg
+            .append('g')
+            .attr('class', question_g_sel);
+
+        let question;
+        const format_num = d3.format(",.1f");
+
+        const radius = radiis[(question_num-1)%8];
+        bubble_quest_countries = question_data.filter(item => item.r === radius);
+
+        question = `Question-${question_num}: Click on a Country where "Value=${format_num(radius)}" and "CA=${format_num(bubble_quest_countries[0].deviation)}".`;
+
+        svg_g
+        .append("text")
+        .attr("x", x)
+        .attr("y", y)
+        .text(question)
+        .attr("font-size", 20)
+        .attr('fill', 'black');
+
+        transition_question(svg_g, 2800);
+    }
+
+}
+
+function draw_ca_grid_questions() {
     const data = draw_usage_chart();
     // Draw rects
     const svg = d3.select('.rate-svg');
     show_usage_chart_legend(svg, data);
 
     show_nav(svg, 1071, 776, 214, 27);
-
 
     function show_usage_chart_legend(svg, legend_data) {
 
@@ -241,7 +557,6 @@ function draw_usage_chart_questions() {
     
         let data = [];
         
-    
         let padding_left = 20;
         for (let k = 0; k < 5; k++) {
             const dev = (min_deviation + k * dev_factor)/10;
@@ -252,6 +567,22 @@ function draw_usage_chart_questions() {
 
             data.push({deviation: dev, width, height, value, padding_left});
         }
+
+
+        var vDom = d3.extent(data.map(function(d) { return d.value; }));
+        var uDom = d3.extent(data.map(function(d) { return d.deviation; }));
+
+        var quantization = vsup.quantization().branching(2).layers(4).valueDomain(vDom).uncertaintyDomain(uDom);
+        var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
+        var legend = vsup.legend.arcmapLegend();
+        legend
+            .scale(scale)
+            .size(160)
+            .vtitle("Prediction")
+            .utitle("Uncertainty");
+    
+        svg.append("g").call(legend);
+        d3.select('.legend').attr("transform", "translate(960 130)");
 
         svg
         .append("text")
@@ -353,7 +684,7 @@ function draw_usage_chart_questions() {
     }
 }
 
-function draw_bubble_chart_questions() {
+function draw_ca_bubble_questions() {
     const width = 650;
     const height = 585;
 

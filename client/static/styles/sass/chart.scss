@@ -384,17 +384,17 @@ $height: 750px;
 }
   
 
-svg{
-    rect{
-        margin-top: 4px;
-    }
-    g.tick {
-        font-size: 5px;
-        line{
-            stroke-width: 0.4px;
-        }
-    }
-}
+// svg{
+//     rect{
+//         margin-top: 4px;
+//     }
+//     g.tick {
+//         font-size: 5px;
+//         line{
+//             stroke-width: 0.4px;
+//         }
+//     }
+// }
 
 .y-axis text, .x-axis text {
     font-size: 12px;

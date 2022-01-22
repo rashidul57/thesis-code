@@ -326,16 +326,6 @@ body.min-size .toolbar .left-items, body.min-size .container-box .left-items {
   fill: none;
 }
 
-svg rect {
-  margin-top: 4px;
-}
-svg g.tick {
-  font-size: 5px;
-}
-svg g.tick line {
-  stroke-width: 0.4px;
-}
-
 .y-axis text, .x-axis text {
   font-size: 12px;
 }
