@@ -451,51 +451,27 @@ body.questionnaire{
         }
     }
 
-    .star-fish-questions{
-        input[type="checkbox"]{
-            transform: scale(3.45);
-            margin-top: 20px;
-        }
-        .ag-dis-lbl{
-            font-size: 44px;
-            margin: 6px 0 0 15px;
-            position: absolute;
-        }
-    }
-
-    .impact-question-g{
-        .impact-chart-title{
-            font-size: 7px!important;
+    .rate-svg{
+        overflow: visible;
+        g.tick {
+            font-size: 16px;
+            line{
+                display: none;
+            }
         }
         text{
-            font-size: 6px!important;
-        }
-        .perc-hint{
-            font-size: 4px!important;
-        }
-        input[type="checkbox"]{
-            transform: scale(.45);
-        }
-        .ag-dis-lbl{
-            margin: 6px 0 0 -5px;
-            position: absolute;
-            font-size: 6px;
+            font-family: "Open Sans", sans-serif;
         }
     }
 
-    .circle-questions{
+    .bubble-ca-question-g{
         input[type="checkbox"]{
-            transform: scale(1.65);
+            transform: scale(1.55);
         }
         .ag-dis-lbl{
-            font-size: 25px;
+            font-size: 16px;
             position: absolute;
-            margin: -8px 0 0 -5px;
-        }
-    }
-    .usage-svg{
-        g.tick {
-            font-size: 9px;
+            margin: 1px 0 0 6px;
         }
     }
 
@@ -507,18 +483,6 @@ body.questionnaire{
             font-size: 16px;
             position: absolute;
             margin: 1px 0 0 4px;
-        }
-    }
-
-    .drill-questions{
-        input[type="checkbox"]{
-            transform: scale(1.80);
-            margin: 0 0 0 7px;
-        }
-        .ag-dis-lbl{
-            font-size: 25px;
-            position: absolute;
-            margin: 0 0 0 14px;
         }
     }
 

@@ -1082,17 +1082,24 @@ function show_hide_polygons() {
 function draw_usage_chart() {
     let data = [];
     const prop = 'new_cases';
-    const top_countries = _.take(countries, 31);
+    let num_countries = 31;
+    let top_countries = _.take(countries, num_countries);
+    if (question_mode) {
+        const codes = ['Canada', 'Iraq', 'Japan', 'Peru', 'Malaysia'];
+        num_countries = codes.length;
+        top_countries = top_countries.filter(c => codes.indexOf(c) > -1);
+    }
+
     top_countries.forEach(country  => {
         const c_base = all_covid_data[country];
-        const c_data = {name: country, iso_code: c_base[0].iso_code};
+        const c_data = {name: country, iso_code: c_base[0].iso_code, population: c_base[0].population};
 
         let preds = forecast_data[prop][country][sel_model]['y_pred'];
         let deaths_preds = forecast_data['new_deaths'][country][sel_model]['y_pred'];
         const start_date = new Date(forecast_data[prop][country][sel_model].start_timestamp);
 
         if (question_mode) {
-            preds = _.take(preds, 25)
+            preds = _.take(preds, 6)
         } else {
             preds = _.take(preds, 50); // to smooth rendering
         }
@@ -1101,25 +1108,34 @@ function draw_usage_chart() {
             const date = moment(start_date).add('days', i).toDate();
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const divider = _.max([ranges[0], ranges[1], value]);
-            const uncertainty = Math.abs(ranges[1]-ranges[0])*100/divider;
-            const row = Object.assign({date, uncertainty: uncertainty}, c_data);
-            row[prop] = Number(value || 0);
-            row['new_deaths'] = Number(deaths_preds[i] || 0);
-            data.push(row);
+            const uncertainty = Math.abs(Math.abs(ranges[1])-Math.abs(ranges[0]))*100/divider;
+            
+            const rec = Object.assign({date, uncertainty: uncertainty}, c_data);
+            rec.infection_rate = divider*100/rec.population;
+            rec[prop] = Number(value || 0);
+            rec['new_deaths'] = Number(deaths_preds[i] || 0);
+            data.push(rec);
         });
     });
     const c_codes = _.uniq(data.map(c => c.iso_code));
     data = _.orderBy(data, [(item) => item.date], ['asc']);
+    const max_rate = _.maxBy(data, 'infection_rate').infection_rate;
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
+    let width = 954;
+    let cell_height = 12;
     if (question_mode) {
-        margin.top = 65;
-        margin.left = 55;
-    }
-    let height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * 12;
+        margin.top = 385;
+        margin.left = 115;
+        width = 800;
+        cell_height = usage_cell_height = 40;
 
-    const width = 954;
+        usage_cell_width = (width - margin.left - margin.right)/num_countries;
+    }
+
+    let height = margin.top + margin.bottom + (d3.timeDay.count(...dateExtent) + 1) * cell_height;
+
     formatCountry = (d) => {
         return d;
     }
@@ -1166,17 +1182,17 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    
-    let max_x = [], max_y = [];
-    let min_w = [], min_h = [];
+    draw_layer(3);
+
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
     }
 
-    // draw_layer(3);
+    return data;
+
 
     function draw_layer(k) {
-        const ca_space = 2;
+        const ca_space = question_mode ? 5 : 2;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -1185,14 +1201,13 @@ function draw_usage_chart() {
             return 'usage-rect' + ' urect-' + i;
         })
         .attr("x", (d, i) => {
-            let x_pos = x_base = x(d.iso_code);
+            let x_pos = x(d.iso_code);
             if (k===3) {
-                return max_x[i];
+                return x_pos - ca_space/2;
             } else {
+                let width = x.bandwidth();
+                const w_reduce = (d.infection_rate * width)/max_rate;
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
-                if (!max_x[i]) {
-                    max_x[i] = -9999;
-                }
 
                 if (change >= 0) {
                     x_pos = x_pos + change;
@@ -1200,17 +1215,17 @@ function draw_usage_chart() {
                     x_pos = x_pos + ca_space - change;
                 }
 
-                if (x_pos > max_x[i]) {
-                    max_x[i] = x_pos;
-                }
+                x_pos += w_reduce/2;
+
                 return x_pos;
             }
         })
         .attr("width", (d, i) => {
+            let width = x.bandwidth();
             if (k===3) {
-                return min_w[i]; // x.bandwidth() - max_x_change;
+                return width;
             } else {
-                let width = base_width = x.bandwidth();
+                const w_reduce = (d.infection_rate * width)/max_rate;
                 const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
 
                 if (change >= 0) {
@@ -1218,45 +1233,45 @@ function draw_usage_chart() {
                 } else {
                     width = width - 2*ca_space + change;
                 }
-                if (!min_w[i]) {
-                    min_w[i] = 999999;
-                }
+                width -= w_reduce;
 
-                if (width < min_w[i]) {
-                    min_w[i] = width;
+                if (width < 3) {
+                    width = 3;
                 }
 
                 return width;
             }
         })
         .attr("y", (d, i) => {
-            let y_pos = base_y = y(moment(new Date(d.date)).format('L')) || 0;
+            let y_pos = y(moment(new Date(d.date)).format('L')) || 0;
+            
+            // hide the unexpected cells
+            if (y_pos < 10) {
+                y_pos = - 1000;
+            }
             if (k===3) {
-                return max_y[i]; // y_pos + max_y_change;
+                return y_pos - ca_space/2;
             } else {
+                let height = y.bandwidth();
+                const h_reduce = (d.infection_rate * height)/max_rate;
                 const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
-                if (!max_y[i]) {
-                    max_y[i] = -999999;
-                }
                 
                 if (change >= 0) {
                     y_pos = y_pos + change;
                 } else {
                     y_pos = y_pos + ca_space - change;
                 }
-
-                if (y_pos > max_y[i]) {
-                    max_y[i] = y_pos;
-                }
+                y_pos += h_reduce/2;
 
                 return y_pos;
             }
         })
         .attr("height", (d, i) => {
+            let height = y.bandwidth();
             if (k===3) {
-                return min_h[i]; //y.bandwidth() - max_y_change;
+                return height;
             } else {
-                let height = base_height = y.bandwidth();
+                const h_reduce = (d.infection_rate * height)/max_rate;
                 const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
                 // console.log('k:', k, '  h:', change);
                 if (change >= 0) {
@@ -1264,39 +1279,44 @@ function draw_usage_chart() {
                 } else {
                     height = height - 2*ca_space + change;
                 }
-                if (!min_h[i]) {
-                    min_h[i] = 999999;
-                }
 
-                if (height < min_h[i]) {
-                    min_h[i] = height;
+                height -= h_reduce;
+
+                if (height < 3) {
+                    height = 3;
                 }
                 
                 return height;
             }
         })
-        .attr('fill-opacity', () => {
-            // return k===3 ? 1 : 0.33;
-            return 1;
-        })
+        // .attr('fill-opacity', () => {
+        //     return k===3 ? 1 : 0.33;
+        // })
         .style("mix-blend-mode", "darken")
         .attr("fill", (d) => {
             if (k===3) {
-                return '#888';
+                return 'transparent';
             } else {
-                const u =  d.uncertainty*255*2;
-                const unc = parseInt(u/100);
-                const hex_code = unc.toString(16);
-                return bubble_colors[k].replace('ff', hex_code);
+                const unc =  parseInt(d.uncertainty*255/100); // percentage to FF scale
+                let hex_code = unc.toString(16);
+                if (hex_code.length === 1) {
+                    hex_code = 0 + hex_code;
+                }
+                let colr = bubble_colors[k];
+                const rgb_part = colr.replace(/[(#)(ff)]/g, '');
+                
+                // colr = colr.replace(rgb_part, hex_code);
+
+                return colr;
             }
         })
-        // .attr('stroke', () => {
-        //     const stroke_color = k===3 ? '#121214' : 'none';
-        //     return stroke_color;
-        // })
-        // .attr("stroke-width", 0.1)
+        .attr('stroke', () => {
+            const stroke_color = k===3 ? '#121214' : 'none';
+            return stroke_color;
+        })
+        .attr("stroke-width", question_mode ? 0.1 : 0)
         .append("title")
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty*2)}%`);
+        .text(d => `Uncertainty: ${formatUsage(d.uncertainty)}%`);
     }
 }
 
@@ -2023,7 +2043,7 @@ function draw_bubble_chart(data, params) {
                 if (circle_for === 'question') {
                     show_circle_questions(svg);
                 }
-                add_country_code(circle);
+                add_country_code(circle, undefined, false);
             }
 
             if (!question_circle_mode || question_circle_mode === 'ca' || question_circle_mode === 'ca-static' || question_circle_mode === 'ca-blur') {
@@ -2107,7 +2127,7 @@ function draw_bubble_chart(data, params) {
         
                 if (k === 2) {
                     add_alt_mode(circle, bubble_data[0].deviation, circle_for);
-                    add_country_code(circle);
+                    add_country_code(circle, undefined, false);
                 }
             }
             
@@ -2502,8 +2522,8 @@ function toggle_cross(selector, len) {
     d3.select(selector).style("display", opacity);
 }
 
-function add_country_code(country_cell, show_aber) {
-    country_cell.append("text")
+function add_country_code(country_cell, show_aber, show_all, fill_color) {
+    const text = country_cell.append("text")
         .attr('class', 'country-code')
         .attr("y", 5)
         .attr("x", (d) => {
@@ -2515,14 +2535,18 @@ function add_country_code(country_cell, show_aber) {
         })
         .text(function(d){
             const ratio = d.r*bubble_chart_scale;
-            let label = ratio > 14 ? d.data.code : '';
+            let label = ratio > 14 || show_all ? d.data.code : '';
             return label;
         })
         .attr("font-size", (d) => {
             let size = 10 / bubble_chart_scale;
             return size + 'px';
         })
-        .attr("fill", 'white');
+        .attr("fill", fill_color || 'white');
+
+    if (question_mode) {
+        text.attr('font-weight', 'bold');
+    }
 }
 
 function add_zoom_listener(svg, width, height, selector) {
@@ -2546,7 +2570,7 @@ function add_zoom_listener(svg, width, height, selector) {
                 bubble_chart_scale = event.transform.k;
                 d3.selectAll('.circle-container text').remove();
                 const circles = d3.selectAll('.circle-container');
-                add_country_code(circles, undefined)
+                add_country_code(circles, undefined, false)
             }
         
             // console.log(event.sourceEvent.type, event.transform);

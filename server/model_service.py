@@ -235,7 +235,7 @@ def load_all_data():
         # parse_dates=['date'], 
         header=0
     )
-    prop_df = df[['location', 'iso_code', 'date', 'total_cases', 'new_cases', 'new_deaths', 'icu_patients', 'hosp_patients', 'new_tests', 'new_vaccinations' ]]
+    prop_df = df[['location', 'iso_code', 'date', 'total_cases', 'new_cases', 'new_deaths', 'icu_patients', 'hosp_patients', 'new_tests', 'new_vaccinations', 'population' ]]
     prop_df = prop_df.replace(np.nan, 0)
     return prop_df
 

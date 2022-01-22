@@ -3,7 +3,7 @@ let sel_quest_category;
 let sel_property = 'new_cases';
 let control_mode = 'pan';
 const models = ['mlp', 'cnn', 'lstm', 'arima'];
-const num_props = ['hosp_patients', 'icu_patients', 'new_cases', 'new_deaths', 'new_tests', 'new_vaccinations', 'total_cases'];
+const num_props = ['hosp_patients', 'icu_patients', 'new_cases', 'new_deaths', 'new_tests', 'new_vaccinations', 'total_cases', 'population'];
 let sel_model;
 let country_list_show = false;
 let selected_countries = [];
@@ -12,10 +12,12 @@ let color_or_texture = 'color';
 let mapped_countries = {};
 let color_mappings = {};
 let mapped_all_countries;
+let population_countries = [];
 let question_mode;
 let drill_country;
 const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart', 'World Map'];
 const country_stream_modes = ['Prediction', 'By Properties'];
+let usage_cell_width, usage_cell_height;
 
 window.onload = init;
 
@@ -97,12 +99,20 @@ async function init() {
                 rec = datedItem;
             } else {
                 num_props.forEach(prop => {
-                    rec[prop] += datedItem[prop] || 0;
+                    if (prop === 'population') {
+                        rec[prop] = datedItem[prop] || 0;
+                    } else {
+                        rec[prop] += datedItem[prop] || 0;
+                    }
                 });
             }
         });
         mapped_all_countries[rec.location] = rec;
+
+        population_countries.push(rec);
     }
+
+    population_countries = _.orderBy(population_countries, ['population'], ['desc']);
 
     if (question_mode) {
         show_question();
@@ -117,7 +127,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    sel_chart_type = chart_types[6];
+    sel_chart_type = chart_types[4];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
     .data(chart_types)
