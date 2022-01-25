@@ -17,6 +17,9 @@ const height = 585;
 const question_x = 700; 
 const question_y = 450;
 let cur_section_indx = 0;
+let submitted = false;
+const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
+const session_msg = 'Please conduct a session and click Start';
 
 const question_values = [
     {
@@ -89,14 +92,13 @@ function show_question() {
             .attr("width", width)
             .attr("height", height)
             .attr("viewBox", [0, 0, width, height]);
+        
         svg
         .append("text")
         .text('Submit')
         .attr("x", 655)
         .attr("y", 300)
         .attr('class', 'btn-submit')
-        .attr('stroke', '#121214')
-        .attr("stroke-width", 0.1)
         .attr("font-size", 47)
         .on('mousedown', function (ev) {
             cur_session_user_info.submitted = true;
@@ -106,9 +108,22 @@ function show_question() {
                 answers: JSON.stringify(answers),
                 user_name: 'rashidul'
             },
-            function(data, status, jqXHR) {
+            () => {
+                d3.select('.btn-submit').remove();
+                svg
+                .append("text")
+                .text(`Thank you for your participation.`)
+                .attr("x", 430)
+                .attr("y", 230)
+                .attr("font-size", 35);
                 
-            })
+                svg
+                .append("text")
+                .text(`Your response has been saved. Please contact md313724@dal.ca for any query.`)
+                .attr("x", 220)
+                .attr("y", 300)
+                .attr("font-size", 25);
+            });
         });
     }
 }
@@ -145,7 +160,34 @@ function draw_ca_bubble_questions() {
         return Object.assign({r: item.r}, item.data);
     });
 
-    draw_question(svg, question_data, val_conf.radiis);
+    if (section_session_states['ca-bubble']) {
+        draw_question(svg, question_data, val_conf.radiis);
+    } else {
+
+        svg
+        .append("text")
+        .attr("x", question_x)
+        .attr("y", question_y)
+        .text(session_msg)
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'black');
+
+        svg
+        .append("text")
+        .attr("x", question_x + 200)
+        .attr("y", question_y + 50)
+        .text('Start')
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'blue')
+        .on('mousedown', function (ev) {
+            d3.selectAll('.txt-session').remove();
+            section_session_states['ca-bubble'] = true;
+            draw_question(svg, question_data, val_conf.radiis);
+        });
+    }
+    
 
     function draw_chart(k, leaves) {
         let svg;
@@ -358,7 +400,33 @@ function draw_ca_grid_questions() {
     draw_legend(svg, val_conf, max_radius);
     draw_legend(svg, dev_conf, max_radius);
     
-    draw_question(svg, data, val_conf.radiis);
+    
+    if (section_session_states['ca-grid']) {
+        draw_question(svg, data, val_conf.radiis);
+    } else {
+        svg
+        .append("text")
+        .attr("x", question_x)
+        .attr("y", question_y)
+        .text(session_msg)
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'black');
+
+        svg
+        .append("text")
+        .attr("x", question_x + 200)
+        .attr("y", question_y + 50)
+        .text('Start')
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'blue')
+        .on('mousedown', function (ev) {
+            d3.selectAll('.txt-session').remove();
+            section_session_states['ca-grid'] = true;
+            draw_question(svg, data, val_conf.radiis);
+        });
+    }
 
     function draw_grid(k) {
         const ca_space = 4;
@@ -442,7 +510,7 @@ function draw_ca_grid_questions() {
                     return;
                 }
                 const fill_color = d3.select(this).attr('fill');
-                console.log(vsup_quest_color === fill_color);
+                // console.log(vsup_quest_color === fill_color);
                 show_question(++question_num);
             })
             .append("title")
@@ -708,7 +776,32 @@ function draw_vsup_bubble_questions() {
     // remove pred scales 
     d3.select(g_tags.nodes()[1]).remove();
     
-    draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
+    if (section_session_states['vsup-bubble']) {
+        draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
+    } else {
+        svg
+        .append("text")
+        .attr("x", question_x)
+        .attr("y", question_y)
+        .text(session_msg)
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'black');
+
+        svg
+        .append("text")
+        .attr("x", question_x + 200)
+        .attr("y", question_y + 50)
+        .text('Start')
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'blue')
+        .on('mousedown', function (ev) {
+            d3.selectAll('.txt-session').remove();
+            section_session_states['vsup-bubble'] = true;
+            draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
+        });
+    }
 
     function draw_chart(k, leaves) {
         let svg;
@@ -776,7 +869,7 @@ function draw_vsup_bubble_questions() {
                     answers[question_num] = false;
                 }
 
-                console.log(answers[question_num]);
+                // console.log(answers[question_num]);
 
                 show_question(++question_num);
 
@@ -905,7 +998,7 @@ function draw_vsup_grid_questions() {
                 return;
             }
             const fill_color = d3.select(this).attr('fill');
-            console.log(vsup_quest_color === fill_color);
+            // console.log(vsup_quest_color === fill_color);
             show_question(++question_num);
         });
 
@@ -955,18 +1048,46 @@ function draw_vsup_grid_questions() {
 
     const conf = get_vsup_grid_conf();
     
-    const question = `Question-${question_num}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
-
     const svg_g = svg.append('g');
 
-    svg_g
-    .append("text")
-    .attr("x", question_x-50)
-    .attr("y", question_y)
-    .text(question)
-    .attr("font-size", 22);
+    if (section_session_states['vsup-grid']) {
+        draw_question(svg_g, question_x, question_y, conf);
+    } else {
+        svg_g
+        .append("text")
+        .attr("x", question_x)
+        .attr("y", question_y)
+        .text(session_msg)
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'black');
 
-    transition_question(svg_g, 3000);
+        svg_g
+        .append("text")
+        .attr("x", question_x + 200)
+        .attr("y", question_y + 50)
+        .text('Start')
+        .attr('class', 'txt-session')
+        .attr("font-size", 25)
+        .attr('fill', 'blue')
+        .on('mousedown', function (ev) {
+            d3.selectAll('.txt-session').remove();
+            section_session_states['vsup-grid'] = true;
+            draw_question(svg_g, question_x, question_y, conf);
+        });
+    }
+
+    function draw_question(svg_g, question_x, question_y, conf) {
+        const question = `Question-${question_num}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
+        svg_g
+        .append("text")
+        .attr("x", question_x-50)
+        .attr("y", question_y)
+        .text(question)
+        .attr("font-size", 22);
+
+        transition_question(svg_g, 3000);
+    }
 }
 
 function get_vsup_grid_conf() {
