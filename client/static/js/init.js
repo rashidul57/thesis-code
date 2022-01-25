@@ -117,6 +117,9 @@ async function init() {
 
     if (question_mode) {
         cb_user_info = await $.get("/get-couter-balance");
+        if (typeof cb_user_info === 'string') {
+            cb_user_info = JSON.parse(cb_user_info);
+        }
 
         cb_user_info.forEach(user => {
             if (!user.submitted && !cur_session_user_info) {

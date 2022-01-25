@@ -1,7 +1,7 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 33, sel_country_num;
+let question_num = 1, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 let question_per_sec = 2;
@@ -61,23 +61,23 @@ function show_question() {
     
     const cur_order = cur_session_user_info.orders[cur_section_indx];
 
-    // switch (cur_order) {
-    //     case 1:
-    //     draw_ca_bubble_questions();
-    //     break;
+    switch (cur_order) {
+        case 1:
+        draw_ca_bubble_questions();
+        break;
 
-    //     case 2:
-    //     draw_ca_grid_questions();
-    //     break;
+        case 2:
+        draw_ca_grid_questions();
+        break;
 
-    //     case 3:
-    //     draw_vsup_bubble_questions();
-    //     break;
+        case 3:
+        draw_vsup_bubble_questions();
+        break;
 
-    //     case 4:
-    //     draw_vsup_grid_questions();
-    //     break;
-    // }
+        case 4:
+        draw_vsup_grid_questions();
+        break;
+    }
     if (question_num%8 === 0) {
         cur_section_indx++;
     }
@@ -101,9 +101,12 @@ function show_question() {
         .on('mousedown', function (ev) {
             cur_session_user_info.submitted = true;
 
-            $.post('/save-feedback',   // url
-            {'user_data': cb_user_info }, // data to be submit
-            function(data, status, jqXHR) {// success callback
+            $.post('/save-feedback', {
+                cb_user_data: JSON.stringify(cb_user_info),
+                answers: JSON.stringify(answers),
+                user_name: 'rashidul'
+            },
+            function(data, status, jqXHR) {
                 
             })
         });

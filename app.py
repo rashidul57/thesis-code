@@ -5,7 +5,7 @@ from server import model_service as model_service
 import json
 import cgi
 import sys
-
+import cgi, cgitb
 
 app = flask.Flask(__name__, template_folder='./client/templates', static_folder="./client/static");
 
@@ -65,26 +65,20 @@ def get_counter_balance():
         data = json.load(json_file)
         return jsonify(data)
 
+
 @app.route('/save-feedback', methods=['POST'])
 def save_feedback():
-    print('....')
-    # data = request.form["user_data"].value
-    y = request.form["user_data"]
-    print(str(y), '....')
+    cb_user_data = request.form.get('cb_user_data')
+    answers = request.form.get('answers')
+    user_name = request.form.get('user_name')
 
+    with open('counter-balance.json', 'w+') as outfile:
+        json.dump(cb_user_data, outfile)
 
-    # for key, value in data.items():
-    #     print("received", key, "with value", value)
-
-
-    # with open('counter-balance1.json', 'w+') as outfile:
-    #     json.dump(jsonify(form), outfile)
-
+    with open('answers/' + user_name + '.json', 'w+') as outfile:
+        json.dump(answers, outfile)
 
     return ""
-
-
-
 
 
 app.run()
