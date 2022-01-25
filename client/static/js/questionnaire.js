@@ -64,6 +64,9 @@ function show_question() {
     
     const cur_order = cur_session_user_info.orders[cur_section_indx];
 
+    if (question_num%8 === 0) {
+        cur_section_indx++;
+    }
 
     switch (cur_order) {
         case 1:
@@ -83,9 +86,6 @@ function show_question() {
         break;
     }
 
-    if (question_num%8 === 0) {
-        cur_section_indx++;
-    }
 
     if (question_num === 33) {
         svg = d3.select('.left-chart-container')
