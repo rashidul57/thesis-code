@@ -1080,9 +1080,10 @@ function show_hide_polygons() {
 }
 
 function draw_usage_chart() {
-    let data = [];
+    let num_countries;
     const prop = 'new_cases';
-    let num_countries = 31;
+    let data = [];
+    num_countries = 31;
     let top_countries = _.take(countries, num_countries);
     if (question_mode) {
         const codes = ['Canada', 'Iraq', 'Japan', 'Peru', 'Malaysia'];
@@ -1108,18 +1109,19 @@ function draw_usage_chart() {
             const date = moment(start_date).add('days', i).toDate();
             const ranges = forecast_data[prop][country][sel_model]['ranges'][i];
             const divider = _.max([ranges[0], ranges[1], value]);
-            const uncertainty = Math.abs(Math.abs(ranges[1])-Math.abs(ranges[0]))*100/divider;
+            const deviation = Math.abs(Math.abs(ranges[1])-Math.abs(ranges[0]))*100/divider;
             
-            const rec = Object.assign({date, uncertainty: uncertainty}, c_data);
-            rec.infection_rate = divider*100/rec.population;
+            const rec = Object.assign({date, deviation}, c_data);
+            rec.r = divider*100/rec.population;
             rec[prop] = Number(value || 0);
             rec['new_deaths'] = Number(deaths_preds[i] || 0);
             data.push(rec);
         });
     });
+
     const c_codes = _.uniq(data.map(c => c.iso_code));
     data = _.orderBy(data, [(item) => item.date], ['asc']);
-    const max_rate = _.maxBy(data, 'infection_rate').infection_rate;
+    const max_rate = _.maxBy(data, 'r').r;
 
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
@@ -1161,7 +1163,7 @@ function draw_usage_chart() {
     .call(g => g.select(".domain").remove());
 
     color = () => {
-        let [min, max] = d3.extent(data, d => d.new_deaths);
+        let [min, max] = d3.extent(data, d => d.new_cases);
         if (min < 0) {
           max = Math.max(-min, max);
           return d3.scaleDiverging([-max, 0, max], t => d3.interpolateRdBu(1 - t));
@@ -1182,7 +1184,7 @@ function draw_usage_chart() {
     svg.append("g")
         .call(yAxis);
 
-    draw_layer(3);
+    // draw_layer(3);
 
     for (let k = 0; k < 3; k++) {
         draw_layer(k);
@@ -1192,7 +1194,7 @@ function draw_usage_chart() {
 
 
     function draw_layer(k) {
-        const ca_space = question_mode ? 5 : 2;
+        const ca_space = question_mode ? 3 : 2;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -1206,8 +1208,8 @@ function draw_usage_chart() {
                 return x_pos - ca_space/2;
             } else {
                 let width = x.bandwidth();
-                const w_reduce = (d.infection_rate * width)/max_rate;
-                const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
+                const w_reduce = (d.r * width)/max_rate;
+                const change = get_rect_change('x', k, d.deviation*ca_space/100);
 
                 if (change >= 0) {
                     x_pos = x_pos + change;
@@ -1225,8 +1227,8 @@ function draw_usage_chart() {
             if (k===3) {
                 return width;
             } else {
-                const w_reduce = (d.infection_rate * width)/max_rate;
-                const change = get_rect_change('x', k, d.uncertainty*ca_space/100);
+                const w_reduce = (d.r * width)/max_rate;
+                const change = get_rect_change('x', k, d.deviation*ca_space/100);
 
                 if (change >= 0) {
                     width = width - 2*ca_space - change;
@@ -1253,8 +1255,8 @@ function draw_usage_chart() {
                 return y_pos - ca_space/2;
             } else {
                 let height = y.bandwidth();
-                const h_reduce = (d.infection_rate * height)/max_rate;
-                const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
+                const h_reduce = (d.r * height)/max_rate;
+                const change = get_rect_change('y', k, d.deviation*ca_space/100);
                 
                 if (change >= 0) {
                     y_pos = y_pos + change;
@@ -1271,8 +1273,8 @@ function draw_usage_chart() {
             if (k===3) {
                 return height;
             } else {
-                const h_reduce = (d.infection_rate * height)/max_rate;
-                const change = get_rect_change('y', k, d.uncertainty*ca_space/100);
+                const h_reduce = (d.r * height)/max_rate;
+                const change = get_rect_change('y', k, d.deviation*ca_space/100);
                 // console.log('k:', k, '  h:', change);
                 if (change >= 0) {
                     height = height - 2*ca_space - change;
@@ -1297,7 +1299,7 @@ function draw_usage_chart() {
             if (k===3) {
                 return 'transparent';
             } else {
-                const unc =  parseInt(d.uncertainty*255/100); // percentage to FF scale
+                const unc =  parseInt(d.deviation*255/100); // percentage to FF scale
                 let hex_code = unc.toString(16);
                 if (hex_code.length === 1) {
                     hex_code = 0 + hex_code;
@@ -1316,7 +1318,7 @@ function draw_usage_chart() {
         })
         .attr("stroke-width", question_mode ? 0.1 : 0)
         .append("title")
-        .text(d => `Uncertainty: ${formatUsage(d.uncertainty)}%`);
+        .text(d => `deviation: ${formatUsage(d.deviation)}%`);
     }
 }
 
