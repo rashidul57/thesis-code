@@ -417,5 +417,8 @@ body.questionnaire .vsup-svg .ag-dis-lbl {
   position: absolute;
   margin: 0 0 0 14px;
 }
+body.questionnaire .btn-submit {
+  fill: #8a57ed;
+}
 
 /*# sourceMappingURL=app.css.map */

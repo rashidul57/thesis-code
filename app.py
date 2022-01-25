@@ -1,8 +1,11 @@
 import flask
 import os
-from flask import request, jsonify, render_template
+from flask import request, jsonify, render_template, make_response
 from server import model_service as model_service
 import json
+import cgi
+import sys
+
 
 app = flask.Flask(__name__, template_folder='./client/templates', static_folder="./client/static");
 
@@ -24,8 +27,6 @@ def index_html():
 @app.route('/questionnaire')
 def questionnaire():
     return render_template('questionnaire.html')
-
-
 
 @app.route('/get-forecasts', methods=['GET'])
 def get_forecasts():
@@ -57,6 +58,33 @@ def get_covid_data():
     #     json.dump(json.dumps(data), outfile)
     
     return json_data;
+
+@app.route('/get-couter-balance', methods=['GET'])
+def get_counter_balance():
+    with open('counter-balance.json') as json_file:
+        data = json.load(json_file)
+        return jsonify(data)
+
+@app.route('/save-feedback', methods=['POST'])
+def save_feedback():
+    print('....')
+    # data = request.form["user_data"].value
+    y = request.form["user_data"]
+    print(str(y), '....')
+
+
+    # for key, value in data.items():
+    #     print("received", key, "with value", value)
+
+
+    # with open('counter-balance1.json', 'w+') as outfile:
+    #     json.dump(jsonify(form), outfile)
+
+
+    return ""
+
+
+
 
 
 app.run()

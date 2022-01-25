@@ -503,12 +503,19 @@ body.questionnaire{
             transform: scale(1.80);
             margin: 0 0 0 7px;
         }
+
         .ag-dis-lbl{
             font-size: 25px;
             position: absolute;
             margin: 0 0 0 14px;
         }
     }
+
+    .btn-submit{
+        fill: rgb(138 87 237);
+    }
+
+
 
 
 }

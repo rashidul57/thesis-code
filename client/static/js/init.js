@@ -18,6 +18,7 @@ let drill_country;
 const chart_types = ['Bubble Chart', 'Parallel Coords', 'Horizon Chart', 'Impact Chart', 'Usage Chart', 'Line Chart', 'World Map'];
 const country_stream_modes = ['Prediction', 'By Properties'];
 let usage_cell_width, usage_cell_height;
+let cur_session_user_info, cb_user_info;
 
 window.onload = init;
 
@@ -115,6 +116,13 @@ async function init() {
     population_countries = _.orderBy(population_countries, ['population'], ['desc']);
 
     if (question_mode) {
+        cb_user_info = await $.get("/get-couter-balance");
+
+        cb_user_info.forEach(user => {
+            if (!user.submitted && !cur_session_user_info) {
+                cur_session_user_info = user;
+            }
+        });
         show_question();
     } else {
         load_control_data();
