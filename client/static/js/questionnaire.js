@@ -64,6 +64,7 @@ function show_question() {
     
     const cur_order = cur_session_user_info.orders[cur_section_indx];
 
+
     switch (cur_order) {
         case 1:
         draw_ca_bubble_questions();
@@ -81,6 +82,7 @@ function show_question() {
         draw_vsup_grid_questions();
         break;
     }
+
     if (question_num%8 === 0) {
         cur_section_indx++;
     }
@@ -245,7 +247,7 @@ function draw_ca_bubble_questions() {
                 return get_circle_coord('y', k, d.data.deviation/aberr_div_factor, 0, true);
             })
             .on('mousedown', function (ev, d) {
-                if (ev.which !== 1) {
+                if (ev.which !== 1 || !section_session_states['ca-bubble']) {
                     return;
                 }
 
@@ -254,13 +256,12 @@ function draw_ca_bubble_questions() {
                         answers[question_num] = true;
                     }
                 });
+
                 if (!answers[question_num]) {
                     answers[question_num] = false;
                 }
-                // console.log(answers[question_num]);
 
                 show_question(++question_num);
-
             });
     }
 
@@ -377,11 +378,9 @@ function draw_ca_grid_questions() {
         .attr("height", h).append("g")
         .attr("transform", "translate(50,250)");
     
-
     draw_grid(0);
     draw_grid(1);
     draw_grid(2);
-    
 
     const dev_radiis = Array(dev_groups).fill(55);
     let dev_deviations = data.map(item => item.deviation);
@@ -399,7 +398,6 @@ function draw_ca_grid_questions() {
 
     draw_legend(svg, val_conf, max_radius);
     draw_legend(svg, dev_conf, max_radius);
-    
     
     if (section_session_states['ca-grid']) {
         draw_question(svg, data, val_conf.radiis);
@@ -506,15 +504,16 @@ function draw_ca_grid_questions() {
                 return colr;
             })
             .on('mousedown', function (ev) {
-                if (ev.which !== 1) {
+                if (ev.which !== 1 || !section_session_states['ca-grid']) {
                     return;
                 }
                 const fill_color = d3.select(this).attr('fill');
-                // console.log(vsup_quest_color === fill_color);
+                answers[question_num] = vsup_quest_color === fill_color;
+
                 show_question(++question_num);
             })
             .append("title")
-            .text(d => `deviation: ${(d.deviation)}%`);;
+            .text(d => `deviation: ${(d.deviation)}%`);
 
             function get_bar_width(y, k, d, ca_space) {
                 let width = y.bandwidth() - 1;
@@ -577,7 +576,6 @@ function draw_ca_grid_questions() {
                 add_legend_rect(rect_g, dev_rec, i, k);
             }
         });
-    
     }
 
     function add_legend_rect(rect_g, d, i, k) {
@@ -599,7 +597,6 @@ function draw_ca_grid_questions() {
             .html(legend_caption);
         }
 
-    
         rect_g
             .append('rect')
             .attr("fill", d => bubble_colors[k])
@@ -635,7 +632,6 @@ function draw_ca_grid_questions() {
             .attr("y", function() {
                 let y_pos = leg_top_start;
                 
-
                 const change = get_rect_change('y', k, d.deviation*ca_space/100);
                 if (change >= 0) {
                     y_pos = y_pos + change/2;
@@ -856,7 +852,7 @@ function draw_vsup_bubble_questions() {
                 return get_circle_coord('y', k, d.data.deviation/aberr_div_factor, 0, true);
             })
             .on('mousedown', function (ev, d) {
-                if (ev.which !== 1) {
+                if (ev.which !== 1 || !section_session_states['vsup-bubble']) {
                     return;
                 }
 
@@ -865,11 +861,10 @@ function draw_vsup_bubble_questions() {
                         answers[question_num] = true;
                     }
                 });
+
                 if (!answers[question_num]) {
                     answers[question_num] = false;
                 }
-
-                // console.log(answers[question_num]);
 
                 show_question(++question_num);
 
@@ -994,11 +989,15 @@ function draw_vsup_grid_questions() {
         .attr("height", y.bandwidth())
         .attr("fill", function(d) { return scale(d.r, d.deviation); })
         .on('mousedown', function (ev) {
-            if (ev.which !== 1) {
+            if (ev.which !== 1 || !section_session_states['vsup-grid']) {
                 return;
             }
             const fill_color = d3.select(this).attr('fill');
-            // console.log(vsup_quest_color === fill_color);
+            if (vsup_quest_color === fill_color) {
+                answers[question_num] = true;
+            } else {
+                answers[question_num] = false;
+            }
             show_question(++question_num);
         });
 
@@ -1301,27 +1300,6 @@ function show_nav(svg, x, y, gap, font_size) {
         if (ev.which !== 1) {
             return;
         }
-        
-        // let chkboxes = d3.selectAll('.ag-dis-chk').nodes();
-        // chkboxes.forEach(chk => {
-        //     const el = d3.select(chk);
-        //     const is_checked = el.property('checked');
-        //     if (is_checked) {
-        //         answers[question_num] = el.property('id');
-        //     }
-        // });
-
-        // if (answers[question_num] || empty_pass) {
-        //     show_question(++question_num);
-        // } else {
-        //     svg
-        //     .append("text")
-        //     .text('Please select an option.')
-        //     .attr("x", x-q_left)
-        //     .attr("y", y + 850)
-        //     .attr("font-size", 30)
-        //     .attr("fill", 'red');
-        // }
     });
 }
 
