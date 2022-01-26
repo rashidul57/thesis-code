@@ -10,7 +10,6 @@ let vsup_quest_color;
 const dev_groups = 4;
 const val_groups = 8;
 const radius_reduce_factor = 0.8;
-const aberr_div_factor = 10;
 const width = 650;
 const height = 585;
 
@@ -70,6 +69,7 @@ function show_question() {
         if (question_num%8 === 0) {
             cur_section_indx++;
         }
+        // cur_order = 1;
 
         switch (cur_order) {
             case 1:
@@ -107,7 +107,7 @@ function show_question() {
             .attr("width", 300)
             .attr("height", 75)
             .html(function(d) {
-                return `<input type="text" class='txt-email' id="txt-email">`;
+                return `<input type="text" class='txt-email' placeholder='Email' id="txt-email">`;
             });
 
             d3.select('.txt-email').on('keyup', (ev) => {
@@ -200,7 +200,7 @@ function draw_ca_bubble_questions() {
 
     const dev_radiis = Array(dev_groups).fill(35);
     let dev_deviations = bubble_data.map(item => item.deviation);
-    dev_deviations = _.sortBy(_.uniq(dev_deviations));
+    const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = leaves.map(item => item.r);
     val_radiis = _.sortBy(_.uniq(val_radiis));
@@ -303,10 +303,12 @@ function draw_ca_bubble_questions() {
                 return color;
             })
             .attr("cx", d => {
-                return get_circle_coord('x', k, d.data.deviation/aberr_div_factor, 0, true);
+                const ca_space = get_ca_space(d.data, ordered_devs);
+                return get_circle_coord('x', k, ca_space, 0, true);
             })
             .attr("cy", d => {
-                return get_circle_coord('y', k, d.data.deviation/aberr_div_factor, 0, true);
+                const ca_space = get_ca_space(d.data, ordered_devs);
+                return get_circle_coord('y', k, ca_space, 0, true);
             })
             .on('mousedown', function (ev, d) {
                 if (ev.which !== 1 || !section_session_states['ca-bubble']) {
@@ -354,7 +356,7 @@ function draw_ca_bubble_questions() {
         data.forEach((dev_rec, i) => {
             const circle_g = svg.append('g');
             for(let k = 0; k < 3; k++) {
-                add_legend_circle(circle_g, dev_rec, i, k);
+                add_legend_circle(circle_g, dev_rec, i, k, ordered_devs);
             }
         }); 
     
@@ -441,20 +443,19 @@ function draw_ca_grid_questions() {
         .attr("height", h).append("g")
         .attr("transform", "translate(50,170)");
 
-    let ordered_devs = data.map(item => item.deviation);
-    ordered_devs = _.sortBy(_.uniq(ordered_devs));
-
-    draw_grid(0, ordered_devs);
-    draw_grid(1, ordered_devs);
-    draw_grid(2, ordered_devs);
-
     const dev_radiis = Array(dev_groups).fill(55);
     let dev_deviations = data.map(item => item.deviation);
-    dev_deviations = _.sortBy(_.uniq(dev_deviations));
+    const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = data.map(item => item.r);
     val_radiis = _.sortBy(_.uniq(val_radiis));
     const val_deviations = Array(val_groups).fill(0);
+
+
+    draw_grid(0, dev_deviations);
+    draw_grid(1, dev_deviations);
+    draw_grid(2, dev_deviations);
+
 
     // used for legend drawing
     const dev_conf = {groups: dev_groups, deviations: dev_deviations, radiis: dev_radiis, type: 'ca-legend', legend_caption: 'CA'};
@@ -612,12 +613,6 @@ function draw_ca_grid_questions() {
                 }
                 return height;
             }
-    }
-
-    function get_ca_space(d, ordered_devs) {
-        const dev_indx = ordered_devs.indexOf(d.deviation);
-        const ca_space = (dev_indx + 1) * 3;
-        return ca_space;
     }
 
     function draw_legend(svg, conf, max_radius) {
@@ -807,7 +802,7 @@ function draw_vsup_bubble_questions() {
 
     const dev_radiis = Array(dev_groups).fill(35);
     let dev_deviations = bubble_data.map(item => item.deviation);
-    dev_deviations = _.sortBy(_.uniq(dev_deviations));
+    const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = leaves.map(item => item.r);
     val_radiis = _.sortBy(_.uniq(val_radiis));
@@ -922,10 +917,12 @@ function draw_vsup_bubble_questions() {
             })
             .attr("fill", function(d) { return scale(d.r, d.data.deviation); })
             .attr("cx", d => {
-                return get_circle_coord('x', k, d.data.deviation/aberr_div_factor, 0, true);
+                const ca_space = get_ca_space(d.data, ordered_devs);
+                return get_circle_coord('x', k, ca_space, 0, true);
             })
             .attr("cy", d => {
-                return get_circle_coord('y', k, d.data.deviation/aberr_div_factor, 0, true);
+                const ca_space = get_ca_space(d.data, ordered_devs);
+                return get_circle_coord('y', k, ca_space, 0, true);
             })
             .on('mousedown', function (ev, d) {
                 if (ev.which !== 1 || !section_session_states['vsup-bubble']) {
@@ -974,7 +971,7 @@ function draw_vsup_bubble_questions() {
         data.forEach((dev_rec, i) => {
             const circle_g = svg.append('g');
             for(let k = 0; k < 3; k++) {
-                add_legend_circle(circle_g, dev_rec, i, k);
+                add_legend_circle(circle_g, dev_rec, i, k, ordered_devs);
             }
         });
     
@@ -1232,7 +1229,7 @@ function get_bubble_leaves(bubble_data) {
     return leaves;
 }
 
-function add_legend_circle(circle_g, dev_rec, i, k) {
+function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
             
     const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label} = dev_rec;
     const label_top = 20;
@@ -1255,14 +1252,16 @@ function add_legend_circle(circle_g, dev_rec, i, k) {
         .attr("fill", d => bubble_colors[k])
         .attr('class', 'legend-circle-' + label)
         .attr('cx', () => {
-            let cx = get_circle_coord('x', k, deviation/aberr_div_factor, padding_left, true);
+            const ca_space = get_ca_space({deviation}, ordered_devs);
+            let cx = get_circle_coord('x', k, ca_space, padding_left, true);
             if (type === 'ca-legend') {
                 cx += i*20;
             }
             return cx;
         })
         .attr('cy', () => {
-            let cy = get_circle_coord('y', k, deviation/aberr_div_factor, leg_top_start, true) + 15;
+            const ca_space = get_ca_space({deviation}, ordered_devs);
+            let cy = get_circle_coord('y', k, ca_space, leg_top_start, true) + 15;
             return cy;
         })
         .style("mix-blend-mode", "darken");
@@ -1387,4 +1386,10 @@ function transition_question(svg_g, start_x) {
     .ease(d3.easeLinear)           
     .duration(500)
     .attr("transform", 'translate(0, 0)');
+}
+
+function get_ca_space(d, ordered_devs) {
+    const dev_indx = ordered_devs.indexOf(d.deviation);
+    const ca_space = (dev_indx + 1) * 3;
+    return ca_space;
 }
