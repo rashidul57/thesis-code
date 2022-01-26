@@ -420,5 +420,9 @@ body.questionnaire .vsup-svg .ag-dis-lbl {
 body.questionnaire .btn-submit {
   fill: #8a57ed;
 }
+body.questionnaire .txt-email {
+  line-height: 30px;
+  width: 280px;
+}
 
 /*# sourceMappingURL=app.css.map */

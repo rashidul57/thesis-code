@@ -20,6 +20,7 @@ let cur_section_indx = 0;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'Please conduct a session and click Start';
+let email;
 
 const question_values = [
     {
@@ -57,38 +58,88 @@ const question_values = [
 ];
 
 function show_question() {
-    sel_model = models[0];
+    if (email) {
+        sel_model = models[0];
 
-    d3.select('.drill-models-container').style('display', 'none');
-    d3.selectAll('.left-chart-container svg').remove();
-    
-    const cur_order = cur_session_user_info.orders[cur_section_indx];
+        d3.select('.drill-models-container').style('display', 'none');
+        d3.selectAll('.left-chart-container svg').remove();
+        
+        const cur_order = cur_session_user_info.orders[cur_section_indx];
 
-    if (question_num%8 === 0) {
-        cur_section_indx++;
+        if (question_num%8 === 0) {
+            cur_section_indx++;
+        }
+
+        switch (cur_order) {
+            case 1:
+            draw_ca_bubble_questions();
+            break;
+
+            case 2:
+            draw_ca_grid_questions();
+            break;
+
+            case 3:
+            draw_vsup_bubble_questions();
+            break;
+
+            case 4:
+            draw_vsup_grid_questions();
+            break;
+        }
+        show_submission_info();
+
+    } else {
+        let x = 575, y = 300;
+        const svg = d3.select('.left-chart-container')
+            .append("svg")
+            .attr('class', 'email-panel')
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height]);
+
+        svg
+            .append("foreignObject")
+            .attr("x", x)
+            .attr("y", y)
+            .attr("font-size", 45)
+            .attr("width", 300)
+            .attr("height", 75)
+            .html(function(d) {
+                return `<input type="text" class='txt-email' id="txt-email">`;
+            });
+
+        svg
+            .append("text")
+            .text('Next')
+            .attr("x", x + 295)
+            .attr("y", y + 55)
+            .attr("font-size", 30)
+            .attr("fill", 'black')
+            .on('mousedown', function (ev) {
+                email = d3.select('.txt-email').property("value");
+                const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+
+                if (pattern.test(email)) {
+                    d3.select('.email-panel').remove();
+                    show_question();
+                } else {
+                    svg
+                    .append("text")
+                    .text('Invalid email')
+                    .attr("x", x)
+                    .attr("y", y + 80)
+                    .attr("font-size", 14)
+                    .attr("fill", 'red');
+                }
+            });
+        
     }
+}
 
-    switch (cur_order) {
-        case 1:
-        draw_ca_bubble_questions();
-        break;
-
-        case 2:
-        draw_ca_grid_questions();
-        break;
-
-        case 3:
-        draw_vsup_bubble_questions();
-        break;
-
-        case 4:
-        draw_vsup_grid_questions();
-        break;
-    }
-
-
+function show_submission_info() {
     if (question_num === 33) {
-        svg = d3.select('.left-chart-container')
+        const svg = d3.select('.left-chart-container')
             .append("svg")
             .attr('class', 'bubble-svg')
             .attr("width", width)
@@ -108,7 +159,7 @@ function show_question() {
             $.post('/save-feedback', {
                 cb_user_data: JSON.stringify(cb_user_info),
                 answers: JSON.stringify(answers),
-                user_name: 'rashidul'
+                email
             },
             () => {
                 d3.select('.btn-submit').remove();
@@ -129,7 +180,6 @@ function show_question() {
         });
     }
 }
-
 
 function draw_ca_bubble_questions() {
 

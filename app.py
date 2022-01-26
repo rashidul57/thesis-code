@@ -70,15 +70,15 @@ def get_counter_balance():
 def save_feedback():
     cb_user_data = request.form.get('cb_user_data')
     answers = request.form.get('answers')
-    user_name = request.form.get('user_name')
+    email = request.form.get('email')
 
     with open('counter-balance.json', 'w+') as outfile:
         json.dump(cb_user_data, outfile)
 
-    with open('answers/' + user_name + '.json', 'w+') as outfile:
+    with open('answers/' + email + '.json', 'w+') as outfile:
         json.dump(answers, outfile)
 
-    return ""
+    return jsonify({'success': True})
 
 
 app.run()
