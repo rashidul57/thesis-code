@@ -59,7 +59,7 @@ def get_covid_data():
     
     return json_data;
 
-@app.route('/get-couter-balance', methods=['GET'])
+@app.route('/get-counter-balance', methods=['GET'])
 def get_counter_balance():
     with open('counter-balance.json') as json_file:
         data = json.load(json_file)

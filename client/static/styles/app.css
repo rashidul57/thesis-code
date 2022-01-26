@@ -423,6 +423,7 @@ body.questionnaire .btn-submit {
 body.questionnaire .txt-email {
   line-height: 30px;
   width: 280px;
+  padding-left: 5px;
 }
 
 /*# sourceMappingURL=app.css.map */

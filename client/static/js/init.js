@@ -30,10 +30,10 @@ window.onload = init;
 async function init() {
     question_mode = location.href.indexOf('question') > -1 ? true : false;
 
-    const forecasts = await $.get("/get-forecasts");
+    const forecasts = await $.get("./get-forecasts");
     forecast_data = JSON.parse(forecasts);
 
-    const arima_forecasts = await $.get("/get-arima-forecasts");
+    const arima_forecasts = await $.get("./get-arima-forecasts");
     arima_data = JSON.parse(arima_forecasts);
 
     props = ['new_cases', 'new_deaths', 'new_tests', 'new_vaccinations']
@@ -74,7 +74,7 @@ async function init() {
     });
 
     const excl_regions = ['World', 'Asia', 'European Union', 'Europe', 'South America', 'North America', 'High income', 'Upper middle income', 'Lower middle income'];
-    let cov_data = await $.get("/get-covid-data");
+    let cov_data = await $.get("./get-covid-data");
     cov_data = JSON.parse(cov_data);
     const columns = cov_data.columns;
 
@@ -116,7 +116,7 @@ async function init() {
     population_countries = _.orderBy(population_countries, ['population'], ['desc']);
 
     if (question_mode) {
-        cb_user_info = await $.get("/get-couter-balance");
+        cb_user_info = await $.get("/get-counter-balance");
         if (typeof cb_user_info === 'string') {
             cb_user_info = JSON.parse(cb_user_info);
         }

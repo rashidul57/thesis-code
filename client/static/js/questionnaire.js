@@ -21,6 +21,7 @@ let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'Please conduct a session and click Start';
 let email;
+// let email = 'mrashidbd2000@gmail.com';
 
 const question_values = [
     {
@@ -64,7 +65,7 @@ function show_question() {
         d3.select('.drill-models-container').style('display', 'none');
         d3.selectAll('.left-chart-container svg').remove();
         
-        const cur_order = cur_session_user_info.orders[cur_section_indx];
+        let cur_order = cur_session_user_info.orders[cur_section_indx];
 
         if (question_num%8 === 0) {
             cur_section_indx++;
@@ -109,6 +110,12 @@ function show_question() {
                 return `<input type="text" class='txt-email' id="txt-email">`;
             });
 
+            d3.select('.txt-email').on('keyup', (ev) => {
+                if (ev.keyCode === 13) {
+                    validate_email();
+                }
+            });
+
         svg
             .append("text")
             .text('Next')
@@ -117,22 +124,27 @@ function show_question() {
             .attr("font-size", 30)
             .attr("fill", 'black')
             .on('mousedown', function (ev) {
-                email = d3.select('.txt-email').property("value");
-                const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-
-                if (pattern.test(email)) {
-                    d3.select('.email-panel').remove();
-                    show_question();
-                } else {
-                    svg
-                    .append("text")
-                    .text('Invalid email')
-                    .attr("x", x)
-                    .attr("y", y + 80)
-                    .attr("font-size", 14)
-                    .attr("fill", 'red');
-                }
+                validate_email();
             });
+
+
+        function validate_email() {
+            email = d3.select('.txt-email').property("value");
+            const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+
+            if (pattern.test(email)) {
+                d3.select('.email-panel').remove();
+                show_question();
+            } else {
+                svg
+                .append("text")
+                .text('Invalid email')
+                .attr("x", x)
+                .attr("y", y + 80)
+                .attr("font-size", 14)
+                .attr("fill", 'red');
+            }
+        }
         
     }
 }
@@ -156,7 +168,7 @@ function show_submission_info() {
         .on('mousedown', function (ev) {
             cur_session_user_info.submitted = true;
 
-            $.post('/save-feedback', {
+            $.post('./save-feedback', {
                 cb_user_data: JSON.stringify(cb_user_info),
                 answers: JSON.stringify(answers),
                 email
@@ -387,7 +399,8 @@ function draw_ca_grid_questions() {
         item.position_indx = parseInt((indx)/cell_per_row);
         return item;
     });
-    const max_rate = _.maxBy(data, 'r').r;
+
+    const max_radius = _.maxBy(data, 'r').r;
     
     d3.select('.vsup-svg').remove();
 
@@ -426,11 +439,14 @@ function draw_ca_grid_questions() {
     var heatmap = svg
         .attr("width", w)
         .attr("height", h).append("g")
-        .attr("transform", "translate(50,250)");
-    
-    draw_grid(0);
-    draw_grid(1);
-    draw_grid(2);
+        .attr("transform", "translate(50,170)");
+
+    let ordered_devs = data.map(item => item.deviation);
+    ordered_devs = _.sortBy(_.uniq(ordered_devs));
+
+    draw_grid(0, ordered_devs);
+    draw_grid(1, ordered_devs);
+    draw_grid(2, ordered_devs);
 
     const dev_radiis = Array(dev_groups).fill(55);
     let dev_deviations = data.map(item => item.deviation);
@@ -443,8 +459,6 @@ function draw_ca_grid_questions() {
     // used for legend drawing
     const dev_conf = {groups: dev_groups, deviations: dev_deviations, radiis: dev_radiis, type: 'ca-legend', legend_caption: 'CA'};
     const val_conf = {groups: val_groups, deviations: val_deviations, radiis: val_radiis,  type: 'value-legend', legend_caption: 'Value'};
-
-    const max_radius = _.max(val_conf.radiis);
 
     draw_legend(svg, val_conf, max_radius);
     draw_legend(svg, dev_conf, max_radius);
@@ -476,8 +490,8 @@ function draw_ca_grid_questions() {
         });
     }
 
-    function draw_grid(k) {
-        const ca_space = 4;
+    function draw_grid(k, ordered_devs) {
+        let ca_space;
 
         heatmap.append("g")
             .selectAll("rect")
@@ -488,16 +502,17 @@ function draw_ca_grid_questions() {
                 return 'rect-' + i;
             })
             .attr("x", function(d, i) {
-                let x_pos = x_base = i%cell_per_row;
+                let x_pos = i%cell_per_row;
                 const width = y.bandwidth() - 1;
                 x_pos = x_pos*width;
-
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                ca_space = get_ca_space(d, ordered_devs);
+                
+                const change = get_rect_change('x', k, ca_space);
                 
                 if (change >= 0) {
-                    x_pos = x_pos + change;
+                    x_pos = x_pos + change/2;
                 } else {
-                    x_pos = x_pos + ca_space - change;
+                    x_pos = x_pos + ca_space - change/2;
                 }
 
                 const bar_width = get_bar_width(y, k, d, ca_space);
@@ -510,17 +525,19 @@ function draw_ca_grid_questions() {
                 return x_pos;
             })
             .attr("width", (d, i) => {
+                ca_space = get_ca_space(d, ordered_devs);
                 const width = get_bar_width(y, k, d, ca_space);
                 return width;
             })
             .attr("y", function(d, i) {
                 let y_pos = y_base = y(d.position_indx);
                 const height = y.bandwidth() - 1;
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                ca_space = get_ca_space(d, ordered_devs);
+                const change = get_rect_change('y', k, ca_space);
                 if (change >= 0) {
-                    y_pos = y_pos + change;
+                    y_pos = y_pos + change/2;
                 } else {
-                    y_pos = y_pos + ca_space - change;
+                    y_pos = y_pos + ca_space - change/2;
                 }
 
                 const bar_height = get_bar_height(y, k, d, ca_space);
@@ -532,6 +549,7 @@ function draw_ca_grid_questions() {
                 return y_pos;
             })
             .attr("height", (d, i) => {
+                ca_space = get_ca_space(d, ordered_devs);
                 const height = get_bar_height(y, k, d, ca_space);
                 if (height < 5) {
                     height = 5;
@@ -567,13 +585,13 @@ function draw_ca_grid_questions() {
 
             function get_bar_width(y, k, d, ca_space) {
                 let width = y.bandwidth() - 1;
-                width = (d.r * width)/max_rate;
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                width = (d.r * width)/max_radius;
+                const change = get_rect_change('x', k, ca_space);
 
                 if (change >= 0) {
-                    width = width - 2*ca_space - change;
+                    width = width - ca_space - change/2;
                 } else {
-                    width = width - 2*ca_space + change;
+                    width = width - ca_space + change/2;
                 }
                 if (width < 5) {
                     width = 5;
@@ -583,17 +601,23 @@ function draw_ca_grid_questions() {
 
             function get_bar_height(y, k, d, ca_space) {
                 let height = y.bandwidth()-1;
-                height = (d.r * height)/max_rate;
+                height = (d.r * height)/max_radius;
                 
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                const change = get_rect_change('y', k, ca_space);
                 // console.log('k:', k, '  h:', change);
                 if (change >= 0) {
-                    height = height - 2*ca_space - change;
+                    height = height - ca_space - change/2;
                 } else {
-                    height = height - 2*ca_space + change;
+                    height = height - ca_space + change/2;
                 }
                 return height;
             }
+    }
+
+    function get_ca_space(d, ordered_devs) {
+        const dev_indx = ordered_devs.indexOf(d.deviation);
+        const ca_space = (dev_indx + 1) * 3;
+        return ca_space;
     }
 
     function draw_legend(svg, conf, max_radius) {
@@ -632,7 +656,7 @@ function draw_ca_grid_questions() {
             
         const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, max_radius} = d;
         const label_top = 20;
-        const ca_space = 4;
+        let ca_space;
     
         if (i === 0 && k === 0) {
             let dx = legend_left_start;
@@ -653,7 +677,8 @@ function draw_ca_grid_questions() {
             .attr('class', 'legend-circle-' + label)
             .attr("x", function() {
                 let x_pos = 0;
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                ca_space = get_ca_space(d, ordered_devs);
+                const change = get_rect_change('x', k, ca_space);
 
                 if (change >= 0) {
                     x_pos = x_pos + change;
@@ -665,13 +690,14 @@ function draw_ca_grid_questions() {
             })
             .attr("width", () => {
                 let width = y.bandwidth() - 1;
-                width = (d.radius * width)/max_rate;
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                width = (d.radius * width)/max_radius;
+                ca_space = get_ca_space(d, ordered_devs);
+                const change = get_rect_change('x', k, ca_space);
 
                 if (change >= 0) {
-                    width = width - 2*ca_space - change;
+                    width = width - ca_space - change;
                 } else {
-                    width = width - 2*ca_space + change;
+                    width = width - ca_space + change;
                 }
                 if (width < 5) {
                     width = 5;
@@ -681,8 +707,8 @@ function draw_ca_grid_questions() {
             })
             .attr("y", function() {
                 let y_pos = leg_top_start;
-                
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                ca_space = get_ca_space(d, ordered_devs);
+                const change = get_rect_change('y', k, ca_space);
                 if (change >= 0) {
                     y_pos = y_pos + change/2;
                 } else {
@@ -694,13 +720,13 @@ function draw_ca_grid_questions() {
             })
             .attr("height", () => {
                 let height = y.bandwidth()-1;
-                height = (d.radius * height)/max_rate;
-                
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                height = (d.radius * height)/max_radius;
+                ca_space = get_ca_space(d, ordered_devs);
+                const change = get_rect_change('y', k, ca_space);
                 if (change >= 0) {
-                    height = height - 2*ca_space - change;
+                    height = height - ca_space - change;
                 } else {
-                    height = height - 2*ca_space + change;
+                    height = height - ca_space + change;
                 }
                 if (height < 5) {
                     height = 5;
@@ -828,7 +854,7 @@ function draw_vsup_bubble_questions() {
         svg
         .append("text")
         .attr("x", question_x)
-        .attr("y", question_y)
+        .attr("y", question_y + 50)
         .text(session_msg)
         .attr('class', 'txt-session')
         .attr("font-size", 25)
@@ -837,7 +863,7 @@ function draw_vsup_bubble_questions() {
         svg
         .append("text")
         .attr("x", question_x + 200)
-        .attr("y", question_y + 50)
+        .attr("y", question_y + 100)
         .text('Start')
         .attr('class', 'txt-session')
         .attr("font-size", 25)

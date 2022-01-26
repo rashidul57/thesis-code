@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: "Open Sans", sans-serif;
+            overflow: hidden;
+            margin: 2px;
+        }
+        
+        .grid-chart{
+            overflow: hidden;
+            border: 1px solid black;
+            height: 750px;
+            position: relative;
+            margin: 0 3px;
+            width: 1500px;
+        }
+        .grid-svg{
+            overflow: visible;
+        }
+
+
+    
+		
+        /* Please play with these two styles */
+        .grid-container rect{
+            mix-blend-mode: darken;
+        }
+        .grid-container rect{
+            fill-opacity: 1;
+        }
+		.redColor
+    </style>
+</head>
+<body>
+<div class="grid-chart">
+    <svg class="grid-svg" width="100" height="100" viewBox="0,0,100,100">
+        /* Basic CA with RGB */
+        <g class="grid-container circle-container-India" transform="translate(221,131)">
+            <rect class="rect-2" x="266.1857397197876" width="47.628520560424775" y="38.44573971978761" height="44.78852056042477" fill="#64ffff" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+            <rect class="rect-2" x="273.8750079399093" width="45.16900841367697" y="40.315739719787615" height="46.20852056042477" fill="#ff95ff" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+            <rect class="rect-2" x="269.8750079399093" width="45.16900841367697" y="40.315739719787615" height="46.20852056042477" fill="#ffffB4" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+        </g>
+
+        /* Rect of VSUP color*/
+        <g class="grid-container circle-container-India" transform="translate(221,131)">
+            <rect class="rect-2" x="366.1857397197876" width="47.628520560424775" y="38.44573971978761" height="44.78852056042477" fill="rgb(132, 212, 75)"><title>deviation: 71%</title></rect>
+        </g>
+
+        /* Result of CA+VSUP color */
+        <g class="grid-container circle-container-India" transform="translate(221,131)">
+            <rect class="rect-2" x="316.1857397197876" width="47.628520560424775" y="138.44573971978761" height="44.78852056042477" fill="#64ffff" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+            <rect class="rect-2" x="323.8750079399093" width="45.16900841367697" y="140.315739719787615" height="46.20852056042477" fill="#ff95ff" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+            <rect class="rect-2" x="319.8750079399093" width="45.16900841367697" y="140.315739719787615" height="46.20852056042477" fill="#ffffB4" style="mix-blend-mode: darken;"><title>deviation: 71%</title></rect>
+
+            <rect class="rect-2" x="319.8750079399093" width="45.16900841367697" y="140.315739719787615" height="46.20852056042477" fill="rgb(132, 212, 75)"><title>deviation: 71%</title></rect>
+        </g>
+
+    </svg>
+</div>
+</body>
+</html>
