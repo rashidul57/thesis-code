@@ -1730,35 +1730,6 @@ function draw_impact_chart(pred_data, model='mlp') {
         });
 }
 
-function get_rect_change(axis, rgb_indx, uncertainty) {
-    let change;
-    if (axis === 'x') {
-        switch (rgb_indx) {
-            case 0:
-            change = 0;
-            break;
-            case 1:
-            change = uncertainty * (-Math.sqrt(3)/2);
-            break;
-            case 2:
-            change = uncertainty * (Math.sqrt(3)/2);
-            break;
-        }
-    } else {
-        switch (rgb_indx) {
-            case 0:
-            change = uncertainty;
-            break;
-            case 1:
-            change = uncertainty * (-1)/2;
-            break;
-            case 2:
-            change = uncertainty * (-1)/2;
-            break;
-        }
-    }
-    return change;
-}
 
 function draw_bubble_chart(data, params) {
     const {ques_mode_indx, question_circle_mode, model='mlp', percents, circle_for} = params || {};
@@ -2321,6 +2292,37 @@ function get_circle_coord(axis, rgb_indx, deviation, init_val, show_aber) {
         }
     }
     return coord;
+}
+
+
+function get_rect_change(axis, rgb_indx, uncertainty) {
+    let change;
+    if (axis === 'x') {
+        switch (rgb_indx) {
+            case 0:
+            change = 0;
+            break;
+            case 1:
+            change = uncertainty * (-Math.sqrt(3)/2);
+            break;
+            case 2:
+            change = uncertainty * (Math.sqrt(3)/2);
+            break;
+        }
+    } else {
+        switch (rgb_indx) {
+            case 0:
+            change = uncertainty;
+            break;
+            case 1:
+            change = uncertainty * (-1)/2;
+            break;
+            case 2:
+            change = uncertainty * (-1)/2;
+            break;
+        }
+    }
+    return change;
 }
 
 function prepare_bubble_data(data, model) {
