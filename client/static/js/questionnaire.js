@@ -118,7 +118,7 @@ function show_question() {
             .attr("width", 300)
             .attr("height", 75)
             .html(function(d) {
-                return `<input type="text" class='txt-email' placeholder='Email' id="txt-email">`;
+                return `<input type="text" class='txt-email' placeholder='Enter Email' id="txt-email">`;
             });
 
             d3.select('.txt-email').on('keyup', (ev) => {
@@ -131,7 +131,7 @@ function show_question() {
             .append("text")
             .text('Next')
             .attr("x", x + 295)
-            .attr("y", y + 55)
+            .attr("y", y + 50)
             .attr("font-size", 30)
             .attr("fill", 'black')
             .on('mousedown', function (ev) {
