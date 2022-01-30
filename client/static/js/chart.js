@@ -1209,7 +1209,7 @@ function draw_usage_chart() {
             } else {
                 let width = x.bandwidth();
                 const w_reduce = (d.r * width)/max_rate;
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                const change = get_rect_coord_change('x', k, d.deviation*ca_space/100);
 
                 if (change >= 0) {
                     x_pos = x_pos + change;
@@ -1228,7 +1228,7 @@ function draw_usage_chart() {
                 return width;
             } else {
                 const w_reduce = (d.r * width)/max_rate;
-                const change = get_rect_change('x', k, d.deviation*ca_space/100);
+                const change = get_rect_coord_change('x', k, d.deviation*ca_space/100);
 
                 if (change >= 0) {
                     width = width - 2*ca_space - change;
@@ -1256,7 +1256,7 @@ function draw_usage_chart() {
             } else {
                 let height = y.bandwidth();
                 const h_reduce = (d.r * height)/max_rate;
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                const change = get_rect_coord_change('y', k, d.deviation*ca_space/100);
                 
                 if (change >= 0) {
                     y_pos = y_pos + change;
@@ -1274,7 +1274,7 @@ function draw_usage_chart() {
                 return height;
             } else {
                 const h_reduce = (d.r * height)/max_rate;
-                const change = get_rect_change('y', k, d.deviation*ca_space/100);
+                const change = get_rect_coord_change('y', k, d.deviation*ca_space/100);
                 // console.log('k:', k, '  h:', change);
                 if (change >= 0) {
                     height = height - 2*ca_space - change;
@@ -1713,8 +1713,8 @@ function draw_impact_chart(pred_data, model='mlp') {
             
             for (let k = 0; k < 3; k++) {
                 const factor = 3.5;
-                const change_x = get_rect_change('x', k, d*w/(factor*100));
-                const change_y = get_rect_change('y', k, d*h/(factor*100));
+                const change_x = get_rect_coord_change('x', k, d*w/(factor*100));
+                const change_y = get_rect_coord_change('y', k, d*h/(factor*100));
 
                 row_g
                     .append("circle")
@@ -2295,7 +2295,7 @@ function get_circle_coord(axis, rgb_indx, deviation, init_val, show_aber) {
 }
 
 
-function get_rect_change(axis, rgb_indx, uncertainty) {
+function get_rect_coord_change(axis, rgb_indx, uncertainty) {
     let change;
     if (axis === 'x') {
         switch (rgb_indx) {

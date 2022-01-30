@@ -22,16 +22,17 @@ const session_msg = 'Please conduct a session and click Start';
 let email;
 // let email = 'mrashidbd2000@gmail.com';
 
-const vsup_colors = {
-    1: 'rgb(103, 147, 169)',
+const vsup_top_colors = {
+    1: 'rgb(72, 24, 106)',
     2: 'rgb(66, 64, 134)',
     3: 'rgb(51, 99, 141)',
     4: 'rgb(38, 130, 142)',
     5: 'rgb(31, 160, 136)',
     6: 'rgb(63, 188, 115)',
     7: 'rgb(132, 212, 75)',
-    8: 'rgb(109, 195, 158)'
+    8: 'rgb(216, 226, 25)'
 };
+
 
 const question_values = [
     {
@@ -469,13 +470,13 @@ function draw_ca_grid_questions() {
     const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = data.map(item => item.r);
-    val_radiis = _.sortBy(_.uniq(val_radiis));
+    const ordered_values = val_radiis = _.sortBy(_.uniq(val_radiis));
     const val_deviations = Array(val_groups).fill(0);
 
     
-    draw_grid(0, dev_deviations);
-    draw_grid(1, dev_deviations);
-    draw_grid(2, dev_deviations);
+    draw_grid(0, dev_deviations, ordered_values);
+    draw_grid(1, dev_deviations, ordered_values);
+    draw_grid(2, dev_deviations, ordered_values);
 
 
     // used for legend drawing
@@ -519,7 +520,7 @@ function draw_ca_grid_questions() {
         });
     }
 
-    function draw_grid(k, ordered_devs) {
+    function draw_grid(k, ordered_devs, ordered_values) {
         let ca_space;
 
         heatmap.append("g")
@@ -536,7 +537,7 @@ function draw_ca_grid_questions() {
                 x_pos = x_pos*width;
                 ca_space = get_ca_space(d, ordered_devs);
                 
-                const change = get_rect_change('x', k, ca_space);
+                const change = get_rect_coord_change('x', k, ca_space);
                 x_pos = x_pos + ca_space + change;
 
                 const bar_width = get_bar_width(x, k, d, ca_space);
@@ -553,7 +554,7 @@ function draw_ca_grid_questions() {
                 let y_pos = y_base = y(d.position_indx) + 3*i;
                 const height = y.bandwidth() - 1;
                 ca_space = get_ca_space(d, ordered_devs);
-                const change = get_rect_change('y', k, ca_space);
+                const change = get_rect_coord_change('y', k, ca_space);
                 y_pos = y_pos + ca_space + change;
 
                 const bar_height = get_bar_height(y, k, d, ca_space);
@@ -572,36 +573,7 @@ function draw_ca_grid_questions() {
             })
             .style("mix-blend-mode", "darken")
             .attr("fill", (d) => {
-                // const unc =  parseInt(d.deviation*255/100); // percentage to FF scale
-                // let hex_code = unc.toString(16);
-                // if (hex_code.length === 1) {
-                //     hex_code = 0 + hex_code;
-                // }
-
-                // const dev_indx = get_dev_index(d, ordered_devs);
-                // let vsup_colr = vsup_colors[dev_indx+1];
-                // const col_base = vsup_colr.replace(/(rgb)|\s|\(|\)/g, '').split(',')[k];
-                // let colr;
-                // switch (k) {
-                //     case 0:
-                //     colr = 'rgb(' + col_base + ',255,255)';
-                //     break;
-                    
-                //     case 1:
-                //     colr = 'rgb(255,' + col_base + ',255)';
-                //     break;
-
-                //     case 2:
-                //     colr = 'rgb(255,255,' + col_base + ')';
-                //     break;
-                // }
-                // const colr = vsup_colr[k]
-                
-                // vsup_colors[]
-                // const rgb_part = colr.replace(/[(#)(ff)]/g, '');
-                // colr = colr.replace(rgb_part, hex_code);
-                
-                let colr = bubble_colors[k];
+                const colr = get_top_vsup_color(k, d, ordered_values);
                 return colr;
             })
             .on('mousedown', function (ev) {
@@ -621,7 +593,7 @@ function draw_ca_grid_questions() {
     function get_bar_width(x, k, d, ca_space) {
         let width = x.bandwidth() - 1;
         width = (d.r * width)/max_radius;
-        const change = get_rect_change('x', k, ca_space);
+        const change = get_rect_coord_change('x', k, ca_space);
 
         if (change >= 0) {
             width = width - ca_space - change/2;
@@ -636,7 +608,7 @@ function draw_ca_grid_questions() {
         let height = y.bandwidth()-1;
         height = (d.r * height)/max_radius;
         
-        const change = get_rect_change('y', k, ca_space);
+        const change = get_rect_coord_change('y', k, ca_space);
 
         if (change >= 0) {
             height = height - ca_space - change/2;
@@ -650,7 +622,7 @@ function draw_ca_grid_questions() {
         const {groups, type, radiis, deviations, legend_caption} = conf;
 
         let data = [];
-        let legend_left_start = 600;
+        let legend_left_start = 500;
         let leg_top_start = 40;
 
         if (type === 'ca-legend') {
@@ -661,32 +633,31 @@ function draw_ca_grid_questions() {
         let padding_left = legend_left_start + 35;
 
         for (let k = 0; k < groups; k++) {
-            const radius = radiis[k];
-            padding_left += 2 * radius + 10;
+            const radius = 55;
+            padding_left += 2 * radius ;
             const deviation = deviations[k];
-            let label, color;
+            const rec = {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, max_radius};
+            let label;
             if (type === 'value-legend') {
-                label = radius;
-                // color = vsup_colors[k+1];
+                label = radiis[k];
+                rec.r = radiis[k];
             } else {
                 label = deviation;
             }
-
-            label = parseInt(label).toString();
-            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, max_radius});
+            rec.label = parseInt(label).toString();
+            data.push(rec);
         }
     
         // Draw dev-group circles
         data.forEach((dev_rec, i) => {
             const rect_g = svg.append('g');
-            // let rect_count = type === 'value-legend' ? 1 : 3;
             for(let k = 0; k < 3; k++) {
-                add_legend_rect(rect_g, dev_rec, i, k, x, y);
+                add_legend_rect(rect_g, dev_rec, i, k, x, y, radiis);
             }
         });
     }
 
-    function add_legend_rect(rect_g, d, i, k, x, y) {
+    function add_legend_rect(rect_g, d, i, k, x, y, ordered_radiis) {
             
         const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, max_radius} = d;
         const label_top = 20;
@@ -698,7 +669,7 @@ function draw_ca_grid_questions() {
             if (type === 'ca-legend') {
                 dx = legend_left_start + 40;
             } else {
-                dx = legend_left_start - 10;
+                dx = legend_left_start + 20;
             }
             rect_g
             .append('text')
@@ -716,7 +687,7 @@ function draw_ca_grid_questions() {
                 x_pos = x_pos*width;
                 ca_space = get_ca_space(d, ordered_devs);
                 
-                const change = get_rect_change('x', k, ca_space);
+                const change = get_rect_coord_change('x', k, ca_space);
                 x_pos = x_pos + ca_space + change;
 
                 const bar_width = get_bar_width(x, k, {r: d.radius}, ca_space);
@@ -734,7 +705,7 @@ function draw_ca_grid_questions() {
             .attr("y", function() {
                 let y_pos = leg_top_start;
                 ca_space = get_ca_space(d, ordered_devs);
-                const change = get_rect_change('y', k, ca_space);
+                const change = get_rect_coord_change('y', k, ca_space);
 
                 y_pos = y_pos + ca_space + change;
 
@@ -751,18 +722,12 @@ function draw_ca_grid_questions() {
                 return "darken";
             })
             .attr("fill", () => {
-                // const unc =  parseInt(d.deviation*255/100); // percentage to FF scale
-                // let hex_code = unc.toString(16);
-                // if (hex_code.length === 1) {
-                //     hex_code = 0 + hex_code;
-                // }
-                let colr = bubble_colors[k];
-                // const rgb_part = colr.replace(/[(#)(ff)]/g, '');
-                
-                // colr = colr.replace(rgb_part, hex_code);
-
-                // const colr = color || bubble_colors[k];
-
+                let colr;
+                if (type === 'ca-legend') {
+                    colr = bubble_colors[k];
+                } else {
+                    colr = get_top_vsup_color(k, d, ordered_radiis);
+                }
                 return colr;
             });
     
@@ -1184,7 +1149,18 @@ function draw_vsup_grid_questions() {
 function get_vsup_grid_conf() {
     let uncertainty, value;
     const indx = question_num%8;
-    vsup_quest_color = vsup_colors[indx];
+    const question_colors = {
+        1: 'rgb(103, 147, 169)',
+        2: 'rgb(66, 64, 134)',
+        3: 'rgb(51, 99, 141)',
+        4: 'rgb(38, 130, 142)',
+        5: 'rgb(31, 160, 136)',
+        6: 'rgb(63, 188, 115)',
+        7: 'rgb(132, 212, 75)',
+        8: 'rgb(109, 195, 158)'
+    };
+    
+    vsup_quest_color = question_colors[indx];
     switch (indx) {
         case 1:
         uncertainty = 25;
@@ -1409,4 +1385,25 @@ function get_ca_space(d, ordered_devs) {
 
 function get_dev_index(d, ordered_devs) {
     return ordered_devs.indexOf(d.deviation);
+}
+
+function get_top_vsup_color(k, d, ordered_values) {
+    const dev_indx = _.indexOf(ordered_values, d.r);
+    let vsup_colr = vsup_top_colors[dev_indx+1];
+    const col_base = vsup_colr.replace(/(rgb)|\s|\(|\)/g, '').split(',')[k];
+    let colr;
+    switch (k) {
+        case 0:
+        colr = 'rgb(' + col_base + ',255,255)';
+        break;
+        
+        case 1:
+        colr = 'rgb(255,' + col_base + ',255)';
+        break;
+
+        case 2:
+        colr = 'rgb(255,255,' + col_base + ')';
+        break;
+    }
+    return colr;
 }
