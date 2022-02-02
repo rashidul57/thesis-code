@@ -18,7 +18,7 @@ const question_y = 450;
 let cur_section_indx = 0;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
-const session_msg = 'Please conduct a session and click Start';
+const session_msg = 'To begin the session, please click the Start Button';
 let email;
 // let email = 'mrashidbd2000@gmail.com';
 
@@ -402,6 +402,8 @@ function draw_ca_bubble_questions() {
 }
 
 function draw_ca_grid_questions() {
+    const cell_width = 52;
+    const cell_height = 40;
     let data = get_quantized_data();
     data = get_bubble_leaves(data).map(item => {
         item.data.r = item.r;
@@ -533,89 +535,50 @@ function draw_ca_grid_questions() {
             })
             .attr("x", function(d, i) {
                 let x_pos = (i%cell_per_row);
-                const width = x.bandwidth() - 1;
-                x_pos = x_pos*width;
+                x_pos = x_pos* (cell_width + 30);
                 ca_space = get_ca_space(d, ordered_devs);
                 
                 const change = get_rect_coord_change('x', k, ca_space);
                 x_pos = x_pos + ca_space + change;
 
-                const bar_width = get_bar_width(x, k, d, ca_space);
-                x_pos = x_pos + (width - bar_width)/2;
-
                 return x_pos;
             })
-            .attr("width", (d, i) => {
-                ca_space = get_ca_space(d, ordered_devs);
-                const width = get_bar_width(x, k, d, ca_space);
-                return width;
-            })
+            .attr("width", cell_width)
             .attr("y", function(d, i) {
-                let y_pos = y_base = y(d.position_indx) + 3*i;
-                const height = y.bandwidth() - 1;
+                let y_pos = y_base = y(d.position_indx) - d.position_indx*30;
                 ca_space = get_ca_space(d, ordered_devs);
                 const change = get_rect_coord_change('y', k, ca_space);
                 y_pos = y_pos + ca_space + change;
-
-                const bar_height = get_bar_height(y, k, d, ca_space);
-                y_pos = y_pos + (height - bar_height)/2;
 
                 if (y_pos < 0) {
                     y_pos = 0;
                 }
                 return y_pos;
             })
-            .attr("height", (d, i) => {
-                ca_space = get_ca_space(d, ordered_devs);
-                const height = get_bar_height(y, k, d, ca_space);
-                
-                return height;
-            })
+            .attr("height", cell_height)
             .style("mix-blend-mode", "darken")
             .attr("fill", (d) => {
                 const colr = get_top_vsup_color(k, d, ordered_values);
                 return colr;
             })
-            .on('mousedown', function (ev) {
+            .on('mousedown', function (ev, d) {
                 if (ev.which !== 1 || !section_session_states['ca-grid']) {
                     return;
                 }
-                const fill_color = d3.select(this).attr('fill');
-                answers[question_num] = vsup_quest_color === fill_color;
+
+                bubble_quest_countries.forEach(country => {
+                    if (country.name === d.name) {
+                        answers[question_num] = true;
+                    }
+                });
+
+                if (!answers[question_num]) {
+                    answers[question_num] = false;
+                }
 
                 show_question(++question_num);
-            })
-            .append("title")
-            .text(d => `deviation: ${(d.deviation)}%`);
+            });
 
-    }
-
-    function get_bar_width(x, k, d, ca_space) {
-        let width = x.bandwidth() - 1;
-        width = (d.r * width)/max_radius;
-        const change = get_rect_coord_change('x', k, ca_space);
-
-        if (change >= 0) {
-            width = width - ca_space - change/2;
-        } else {
-            width = width - ca_space + change/2;
-        }
-
-        return width;
-    }
-
-    function get_bar_height(y, k, d, ca_space) {
-        let height = y.bandwidth()-1;
-        height = (d.r * height)/max_radius;
-        
-        const change = get_rect_coord_change('y', k, ca_space);
-
-        if (change >= 0) {
-            height = height - ca_space - change/2;
-        } else {
-            height = height - ca_space + change/2;
-        }
-        return height;
     }
 
     function draw_legend(svg, conf, max_radius, x, y) {
@@ -623,7 +586,7 @@ function draw_ca_grid_questions() {
 
         let data = [];
         let legend_left_start = 500;
-        let leg_top_start = 40;
+        let leg_top_start = 70;
 
         if (type === 'ca-legend') {
             leg_top_start = max_radius + 100;
@@ -660,16 +623,16 @@ function draw_ca_grid_questions() {
     function add_legend_rect(rect_g, d, i, k, x, y, ordered_radiis) {
             
         const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, max_radius} = d;
-        const label_top = 20;
+        const label_top = 0;
         let ca_space;
     
         if (i === 0 && k === 0) {
             let dx;
-            let dy = leg_top_start + label_top + radius/2 + 10;
+            let dy = leg_top_start + label_top + radius/2 + 3;
             if (type === 'ca-legend') {
-                dx = legend_left_start + 40;
+                dx = legend_left_start + 65;
             } else {
-                dx = legend_left_start + 20;
+                dx = legend_left_start + 45;
             }
             rect_g
             .append('text')
@@ -680,7 +643,7 @@ function draw_ca_grid_questions() {
 
         rect_g
             .append('rect')
-            .attr('class', 'legend-circle-' + label)
+            .attr('class', 'legend-rect-' + label)
             .attr("x", function() {
                 let x_pos = 0;
                 const width = x.bandwidth() - 1;
@@ -690,18 +653,13 @@ function draw_ca_grid_questions() {
                 const change = get_rect_coord_change('x', k, ca_space);
                 x_pos = x_pos + ca_space + change;
 
-                const bar_width = get_bar_width(x, k, {r: d.radius}, ca_space);
-                x_pos = padding_left - max_radius + x_pos + (width - bar_width)/2;
+                x_pos = padding_left - max_radius + x_pos + (width - cell_width)/2;
                 if (type === 'value-legend') {
                     x_pos += 5;
                 }
                 return x_pos;
             })
-            .attr("width", () => {
-                ca_space = get_ca_space(d, ordered_devs);
-                const width = get_bar_width(x, k, {r: d.radius}, ca_space);
-                return width;
-            })
+            .attr("width", cell_width)
             .attr("y", function() {
                 let y_pos = leg_top_start;
                 ca_space = get_ca_space(d, ordered_devs);
@@ -713,11 +671,7 @@ function draw_ca_grid_questions() {
                 
                 return y_pos;
             })
-            .attr("height", () => {
-                ca_space = get_ca_space(d, ordered_devs);
-                const height = get_bar_height(y, k, {r: d.radius}, ca_space);
-                return height;
-            })
+            .attr("height", cell_height)
             .style("mix-blend-mode", () => {
                 return "darken";
             })
@@ -735,16 +689,22 @@ function draw_ca_grid_questions() {
                 rect_g
                 .append('text')
                 .attr('dx', () => {
-                    let dx = padding_left - label.toString().length * 6 - 5;
+                    let dx = padding_left - label.toString().length * 6 - 7;
                     return dx;
                 })
                 .attr('dy', () => {
-                    let dy = leg_top_start + label_top + radius/4 + 18;
+                    let dy = leg_top_start + label_top + radius/4 + 18 + deviation/6;
                     return dy;
                 })
                 .attr("font-size", 18)
                 .attr("font-weight", 'bold')
-                .attr("fill", '#2b1089')
+                .attr("fill", (d, i) => {
+                    let colr = '#2b1089';
+                    if (type === 'value-legend' && parseInt(label) < 40) {
+                        colr = '#fff';
+                    }
+                    return colr;
+                })
                 .html(label);
             }
     }
@@ -1050,11 +1010,8 @@ function draw_vsup_grid_questions() {
                 return;
             }
             const fill_color = d3.select(this).attr('fill');
-            if (vsup_quest_color === fill_color) {
-                answers[question_num] = true;
-            } else {
-                answers[question_num] = false;
-            }
+            answers[question_num] = vsup_quest_color === fill_color;
+
             show_question(++question_num);
         });
 
@@ -1148,7 +1105,7 @@ function draw_vsup_grid_questions() {
 
 function get_vsup_grid_conf() {
     let uncertainty, value;
-    const indx = question_num%8;
+    const indx = (question_num-1)%8;
     const question_colors = {
         1: 'rgb(103, 147, 169)',
         2: 'rgb(66, 64, 134)',
@@ -1160,44 +1117,44 @@ function get_vsup_grid_conf() {
         8: 'rgb(109, 195, 158)'
     };
     
-    vsup_quest_color = question_colors[indx];
+    vsup_quest_color = question_colors[indx+1];
     switch (indx) {
-        case 1:
+        case 0:
         uncertainty = 25;
         value = 42;
         break;
 
-        case 2:
+        case 1:
         uncertainty = 37;
         value = 42;
         break;
 
-        case 3:
+        case 2:
         uncertainty = 25;
         value = 47;
         break;
 
-        case 4:
+        case 3:
         uncertainty = 31;
         value = 56;
         break;
 
-        case 5:
+        case 4:
         uncertainty = 29;
         value = 49;
         break;
 
-        case 6:
+        case 5:
         uncertainty = 51;
         value = 47;
         break;
 
-        case 7:
+        case 6:
         uncertainty = 59;
         value = 42;
         break;
 
-        case 8:
+        case 7:
         uncertainty = 47;
         value = 61;
         break;
