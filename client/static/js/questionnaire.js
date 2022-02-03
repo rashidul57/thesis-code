@@ -81,7 +81,7 @@ function show_question() {
         if (question_num%8 === 0) {
             cur_section_indx++;
         }
-        cur_order = 4;
+        cur_order = 2;
 
         switch (cur_order) {
             case 1:
@@ -215,7 +215,7 @@ function draw_ca_bubble_questions() {
     const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = leaves.map(item => item.r);
-    val_radiis = _.sortBy(_.uniq(val_radiis));
+    const ordered_vals = val_radiis = _.sortBy(_.uniq(val_radiis));
     const val_deviations = Array(val_groups).fill(0);
 
     // used for legend drawing
@@ -311,7 +311,8 @@ function draw_ca_bubble_questions() {
                 return 'abberation';
             })
             .attr("fill", (d) => {
-                let color = bubble_colors[k];
+                // let color = bubble_colors[k];
+                const color = get_top_vsup_color(k, d, ordered_vals);
                 return color;
             })
             .attr("cx", d => {
@@ -361,7 +362,8 @@ function draw_ca_bubble_questions() {
             const deviation = deviations[k];
             let label = type === 'value-legend' ? radius : deviation;
             label = parseInt(label);
-            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label});
+            let colr = type === 'value-legend' ? vsup_top_colors[k+1] : undefined;
+            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, color: colr});
         }
     
         // Draw circles
@@ -452,15 +454,23 @@ function draw_ca_grid_questions() {
     var quantization = vsup.quantization().branching(2).layers(4).valueDomain(vDom).uncertaintyDomain(uDom);
     var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
 
-    var legend = vsup.legend.arcmapLegend();
-    legend
-        .scale(scale)
-        .size(160)
-        .vtitle("Value")
-        .utitle("");
+    // var legend = vsup.legend.arcmapLegend();
+    // legend
+    //     .scale(scale)
+    //     .size(160)
+    //     .vtitle("Value")
+    //     .utitle("");
 
-    svg.append("g").call(legend);
-    d3.select('.legend').attr("transform", "translate(850 80)");
+    // svg.append("g").call(legend);
+    // d3.select('.legend').attr("transform", "translate(850 80)");
+
+    // // remove pred scales
+    // const legend_comp = d3.select('.legend');
+    // const g_tags = legend_comp.selectAll("g").filter(function() { 
+    //     return this.parentNode == legend_comp.node();
+    // });
+    // d3.select(g_tags.nodes()[0]).remove();
+    // move_value_legend_upward();
 
     var heatmap = svg
         .attr("width", w)
@@ -485,15 +495,9 @@ function draw_ca_grid_questions() {
     const dev_conf = {groups: dev_groups, deviations: dev_deviations, radiis: dev_radiis, type: 'ca-legend', legend_caption: 'CA'};
     const val_conf = {groups: val_groups, deviations: val_deviations, radiis: val_radiis,  type: 'value-legend', legend_caption: 'Value'};
 
-    // draw_legend(svg, val_conf, max_radius, x, y);
+    draw_legend(svg, val_conf, max_radius, x, y);
     draw_legend(svg, dev_conf, max_radius, x, y);
 
-    // remove pred scales
-    const legend_comp = d3.select('.legend');
-    const g_tags = legend_comp.selectAll("g").filter(function() { 
-        return this.parentNode == legend_comp.node();
-    });
-    d3.select(g_tags.nodes()[0]).remove();
     
     if (section_session_states['ca-grid']) {
         draw_question(svg, data, val_conf.radiis);
@@ -589,7 +593,7 @@ function draw_ca_grid_questions() {
         let leg_top_start = 70;
 
         if (type === 'ca-legend') {
-            leg_top_start = max_radius + 200;
+            leg_top_start = 170;
             legend_left_start += 160;
         }
 
@@ -908,7 +912,8 @@ function draw_vsup_bubble_questions() {
             const deviation = deviations[k];
             let label = type === 'value-legend' ? radius : deviation;
             label = parseInt(label).toString();
-            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label});
+            let colr = type === 'value-legend' ? vsup_top_colors[k+1] : undefined;
+            data.push({radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, color: colr});
         }
     
         // Draw dev-group circles
@@ -1047,6 +1052,7 @@ function draw_vsup_grid_questions() {
     svg.append("g").call(legend);
     d3.select('.legend').attr("transform", "translate(900 130)");
 
+    move_value_legend_upward();
 
     // Question sections
     const xx = 30;
@@ -1177,7 +1183,7 @@ function get_bubble_leaves(bubble_data) {
 
 function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
             
-    const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label} = dev_rec;
+    const {radius, deviation, padding_left, legend_left_start, leg_top_start, type, legend_caption, label, color} = dev_rec;
     const label_top = 20;
 
     if (i === 0 && k === 0) {
@@ -1192,10 +1198,12 @@ function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
         .html(legend_caption);
     }
 
+    const bubble_color = type === 'ca-legend' ? bubble_colors[k] : get_channel_color(color, k);
+
     circle_g
         .append('circle')
         .attr("r", radius)
-        .attr("fill", d => bubble_colors[k])
+        .attr("fill", bubble_color)
         .attr('class', 'legend-circle-' + label)
         .attr('cx', () => {
             const ca_space = get_ca_space({deviation}, ordered_devs);
@@ -1213,12 +1221,16 @@ function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
         .style("mix-blend-mode", "darken");
 
         if (k === 0) {
+            const perc = Number(label);
             circle_g
             .append('text')
             .attr('dx', () => {
                 let dx = padding_left - label.toString().length * 4;
                 if (type === 'ca-legend') {
-                    dx += i*20 ;
+                    dx += i*20;
+                }
+                if (perc === 20) {
+                    dx -= 2;
                 }
                 return dx;
             })
@@ -1228,7 +1240,9 @@ function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
             })
             .attr("font-size", 18)
             .attr("font-weight", 'bold')
-            .attr("fill", '#2b1089')
+            .attr("fill", () => {
+                return perc < 40 && type !== 'ca-legend' ? 'white' : '#2b1089';
+            })
             .html(label);
         }
 }
@@ -1347,9 +1361,13 @@ function get_dev_index(d, ordered_devs) {
 function get_top_vsup_color(k, d, ordered_values) {
     const dev_indx = _.indexOf(ordered_values, d.r);
     let vsup_colr = vsup_top_colors[dev_indx+1];
-    const col_base = vsup_colr.replace(/(rgb)|\s|\(|\)/g, '').split(',')[k];
+    return get_channel_color(vsup_colr, k);
+}
+
+function get_channel_color(given_color, chan_indx) {
+    const col_base = given_color.replace(/(rgb)|\s|\(|\)/g, '').split(',')[chan_indx];
     let colr;
-    switch (k) {
+    switch (chan_indx) {
         case 0:
         colr = 'rgb(' + col_base + ',255,255)';
         break;
@@ -1363,4 +1381,18 @@ function get_top_vsup_color(k, d, ordered_values) {
         break;
     }
     return colr;
+}
+
+// move Value label a bit upward
+function move_value_legend_upward() {
+    const legend_comp = d3.select('.legend');
+    const value_label = legend_comp
+    .selectAll('text').filter(function(){ 
+        return d3.select(this).text() === 'Value';
+    });
+    if (value_label) {
+        const txt = value_label.nodes()[0];
+        const y = d3.select(txt).attr('y');
+        d3.select(txt).attr('y', Number(y) - 10);
+    }
 }
