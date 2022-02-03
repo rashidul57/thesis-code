@@ -19,8 +19,8 @@ let cur_section_indx = 0;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
-let email;
-// let email = 'mrashidbd2000@gmail.com';
+// let email;
+let email = 'mrashidbd2000@gmail.com';
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -81,7 +81,7 @@ function show_question() {
         if (question_num%8 === 0) {
             cur_section_indx++;
         }
-        // cur_order = 2;
+        cur_order = 4;
 
         switch (cur_order) {
             case 1:
@@ -251,8 +251,8 @@ function draw_ca_bubble_questions() {
 
         svg
         .append("text")
-        .attr("x", question_x + 200)
-        .attr("y", question_y + 50)
+        .attr("x", question_x + 250)
+        .attr("y", question_y + 100)
         .text('Start')
         .attr('class', 'txt-session')
         .attr("font-size", 25)
@@ -452,15 +452,15 @@ function draw_ca_grid_questions() {
     var quantization = vsup.quantization().branching(2).layers(4).valueDomain(vDom).uncertaintyDomain(uDom);
     var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
 
-    // var legend = vsup.legend.arcmapLegend();
-    // legend
-    //     .scale(scale)
-    //     .size(160)
-    //     .vtitle("")
-    //     .utitle("Uncertainty");
+    var legend = vsup.legend.arcmapLegend();
+    legend
+        .scale(scale)
+        .size(160)
+        .vtitle("Value")
+        .utitle("");
 
-    // svg.append("g").call(legend);
-    // d3.select('.legend').attr("transform", "translate(960 220)");
+    svg.append("g").call(legend);
+    d3.select('.legend').attr("transform", "translate(850 80)");
 
     var heatmap = svg
         .attr("width", w)
@@ -485,15 +485,15 @@ function draw_ca_grid_questions() {
     const dev_conf = {groups: dev_groups, deviations: dev_deviations, radiis: dev_radiis, type: 'ca-legend', legend_caption: 'CA'};
     const val_conf = {groups: val_groups, deviations: val_deviations, radiis: val_radiis,  type: 'value-legend', legend_caption: 'Value'};
 
-    draw_legend(svg, val_conf, max_radius, x, y);
+    // draw_legend(svg, val_conf, max_radius, x, y);
     draw_legend(svg, dev_conf, max_radius, x, y);
 
     // remove pred scales
-    // const legend_comp = d3.select('.legend');
-    // const g_tags = legend_comp.selectAll("g").filter(function() { 
-    //     return this.parentNode == legend_comp.node();
-    // });
-    // d3.select(g_tags.nodes()[1]).remove();
+    const legend_comp = d3.select('.legend');
+    const g_tags = legend_comp.selectAll("g").filter(function() { 
+        return this.parentNode == legend_comp.node();
+    });
+    d3.select(g_tags.nodes()[0]).remove();
     
     if (section_session_states['ca-grid']) {
         draw_question(svg, data, val_conf.radiis);
@@ -509,8 +509,8 @@ function draw_ca_grid_questions() {
 
         svg
         .append("text")
-        .attr("x", question_x + 200)
-        .attr("y", question_y + 50)
+        .attr("x", question_x + 250)
+        .attr("y", question_y + 100)
         .text('Start')
         .attr('class', 'txt-session')
         .attr("font-size", 25)
@@ -589,7 +589,7 @@ function draw_ca_grid_questions() {
         let leg_top_start = 70;
 
         if (type === 'ca-legend') {
-            leg_top_start = max_radius + 100;
+            leg_top_start = max_radius + 200;
             legend_left_start += 160;
         }
 
@@ -775,7 +775,7 @@ function draw_vsup_bubble_questions() {
         .vtitle("")
         .utitle("Uncertainty");
     svg.append("g").call(legend);
-    d3.select('.legend').attr("transform", "translate(960 230)");
+    d3.select('.legend').attr("transform", "translate(860 180)");
 
     draw_legend(svg, val_conf, max_radius);
     // draw_legend(svg, dev_conf, max_radius);
@@ -801,8 +801,8 @@ function draw_vsup_bubble_questions() {
 
         svg
         .append("text")
-        .attr("x", question_x + 200)
-        .attr("y", question_y + 100)
+        .attr("x", question_x + 250)
+        .attr("y", question_y + 150)
         .text('Start')
         .attr('class', 'txt-session')
         .attr("font-size", 25)
@@ -1045,7 +1045,7 @@ function draw_vsup_grid_questions() {
         .utitle("Uncertainty");
 
     svg.append("g").call(legend);
-    d3.select('.legend').attr("transform", "translate(960 130)");
+    d3.select('.legend').attr("transform", "translate(900 130)");
 
 
     // Question sections
@@ -1077,8 +1077,8 @@ function draw_vsup_grid_questions() {
 
         svg_g
         .append("text")
-        .attr("x", question_x + 200)
-        .attr("y", question_y + 50)
+        .attr("x", question_x + 250)
+        .attr("y", question_y + 100)
         .text('Start')
         .attr('class', 'txt-session')
         .attr("font-size", 25)
