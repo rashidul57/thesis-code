@@ -16,6 +16,7 @@ const height = 585;
 const question_x = 700; 
 const question_y = 450;
 let cur_section_indx = 0;
+let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
@@ -85,18 +86,22 @@ function show_question() {
 
         switch (cur_order) {
             case 1:
+            set_section('ca-bubble');
             draw_ca_bubble_questions();
             break;
 
             case 2:
+            set_section('ca-grid');
             draw_ca_grid_questions();
             break;
 
             case 3:
+            set_section('vsup-bubble');
             draw_vsup_bubble_questions();
             break;
 
             case 4:
+            set_section('vsup-grid');
             draw_vsup_grid_questions();
             break;
         }
@@ -138,26 +143,32 @@ function show_question() {
             .on('mousedown', function (ev) {
                 validate_email();
             });
+    }
 
 
-        function validate_email() {
-            email = d3.select('.txt-email').property("value");
-            const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    function validate_email() {
+        email = d3.select('.txt-email').property("value");
+        const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
-            if (pattern.test(email)) {
-                d3.select('.email-panel').remove();
-                show_question();
-            } else {
-                svg
-                .append("text")
-                .text('Invalid email')
-                .attr("x", x)
-                .attr("y", y + 80)
-                .attr("font-size", 14)
-                .attr("fill", 'red');
-            }
+        if (pattern.test(email)) {
+            d3.select('.email-panel').remove();
+            show_question();
+        } else {
+            svg
+            .append("text")
+            .text('Invalid email')
+            .attr("x", x)
+            .attr("y", y + 80)
+            .attr("font-size", 14)
+            .attr("fill", 'red');
         }
-        
+    }
+
+    function set_section(name) {
+        section_name = name;
+        if (!answers[section_name]) {
+            answers[section_name] = {};
+        }
     }
 }
 
@@ -330,12 +341,12 @@ function draw_ca_bubble_questions() {
 
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.data.name) {
-                        answers[question_num] = true;
+                        answers[section_name][question_num] = true;
                     }
                 });
 
-                if (!answers[question_num]) {
-                    answers[question_num] = false;
+                if (!answers[section_name][question_num]) {
+                    answers[section_name][question_num] = false;
                 }
 
                 show_question(++question_num);
@@ -572,12 +583,12 @@ function draw_ca_grid_questions() {
 
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.name) {
-                        answers[question_num] = true;
+                        answers[section_name][question_num] = true;
                     }
                 });
 
-                if (!answers[question_num]) {
-                    answers[question_num] = false;
+                if (!answers[section_name][question_num]) {
+                    answers[section_name][question_num] = false;
                 }
 
                 show_question(++question_num);
@@ -885,12 +896,12 @@ function draw_vsup_bubble_questions() {
 
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.data.name) {
-                        answers[question_num] = true;
+                        answers[section_name][question_num] = true;
                     }
                 });
 
-                if (!answers[question_num]) {
-                    answers[question_num] = false;
+                if (!answers[section_name][question_num]) {
+                    answers[section_name][question_num] = false;
                 }
 
                 show_question(++question_num);
@@ -1021,7 +1032,7 @@ function draw_vsup_grid_questions() {
                 return;
             }
             const fill_color = d3.select(this).attr('fill');
-            answers[question_num] = vsup_quest_color === fill_color;
+            answers[section_name][question_num] = vsup_quest_color === fill_color;
 
             show_question(++question_num);
         });
