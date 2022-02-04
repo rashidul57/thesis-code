@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: "Open Sans", sans-serif;
+            overflow: hidden;
+            margin: 2px;
+        }
+        
+        .grid-chart{
+            overflow: hidden;
+            border: 1px solid black;
+            height: 750px;
+            position: relative;
+            margin: 0 3px;
+            width: 1500px;
+        }
+        .grid-svg{
+            overflow: visible;
+        }
+
+
+    
+		
+        /* Please play with these two styles */
+        .grid-container rect{
+            mix-blend-mode: darken;
+        }
+        .grid-container rect{
+            fill-opacity: 1;
+        }
+		.redColor
+    </style>
+</head>
+<body>
+<div class="grid-chart">
+    <svg class="grid-svg" width="100" height="100" viewBox="0,0,100,100">
+        <g>
+            
+            <circle r="20.011120322572424" fill="rgb(72,255,255)" class="legend-circle-20" cx="590.0222406451448" cy="88.03686150964296" style="mix-blend-mode: darken;"></circle>
+            <circle r="20.011120322572424" fill="rgb(255,24,255)" class="legend-circle-20" cx="590.0222406451448" cy="88.03686150964296" style="mix-blend-mode: darken;"></circle>
+            <circle r="20.011120322572424" fill="rgb(255,255,106)" class="legend-circle-20" cx="590.0222406451448" cy="88.03686150964296" style="mix-blend-mode: darken;"></circle>
+            <text dx="580.0222406451448" dy="93.03686150964296" font-size="18" font-weight="bold" fill="white">20</text>
+        </g>
+
+    </svg>
+</div>
+</body>
+</html>

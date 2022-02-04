@@ -19,8 +19,8 @@ let cur_section_indx = 0;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
-// let email;
-let email = 'mrashidbd2000@gmail.com';
+let email;
+// let email = 'mrashidbd2000@gmail.com';
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -81,7 +81,7 @@ function show_question() {
         if (question_num%8 === 0) {
             cur_section_indx++;
         }
-        cur_order = 2;
+        // cur_order = 2;
 
         switch (cur_order) {
             case 1:
@@ -689,7 +689,7 @@ function draw_ca_grid_questions() {
                 return colr;
             });
     
-            if (k === 0) {
+            if (k === 2) {
                 rect_g
                 .append('text')
                 .attr('dx', () => {
@@ -698,17 +698,14 @@ function draw_ca_grid_questions() {
                 })
                 .attr('dy', () => {
                     let dy = leg_top_start + label_top + radius/4 + 18 + deviation/6;
+                    if (type === 'ca-legend') {
+                        dy -= 2;
+                    }
                     return dy;
                 })
                 .attr("font-size", 18)
                 .attr("font-weight", 'bold')
-                .attr("fill", (d, i) => {
-                    let colr = '#2b1089';
-                    if (type === 'value-legend' && parseInt(label) < 40) {
-                        colr = '#fff';
-                    }
-                    return colr;
-                })
+                .attr("fill", '#fff')
                 .html(label);
             }
     }
@@ -750,11 +747,14 @@ function draw_vsup_bubble_questions() {
     });
 
     const dev_radiis = Array(dev_groups).fill(35);
-    let dev_deviations = bubble_data.map(item => item.deviation);
+    let dev_deviations = bubble_data.map(item => {
+        item.deviation = 0;
+        return item;
+    });
     const ordered_devs = dev_deviations = _.sortBy(_.uniq(dev_deviations));
 
     let val_radiis = leaves.map(item => item.r);
-    val_radiis = _.sortBy(_.uniq(val_radiis));
+    const ordered_vals = val_radiis = _.sortBy(_.uniq(val_radiis));
     const val_deviations = Array(val_groups).fill(0);
 
     // used for legend drawing
@@ -770,7 +770,9 @@ function draw_vsup_bubble_questions() {
     var scale = vsup.scale().quantize(quantization).range(d3.interpolateViridis);
     var legend = vsup.legend.arcmapLegend();
 
-    draw_chart(0, leaves);
+    for (let k = 0; k < 3; k++) {
+        draw_chart(k, leaves);
+    }
     const svg = d3.select('.bubble-svg');
 
     legend
@@ -863,7 +865,11 @@ function draw_vsup_bubble_questions() {
             .attr('class', ()=> {
                 return 'abberation';
             })
-            .attr("fill", function(d) { return scale(d.r, d.data.deviation); })
+            .attr("fill", function(d) { 
+                // return scale(d.r, d.data.deviation);
+                const color = get_top_vsup_color(k, d, ordered_vals);
+                return color;
+            })
             .attr("cx", d => {
                 const ca_space = get_ca_space(d.data, ordered_devs);
                 return get_circle_coord('x', k, ca_space, 0, true);
@@ -1220,7 +1226,7 @@ function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
         })
         .style("mix-blend-mode", "darken");
 
-        if (k === 0) {
+        if (k === 2) {
             const perc = Number(label);
             circle_g
             .append('text')
@@ -1240,9 +1246,7 @@ function add_legend_circle(circle_g, dev_rec, i, k, ordered_devs) {
             })
             .attr("font-size", 18)
             .attr("font-weight", 'bold')
-            .attr("fill", () => {
-                return perc < 40 && type !== 'ca-legend' ? 'white' : '#2b1089';
-            })
+            .attr("fill", 'white')
             .html(label);
         }
 }
