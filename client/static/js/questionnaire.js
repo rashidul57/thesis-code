@@ -20,8 +20,8 @@ let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
-// let email;
-let email = 'mrashidbd2000@gmail.com';
+let email;
+// let email = 'mrashidbd2000@gmail.com';
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -808,6 +808,8 @@ function draw_vsup_bubble_questions() {
         .utitle("Uncertainty");
     svg.append("g").call(legend);
     d3.select('.legend').attr("transform", "translate(860 180)");
+
+    move_value_legend_upward();
 
     // draw_legend(svg, val_conf, max_radius);
     // draw_legend(svg, dev_conf, max_radius);
