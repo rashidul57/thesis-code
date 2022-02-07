@@ -373,7 +373,7 @@ body.questionnaire .rate-svg, body.questionnaire svg {
   overflow: visible;
 }
 body.questionnaire .rate-svg g.tick, body.questionnaire svg g.tick {
-  font-size: 16px;
+  font-size: 11px;
 }
 body.questionnaire .rate-svg g.tick line, body.questionnaire svg g.tick line {
   display: none;
