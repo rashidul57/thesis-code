@@ -34,6 +34,23 @@ const vsup_top_colors = {
     8: 'rgb(216, 226, 25)'
 };
 
+const vsup_data = {
+    1: { color: 'rgb(38, 130, 142)', value: 27, uncertainty: 37 },
+    2: { color: 'rgb(109, 195, 158)', value: 51, uncertainty: 43 },
+    3: { color: 'rgb(72, 24, 106)', value: 8, uncertainty: 38 },
+    4: { color: 'rgb(180, 229, 176)', value: 66, uncertainty: 78 },
+    5: { color: 'rgb(205, 227, 225)', value: 34, uncertainty: 89 },
+    6: { color: 'rgb(117, 93, 155)', value: 11, uncertainty: 56 },
+    7: { color: 'rgb(51, 99, 141)', value: 19, uncertainty: 33 },
+    8: { color: 'rgb(31, 160, 136)', value: 36, uncertainty: 23 }
+};
+
+const question_seqs = {
+    'ca-bubble': {},
+    'ca-grid': {},
+    'vsup-bubble': {},
+    'vsup-grid': {}
+};
 
 const question_values = [
     {
@@ -82,8 +99,7 @@ function show_question() {
         if (question_num%8 === 0) {
             cur_section_indx++;
         }
-        // cur_order = 4;
-
+        
         switch (cur_order) {
             case 1:
             set_section('ca-bubble');
@@ -362,11 +378,13 @@ function draw_ca_bubble_questions() {
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.data.name) {
                         answers[section_name][question_num] = true;
+                        // console.log('true')
                     }
                 });
 
                 if (!answers[section_name][question_num]) {
                     answers[section_name][question_num] = false;
+                    // console.log('false')
                 }
 
                 show_question(++question_num);
@@ -415,10 +433,12 @@ function draw_ca_bubble_questions() {
             .attr('class', question_g_sel);
 
         // don't parseInt here as used in next line
-        const radius = radiis[(question_num-1)%8];
+        const rand_indx = get_next_index();
+        const radius = radiis[rand_indx];
         bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
+        
         const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
 
         svg_g
@@ -431,7 +451,9 @@ function draw_ca_bubble_questions() {
 
         transition_question(svg_g, 2800);
     }
+
 }
+
 
 function draw_ca_grid_questions() {
     const cell_width = 52;
@@ -598,11 +620,13 @@ function draw_ca_grid_questions() {
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.name) {
                         answers[section_name][question_num] = true;
+                        // console.log('true');
                     }
                 });
 
                 if (!answers[section_name][question_num]) {
                     answers[section_name][question_num] = false;
+                    // console.log('false');
                 }
 
                 show_question(++question_num);
@@ -745,7 +769,8 @@ function draw_ca_grid_questions() {
             .attr('class', question_g_sel);
 
         // don't parseInt here as used in next line
-        const radius = radiis[(question_num-1)%8];
+        const rand_indx = get_next_index();
+        const radius = radiis[rand_indx];
         bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
@@ -842,6 +867,9 @@ function draw_vsup_bubble_questions() {
         .attr("font-size", 25)
         .attr('fill', 'blue')
         .on('mousedown', function (ev) {
+            if (ev.which !== 1) {
+                return;
+            }
             d3.selectAll('.txt-session').remove();
             section_session_states['vsup-bubble'] = true;
             draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
@@ -891,12 +919,11 @@ function draw_vsup_bubble_questions() {
                 return 'value=' + d.r + ', unc=' + d.data.deviation;
             })
             .style("mix-blend-mode", "darken")
-            .attr('class', ()=> {
-                return 'abberation';
+            .attr('class', (d)=> {
+                return 'abberation ' + 'vsup-bubble-' + d.data.name;
             })
             .attr("fill", function(d) { 
-                // return scale(d.r, d.data.deviation);
-                const color = get_top_vsup_color(k, d, ordered_vals);
+                const color = get_vsup_bubble_color(k, d, ordered_vals);
                 return color;
             })
             .attr("cx", d => {
@@ -911,16 +938,17 @@ function draw_vsup_bubble_questions() {
                 if (ev.which !== 1 || !section_session_states['vsup-bubble']) {
                     return;
                 }
-
-                bubble_quest_countries.forEach(country => {
-                    if (country.name === d.data.name) {
-                        answers[section_name][question_num] = true;
-                    }
+                const nodes = d3.selectAll('.vsup-bubble-' + d.data.name).nodes();
+                let color = [];
+                nodes.forEach(node => {
+                    const c = d3.select(node).attr('fill').replace(/(rgb)|,|(255)|\(|\)|\s/g, '');
+                    color.push(c);
                 });
-
-                if (!answers[section_name][question_num]) {
-                    answers[section_name][question_num] = false;
-                }
+                
+                const fill_color = 'rgb(' + color.join(', ') + ')';
+                answers[section_name][question_num] = vsup_quest_color === fill_color;
+                
+                // console.log(vsup_quest_color, fill_color, answers[section_name][question_num])
 
                 show_question(++question_num);
 
@@ -969,10 +997,13 @@ function draw_vsup_bubble_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        const radius = radiis[(question_num-1)%8];
-        bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
-        const ca = parseInt(bubble_quest_countries[0].deviation);
-        const question = `Question-${question_num}: Click on bubble chart where <Value=${parseInt(radius*8)}> and <Uncertainty=${parseInt(ca)}>`;
+        // const rand_indx = get_next_index();
+        // const radius = radiis[rand_indx];
+        // bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
+        // const ca = parseInt(bubble_quest_countries[0].deviation);
+
+        const {value, uncertainty} = get_vsup_conf();
+        const question = `Question-${question_num}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
 
         svg_g
         .append("text")
@@ -984,7 +1015,6 @@ function draw_vsup_bubble_questions() {
 
         transition_question(svg_g, 2800);
     }
-
 }
 
 function draw_vsup_grid_questions() {
@@ -1053,7 +1083,7 @@ function draw_vsup_grid_questions() {
             }
             const fill_color = d3.select(this).attr('fill');
             answers[section_name][question_num] = vsup_quest_color === fill_color;
-
+            // console.log(answers[section_name][question_num]);
             show_question(++question_num);
         });
 
@@ -1102,8 +1132,7 @@ function draw_vsup_grid_questions() {
     .attr("y", yy+20)
     .attr("font-size", 22);
 
-    const conf = get_vsup_grid_conf();
-    
+    const conf = get_vsup_conf();
     const svg_g = svg.append('g');
 
     if (section_session_states['vsup-grid']) {
@@ -1146,62 +1175,14 @@ function draw_vsup_grid_questions() {
     }
 }
 
-function get_vsup_grid_conf() {
-    let uncertainty, value;
-    const indx = (question_num-1)%8;
-    const question_colors = {
-        1: 'rgb(66, 64, 134)',
-        2: 'rgb(51, 99, 141)',
-        3: 'rgb(38, 130, 142)',
-        4: 'rgb(31, 160, 136)',
-        5: 'rgb(63, 188, 115)',
-        6: 'rgb(132, 212, 75)',
-        7: 'rgb(103, 147, 169)',
-        8: 'rgb(109, 195, 158)'
-    };
+function get_vsup_conf() {
+    const indx = get_next_index();
+    const cell_data = vsup_data[indx+1];
     
-    vsup_quest_color = question_colors[indx+1];
-    switch (indx) {
-        case 0:
-        value = 16;
-        uncertainty = 37;
-        break;
+    vsup_quest_color = cell_data.color;
+    const value = cell_data.value;
+    const uncertainty = cell_data.uncertainty;
 
-        case 1:
-        value = 24;
-        uncertainty = 25;
-        break;
-
-        case 2:
-        value = 32;
-        uncertainty = 31;
-        break;
-
-        case 3:
-        value = 40;
-        uncertainty = 29;
-        break;
-
-        case 4:
-        value = 48;
-        uncertainty = 22;
-        break;
-
-        case 5:
-        value = 56;
-        uncertainty = 39;
-        break;
-
-        case 6:
-        value = 21;
-        uncertainty = 46;
-        break;
-
-        case 7:
-        value = 49;
-        uncertainty = 59;
-        break;
-    }
     return {uncertainty, value, vsup_quest_color};
 }
 
@@ -1405,6 +1386,13 @@ function get_top_vsup_color(k, d, ordered_values) {
     return get_channel_color(vsup_colr, k);
 }
 
+function get_vsup_bubble_color(k, d, ordered_values) {
+    const dev = d.data ? d.data.r_indx : d.r_indx;
+    const dev_indx = _.indexOf(ordered_values, dev);
+    let vsup_colr = vsup_data[dev_indx+1].color;
+    return get_channel_color(vsup_colr, k);
+}
+
 function get_channel_color(given_color, chan_indx) {
     const col_base = given_color.replace(/(rgb)|\s|\(|\)/g, '').split(',')[chan_indx];
     let colr;
@@ -1456,3 +1444,12 @@ function move_value_legend_upward() {
     }
 }
 
+function get_next_index() {
+    while (true) {
+        const rand = _.random(0, 7);
+        if (!question_seqs[section_name][rand]) {
+            question_seqs[section_name][rand] = true;
+            return rand;
+        }
+    }
+}
