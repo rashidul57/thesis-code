@@ -52,41 +52,6 @@ const question_seqs = {
     'vsup-grid': {}
 };
 
-const question_values = [
-    {
-        "ca": 52,
-        "radius": 20
-    },
-    {
-        "ca": 71,
-        "radius": 30
-    },
-    {
-        "ca": 71,
-        "radius": 37
-    },
-    {
-        "ca": 33,
-        "radius": 43
-    },
-    {
-        "ca": 52,
-        "radius": 49
-    },
-    {
-        "ca": 71,
-        "radius": 54
-    },
-    {
-        "ca": 71,
-        "radius": 58
-    },
-    {
-        "ca": 90,
-        "radius": 63
-    }
-];
-
 function show_question() {
     if (email) {
         sel_model = models[0];
