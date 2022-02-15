@@ -138,7 +138,7 @@ function load_control_data() {
     hide_items()
 
     // Chart Types
-    sel_chart_type = chart_types[4];
+    sel_chart_type = chart_types[0];
     d3.select("#drp-chart-types")
     .selectAll('chart-types')
     .data(chart_types)

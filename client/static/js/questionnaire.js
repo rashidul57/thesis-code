@@ -20,8 +20,8 @@ let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
-let email;
-// let email = 'mrashidbd2000@gmail.com';
+
+let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
