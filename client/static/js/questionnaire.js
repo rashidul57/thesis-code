@@ -404,7 +404,7 @@ function draw_ca_bubble_questions() {
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
         
-        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        const question = `Question-${(question_num-1)%8+1}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
 
         svg_g
         .append("text")
@@ -739,7 +739,7 @@ function draw_ca_grid_questions() {
         bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
-        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        const question = `Question-${(question_num-1)%8+1}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
 
         svg_g
         .append("text")
@@ -968,7 +968,7 @@ function draw_vsup_bubble_questions() {
         // const ca = parseInt(bubble_quest_countries[0].deviation);
 
         const {value, uncertainty} = get_vsup_conf();
-        const question = `Question-${question_num}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
+        const question = `Question-${(question_num-1)%8+1}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
 
         svg_g
         .append("text")
@@ -1128,7 +1128,7 @@ function draw_vsup_grid_questions() {
     }
 
     function draw_question(svg_g, question_x, question_y, conf) {
-        const question = `Question-${question_num}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
+        const question = `Question-${(question_num-1)%8+1}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
         svg_g
         .append("text")
         .attr("x", question_x-50)
