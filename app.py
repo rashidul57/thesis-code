@@ -20,6 +20,10 @@ def index_def():
 def index():
     return render_template('index.html')
 
+@app.route('/cb-test')
+def cn_test():
+    return render_template('cb-test.html')
+
 @app.route('/index.html')
 def index_html():
     return render_template('index.html')

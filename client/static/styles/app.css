@@ -427,4 +427,45 @@ body.questionnaire .txt-email {
   font-size: 20px;
 }
 
+body.cb-test .container-box {
+  overflow: hidden;
+  border: 1px solid black;
+  height: 750px;
+  position: relative;
+  display: grid;
+  grid-template-columns: calc(50% - 3px) calc(50% - 3px);
+  margin: 0 3px;
+  width: 1000px;
+}
+body.cb-test .container-box.result-mode {
+  grid-template-columns: 100%;
+}
+body.cb-test .container-box .image {
+  text-align: right;
+  margin-top: 200px;
+}
+body.cb-test .container-box .inputs {
+  margin-top: 300px;
+  margin-left: 20px;
+}
+body.cb-test .container-box .inputs .txt-input {
+  line-height: 30px;
+  font-size: 30px;
+  color: #565151;
+  width: 150px;
+}
+body.cb-test .container-box .inputs .btn-next {
+  height: 30px;
+  width: 70px;
+  margin-left: 13px;
+  margin-top: 5px;
+  position: absolute;
+}
+body.cb-test .container-box .result {
+  display: none;
+  margin-top: 300px;
+  text-align: center;
+  font-size: 30px;
+}
+
 /*# sourceMappingURL=app.css.map */

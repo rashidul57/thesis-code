@@ -526,3 +526,45 @@ body.questionnaire{
 
 }
 
+body.cb-test{
+    .container-box{
+        overflow: hidden;
+        border: 1px solid black;
+        height: $height;
+        position: relative;
+        display: grid;
+        grid-template-columns: calc(50% - 3px) calc(50% - 3px);
+        margin: 0 3px;
+        width: 1000px;
+        &.result-mode{
+            grid-template-columns: 100%;
+        }
+        .image{
+            text-align: right;
+            margin-top: 200px;
+        }
+        .inputs{
+            margin-top: 300px;
+            margin-left: 20px;
+            .txt-input{
+                line-height: 30px;
+                font-size: 30px;
+                color: #565151;
+                width: 150px;
+            }
+            .btn-next{
+                height: 30px;
+                width: 70px;
+                margin-left: 13px;
+                margin-top: 5px;
+                position: absolute;
+            }
+        }
+        .result{
+            display: none;
+            margin-top: 300px;
+            text-align: center;
+            font-size: 30px;
+        }
+    }
+}
