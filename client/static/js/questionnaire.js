@@ -32,8 +32,16 @@ const sus_questions = [
     ['I found the system very', 'cumbersome to use.'],
     ['I felt very confident using the', 'system.'],
     ['I needed to learn a lot of', 'things before I could get going', 'with this system.'],
+];
 
-]
+const nasa_tlx_questions = [
+    {title: 'Mental Demand', question: 'How mentally demanding was the task?'},
+    {title: 'Physical Demand', question: 'How physically demanding was the task?'},
+    {title: 'Temporal Demand', question: 'How hurried or rushed was the pace of the task?'},
+    {title: 'Performance', question: 'How successful were you in accomplishing what you were asked to do?'},
+    {title: 'Effort', question: 'How hard did you have to work to accomplish your level of performance?'},
+    {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
+];
 
 let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
