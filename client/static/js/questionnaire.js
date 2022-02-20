@@ -1,7 +1,7 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 1, sel_country_num;
+let question_num = 33, sel_country_num;
 let empty_pass = true;
 let cur_quest_perc;
 let question_per_sec = 2;
@@ -15,11 +15,25 @@ const height = 585;
 
 const question_x = 700; 
 const question_y = 450;
-let cur_section_indx = 0;
+let cur_section_indx = 5;
 let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
 const session_msg = 'To begin the session, please click the Start Button';
+
+const sus_questions = [
+    ['I think that I would like to', 'use this system frequently.'],
+    ['I found the system', 'unnecessarily complex.'],
+    ['I thought the system was easy', 'to use.'],
+    ['I think that I would need the', 'support of a technical person to', 'be able to use this system.'],
+    ['I found the various functions in', 'this system were well integrated.'],
+    ['I thought there was too much', 'inconsistency in this system.'],
+    ['I would imagine that most', 'people would learn to use this', 'system very quickly.'],
+    ['I found the system very', 'cumbersome to use.'],
+    ['I felt very confident using the', 'system.'],
+    ['I needed to learn a lot of', 'things before I could get going', 'with this system.'],
+
+]
 
 let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
@@ -86,7 +100,10 @@ function show_question() {
             draw_vsup_grid_questions();
             break;
         }
-        show_submission_info();
+        if (question_num === 33) {
+            section_name = 'sus';
+            show_sus_questions();
+        }
 
     } else {
         let x = 575, y = 300;
@@ -153,48 +170,204 @@ function show_question() {
     }
 }
 
-function show_submission_info() {
-    if (question_num === 33) {
-        const svg = d3.select('.left-chart-container')
-            .append("svg")
-            .attr('class', 'bubble-svg')
-            .attr("width", width)
-            .attr("height", height)
-            .attr("viewBox", [-10, 0, width, height]);
-        
-        svg
-        .append("text")
-        .text('Submit')
-        .attr("x", 655)
-        .attr("y", 300)
-        .attr('class', 'btn-submit')
-        .attr("font-size", 47)
-        .on('mousedown', function (ev) {
-            cur_session_user_info.submitted = true;
-
-            $.post('./save-feedback', {
-                cb_user_data: JSON.stringify(cb_user_info),
-                answers: JSON.stringify(answers),
-                email
-            },
-            () => {
-                d3.select('.btn-submit').remove();
-                svg
-                .append("text")
-                .text(`Thank you for your participation.`)
-                .attr("x", 430)
-                .attr("y", 230)
-                .attr("font-size", 35);
-                
-                svg
-                .append("text")
-                .text(`Your response has been saved. Please contact md313724@dal.ca for any query.`)
-                .attr("x", 220)
-                .attr("y", 300)
-                .attr("font-size", 25);
-            });
-        });
+function show_sus_questions() {
+    // show_submission_info();
+    
+    if (!answers[section_name]) {
+        answers[section_name] = {};
     }
+
+    d3.select('.sus-svg').remove();
+    d3.selectAll('.container-box').classed('whole-width', true);
+
+    const width = 1500;
+    const height = 750;
+    const svg = d3.select('.left-chart-container')
+    .append("svg")
+    .attr('class', 'sus-svg')
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [-10, 0, width, height]);
+
+    const x = 35, y = 50;
+    svg
+    .append("text")
+    .text('System Usability Scale (SUS):')
+    .attr("x", x)
+    .attr("y", y)
+    .attr("font-size", 25)
+    .attr("font-weight", 'bold');
+
+    const svg_g = svg.append('g');
+
+    const q_indx = question_num - 32;
+    const texts = sus_questions[q_indx-1];
+    const yy = y + 250;
+    texts.forEach((text, ind) => {
+        const prefix = ind === 0 ? (q_indx + '. ') : '  ';
+        text = prefix + text;
+        svg_g
+        .append("text")
+        .text(text)
+        .attr("x", x + 200)
+        .attr("y", yy + (ind * 25))
+        .attr("font-size", 20);
+    });
+
+    const rect_x = 430;
+    svg_g
+    .append("text")
+    .text('Strongly')
+    .attr("x", x + 110 + rect_x)
+    .attr("y", y + 200)
+    .attr("font-size", 16);
+
+    svg_g
+    .append("text")
+    .text('Disagree')
+    .attr("x", x + 110 + rect_x)
+    .attr("y", y + 225)
+    .attr("font-size", 16);
+
+    svg_g
+    .append("text")
+    .text('Strongly')
+    .attr("x", x + 525 + rect_x)
+    .attr("y", y + 200)
+    .attr("font-size", 16);
+
+    svg_g
+    .append("text")
+    .text('Agree')
+    .attr("x", x + 530 + rect_x)
+    .attr("y", y + 225)
+    .attr("font-size", 16);
+
+    for (let k = 0; k < 5; k++) {
+        svg_g
+        .append("rect")
+        .attr("x", x + 100 + k * 100 + rect_x)
+        .attr("y", y + 240)
+        .attr("height", 50)
+        .attr("width", 100)
+        .attr('fill', 'transparent')
+        .attr('stroke', 'black');
+
+        svg_g
+        .append("foreignObject")
+        .attr("x", x + 100 + ((k+1) * 100) - 60 + rect_x)
+        .attr("y", y + 250)
+        .attr("width", 30)
+        .attr("height", 30)
+        .html(function(d) {
+            return `<input type="checkbox" class='sus-chk' name='sus-chk'>`;
+        })
+        .on('mousedown', function (ev) {
+            next_sus_quest(ev, k+1, q_indx);
+        });
+
+        svg_g
+        .append("text")
+        .text(k+1)
+        .attr("x", x + 100 + ((k+1) * 100) - 50 + rect_x)
+        .attr("y", y + 315)
+        .attr("font-size", 16);
+
+        transition_question(svg_g, -2000);
+    }
+
+
+    function next_sus_quest(ev, k, q_indx) {
+        const chks = d3.selectAll('.sus-chk').nodes();
+        chks.forEach(chk => {
+            if (chk !== ev.target) {
+                d3.select(chk).property("checked", false);;
+            }
+        });
+        
+        answers[section_name][question_num] = k;
+        console.log(k)
+
+        question_num++;
+        setTimeout(() => {
+            if (q_indx < 10) {
+                show_sus_questions();
+            } else {
+                d3.select('.sus-svg').remove();
+                section_name = 'nasa-tlx';
+                show_NASA_TLX_questions();
+            }
+        }, 300);
+    }
+}
+
+function show_NASA_TLX_questions() {
+    d3.select('.nasa-tlx-svg').remove();
+    d3.selectAll('.container-box').classed('whole-width', true);
+
+    const width = 1500;
+    const height = 750;
+    const svg = d3.select('.left-chart-container')
+    .append("svg")
+    .attr('class', 'nasa-tlx-')
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [-10, 0, width, height]);
+
+    const x = 35, y = 50;
+    svg
+    .append("text")
+    .text('NASA TLX:')
+    .attr("x", x)
+    .attr("y", y)
+    .attr("font-size", 25)
+    .attr("font-weight", 'bold');
+
+    const svg_g = svg.append('g');
+
+}
+
+function show_submission_info() {
+    
+    const svg = d3.select('.left-chart-container')
+        .append("svg")
+        .attr('class', 'bubble-svg')
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [-10, 0, width, height]);
+    
+    svg
+    .append("text")
+    .text('Submit')
+    .attr("x", 655)
+    .attr("y", 300)
+    .attr('class', 'btn-submit')
+    .attr("font-size", 47)
+    .on('mousedown', function (ev) {
+        cur_session_user_info.submitted = true;
+
+        $.post('./save-feedback', {
+            cb_user_data: JSON.stringify(cb_user_info),
+            answers: JSON.stringify(answers),
+            email
+        },
+        () => {
+            d3.select('.btn-submit').remove();
+            svg
+            .append("text")
+            .text(`Thank you for your participation.`)
+            .attr("x", 430)
+            .attr("y", 230)
+            .attr("font-size", 35);
+            
+            svg
+            .append("text")
+            .text(`Your response has been saved. Please contact md313724@dal.ca for any query.`)
+            .attr("x", 220)
+            .attr("y", 300)
+            .attr("font-size", 25);
+        });
+    });
 }
 
 function draw_ca_bubble_questions() {

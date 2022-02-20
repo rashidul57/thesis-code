@@ -522,6 +522,11 @@ body.questionnaire{
         font-size: 20px;
     }
 
+    .sus-chk{
+        transform: scale(3);
+        width: 20px;
+        height: 9px;
+    }
 
 
 }
@@ -566,5 +571,6 @@ body.cb-test{
             text-align: center;
             font-size: 30px;
         }
+
     }
 }

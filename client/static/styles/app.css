@@ -426,6 +426,11 @@ body.questionnaire .txt-email {
   padding-left: 5px;
   font-size: 20px;
 }
+body.questionnaire .sus-chk {
+  transform: scale(3);
+  width: 20px;
+  height: 9px;
+}
 
 body.cb-test .container-box {
   overflow: hidden;
