@@ -1,11 +1,9 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 33, sel_country_num;
+let question_num = 1;
 let empty_pass = true;
-let cur_quest_perc;
-let question_per_sec = 2;
-let bubble_quest_countries;
+let bubble_quest_countries, sel_country_num;
 let vsup_quest_color;
 const dev_groups = 4;
 const val_groups = 8;
@@ -15,7 +13,7 @@ const height = 585;
 
 const question_x = 700; 
 const question_y = 450;
-let cur_section_indx = 5;
+let cur_section_indx = 0;
 let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
@@ -112,6 +110,10 @@ function show_question() {
             section_name = 'sus';
             show_sus_questions();
         }
+        if (question_num === 43) {
+            section_name = 'nasa-tlx';
+            show_NASA_TLX_questions();
+        }
 
     } else {
         let x = 575, y = 300;
@@ -179,7 +181,6 @@ function show_question() {
 }
 
 function show_sus_questions() {
-    // show_submission_info();
     
     if (!answers[section_name]) {
         answers[section_name] = {};
@@ -212,7 +213,7 @@ function show_sus_questions() {
     const texts = sus_questions[q_indx-1];
     const yy = y + 250;
     texts.forEach((text, ind) => {
-        const prefix = ind === 0 ? (q_indx + '. ') : '  ';
+        const prefix = ind === 0 ? (question_num + '. ') : '  ';
         text = prefix + text;
         svg_g
         .append("text")
@@ -251,19 +252,20 @@ function show_sus_questions() {
     .attr("y", y + 225)
     .attr("font-size", 16);
 
+    const w = 100;
     for (let k = 0; k < 5; k++) {
         svg_g
         .append("rect")
-        .attr("x", x + 100 + k * 100 + rect_x)
+        .attr("x", x + 100 + k * w + rect_x)
         .attr("y", y + 240)
         .attr("height", 50)
-        .attr("width", 100)
+        .attr("width", w)
         .attr('fill', 'transparent')
         .attr('stroke', 'black');
 
         svg_g
         .append("foreignObject")
-        .attr("x", x + 100 + ((k+1) * 100) - 60 + rect_x)
+        .attr("x", x + 100 + ((k+1) * w) - 60 + rect_x)
         .attr("y", y + 250)
         .attr("width", 30)
         .attr("height", 30)
@@ -294,7 +296,6 @@ function show_sus_questions() {
         });
         
         answers[section_name][question_num] = k;
-        console.log(k)
 
         question_num++;
         setTimeout(() => {
@@ -310,6 +311,10 @@ function show_sus_questions() {
 }
 
 function show_NASA_TLX_questions() {
+    if (!answers[section_name]) {
+        answers[section_name] = {};
+    }
+    
     d3.select('.nasa-tlx-svg').remove();
     d3.selectAll('.container-box').classed('whole-width', true);
 
@@ -317,7 +322,7 @@ function show_NASA_TLX_questions() {
     const height = 750;
     const svg = d3.select('.left-chart-container')
     .append("svg")
-    .attr('class', 'nasa-tlx-')
+    .attr('class', 'nasa-tlx-svg')
     .attr("width", width)
     .attr("height", height)
     .attr("viewBox", [-10, 0, width, height]);
@@ -333,6 +338,96 @@ function show_NASA_TLX_questions() {
 
     const svg_g = svg.append('g');
 
+    const q_indx = question_num - 42;
+    const data = nasa_tlx_questions[q_indx-1];
+
+    svg_g
+    .append("text")
+    .text(question_num + '. ' + data.title + ':')
+    .attr("x", x)
+    .attr("y", y + 220)
+    .attr("font-size", 22)
+    .attr("font-weight", 'bolder');
+    
+    
+    svg_g
+    .append("text")
+    .text(data.question)
+    .attr("x", x + ((data.title.length+2) * 15))
+    .attr("y", y + 220)
+    .attr("font-size", 20);
+
+    svg_g
+    .append("text")
+    .text('Very Low')
+    .attr("x", x)
+    .attr("y", y + 310)
+    .attr("font-size", 16);
+
+    svg_g
+    .append("text")
+    .text('Very High')
+    .attr("x", x + 1250)
+    .attr("y", y + 310)
+    .attr("font-size", 16);
+
+    for (let k = 0; k < 22; k++) {
+        const w = 60;
+        svg_g
+        .append("rect")
+        .attr("x", x + k * w)
+        .attr("y", y + 250)
+        .attr("height", 40)
+        .attr("width", w)
+        .attr('fill', 'transparent')
+        .attr('stroke', 'black');
+
+        svg_g
+        .append("foreignObject")
+        .attr("x", x + ((k+1) * w) - (w-18))
+        .attr("y", y + 256)
+        .attr("width", 30)
+        .attr("height", 30)
+        .html(function(d) {
+            return `<input type="checkbox" class='nasa-chk' name='nasa-chk'>`;
+        })
+        .on('mousedown', function (ev) {
+            next_nasa_quest(ev, k+1, q_indx);
+        });
+
+        transition_question(svg_g, -2000);
+    }
+
+    svg_g
+    .append("line")
+    .attr("x1", x)
+    .attr("y1", y + 250)
+    .attr("x2", x + 1400)
+    .attr("y2", y + 250)
+    .attr('stroke', 'white')
+    .attr("stroke-width", 1);
+
+
+    function next_nasa_quest(ev, k, q_indx) {
+        const chks = d3.selectAll('.nasa-chk').nodes();
+        chks.forEach(chk => {
+            if (chk !== ev.target) {
+                d3.select(chk).property("checked", false);;
+            }
+        });
+        
+        answers[section_name][question_num] = k;
+
+        question_num++;
+        setTimeout(() => {
+            if (q_indx < 6) {
+                show_NASA_TLX_questions();
+            } else {
+                d3.select('.nasa-tlx-svg').remove();
+                show_submission_info();
+            }
+        }, 300);
+    }
 }
 
 function show_submission_info() {
@@ -585,7 +680,7 @@ function draw_ca_bubble_questions() {
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
         
-        const question = `Question-${(question_num-1)%8+1}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
 
         svg_g
         .append("text")
@@ -920,7 +1015,7 @@ function draw_ca_grid_questions() {
         bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
 
         const ca = parseInt(bubble_quest_countries[0].deviation);
-        const question = `Question-${(question_num-1)%8+1}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
 
         svg_g
         .append("text")
@@ -1149,7 +1244,7 @@ function draw_vsup_bubble_questions() {
         // const ca = parseInt(bubble_quest_countries[0].deviation);
 
         const {value, uncertainty} = get_vsup_conf();
-        const question = `Question-${(question_num-1)%8+1}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
+        const question = `Question-${question_num}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
 
         svg_g
         .append("text")
@@ -1309,7 +1404,7 @@ function draw_vsup_grid_questions() {
     }
 
     function draw_question(svg_g, question_x, question_y, conf) {
-        const question = `Question-${(question_num-1)%8+1}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
+        const question = `Question-${question_num}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
         svg_g
         .append("text")
         .attr("x", question_x-50)
