@@ -1,7 +1,7 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-// let question_num = 43;
+// let question_num = 33;
 // let cur_section_indx = 5;
 let question_num = 1;
 let cur_section_indx = 0;
