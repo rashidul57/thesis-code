@@ -458,6 +458,7 @@ body.cb-test .container-box .inputs .txt-input {
   font-size: 30px;
   color: #565151;
   width: 150px;
+  padding-left: 7px;
 }
 body.cb-test .container-box .inputs .btn-next {
   height: 30px;

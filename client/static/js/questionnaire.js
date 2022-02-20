@@ -1,7 +1,10 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 1;
+let question_num = 43;
+let cur_section_indx = 5;
+// let question_num = 1;
+// let cur_section_indx = 0;
 let empty_pass = true;
 let bubble_quest_countries, sel_country_num;
 let vsup_quest_color;
@@ -10,10 +13,9 @@ const val_groups = 8;
 const radius_reduce_factor = 0.7;
 const width = 650;
 const height = 585;
-
 const question_x = 700; 
 const question_y = 450;
-let cur_section_indx = 0;
+
 let section_name;
 let submitted = false;
 const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubble': false, 'vsup-grid': false};
@@ -288,6 +290,9 @@ function show_sus_questions() {
 
 
     function next_sus_quest(ev, k, q_indx) {
+        if (ev.which !== 1) {
+            return;
+        }
         const chks = d3.selectAll('.sus-chk').nodes();
         chks.forEach(chk => {
             if (chk !== ev.target) {
@@ -361,14 +366,14 @@ function show_NASA_TLX_questions() {
     .append("text")
     .text('Very Low')
     .attr("x", x)
-    .attr("y", y + 310)
+    .attr("y", y + 312)
     .attr("font-size", 16);
 
     svg_g
     .append("text")
     .text('Very High')
     .attr("x", x + 1250)
-    .attr("y", y + 310)
+    .attr("y", y + 312)
     .attr("font-size", 16);
 
     for (let k = 0; k < 22; k++) {
@@ -376,8 +381,8 @@ function show_NASA_TLX_questions() {
         svg_g
         .append("rect")
         .attr("x", x + k * w)
-        .attr("y", y + 250)
-        .attr("height", 40)
+        .attr("y", y + 258)
+        .attr("height", 35)
         .attr("width", w)
         .attr('fill', 'transparent')
         .attr('stroke', 'black');
@@ -385,7 +390,7 @@ function show_NASA_TLX_questions() {
         svg_g
         .append("foreignObject")
         .attr("x", x + ((k+1) * w) - (w-18))
-        .attr("y", y + 256)
+        .attr("y", y + 261)
         .attr("width", 30)
         .attr("height", 30)
         .html(function(d) {
@@ -401,14 +406,26 @@ function show_NASA_TLX_questions() {
     svg_g
     .append("line")
     .attr("x1", x)
-    .attr("y1", y + 250)
+    .attr("y1", y + 258)
     .attr("x2", x + 1400)
-    .attr("y2", y + 250)
+    .attr("y2", y + 258)
     .attr('stroke', 'white')
     .attr("stroke-width", 1);
 
+    svg_g
+    .append("line")
+    .attr("x1", 695)
+    .attr("y1", 283)
+    .attr("x2", 695)
+    .attr("y2", 342)
+    .attr('stroke', 'black')
+    .attr("stroke-width", 1.5);
+
 
     function next_nasa_quest(ev, k, q_indx) {
+        if (ev.which !== 1) {
+            return;
+        }
         const chks = d3.selectAll('.nasa-chk').nodes();
         chks.forEach(chk => {
             if (chk !== ev.target) {

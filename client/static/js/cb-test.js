@@ -1,5 +1,5 @@
 let cur_img_num = 1;
-const patterns = [12, 8, 29, 5, 3, 15, 74, 6, 45, 5];
+const patterns = [12, 8, 29, 5, 3, 15, 74, 6, 45, 26];
 // const patterns = [12, 8];
 let correct_count = 0;
 
