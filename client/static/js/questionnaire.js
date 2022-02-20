@@ -1,10 +1,10 @@
 const answers = {};
 const question_types = ['ca', 'ca-static', 'blur', 'noise'];
 
-let question_num = 43;
-let cur_section_indx = 5;
-// let question_num = 1;
-// let cur_section_indx = 0;
+// let question_num = 43;
+// let cur_section_indx = 5;
+let question_num = 1;
+let cur_section_indx = 0;
 let empty_pass = true;
 let bubble_quest_countries, sel_country_num;
 let vsup_quest_color;
