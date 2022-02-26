@@ -284,10 +284,10 @@ function load_control_data() {
         drill_country = undefined;
 
         if (control_mode === 'bubble-remove') {
-            toggle_cross('.' + 'bubble-select' + ' .cross', 0);
+            toggle_cross('.' + 'bubble-remove' + ' .cross', 0);
             bubble_selected = [];
         } else if (control_mode === 'bubble-select') {
-            toggle_cross('.' + 'bubble-remove' + ' .cross', 0);
+            toggle_cross('.' + 'bubble-select' + ' .cross', 0);
             bubble_removed = [];
         } else if (control_mode === 'global-streams') {
             toggle_main_stream_container(true);

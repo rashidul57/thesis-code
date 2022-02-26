@@ -152,7 +152,7 @@ function draw_predicted_lines(data, sel_country='United States') {
 }
 
 
-function draw_a_line(base_container, dataset, count_prop, leg_label, indx, legend_title) {
+function draw_a_line(base_container, dataset, indx, legend_title) {
     const mappedData = _.keyBy(dataset, 'date');
     // Init configurations
     let bounds, xScale, yScale, xAccessor, yAccessor, clip;
@@ -1957,7 +1957,7 @@ function draw_bubble_chart(data, params) {
                             create_drill_container();
                             break;
                         case 'bubble-select':
-                            select_deselect('.circle-container', false);
+                            select_deselect('.circle-container', true);
                             if (bubble_selected.indexOf(d.data.name) > -1) {
                                 bubble_selected = bubble_selected.filter(item => item !== d.data.name);
                             } else {
@@ -1965,7 +1965,7 @@ function draw_bubble_chart(data, params) {
                             }
                             bubble_selected.forEach(name => {
                                 nameCls = get_name_cls(name);
-                                select_deselect('.circle-container-' + nameCls, true);
+                                select_deselect('.circle-container-' + nameCls, false);
                             });
 
                             toggle_go();
@@ -1973,14 +1973,17 @@ function draw_bubble_chart(data, params) {
                             break;
 
                         case 'bubble-remove':
-                            select_deselect('.circle-container-' + nameCls, false);
+                            select_deselect('.circle-container', false);
                             if (bubble_removed.indexOf(d.data.name) > -1) {
-                                select_deselect('.circle-container-' + nameCls, true);
                                 bubble_removed = bubble_removed.filter(item => item !== d.data.name);
                             } else {
                                 bubble_removed.push(d.data.name);
-                                select_deselect('.circle-container-' + nameCls, false);
                             }
+
+                            bubble_removed.forEach(name => {
+                                nameCls = get_name_cls(name);
+                                select_deselect('.circle-container-' + nameCls, true);
+                            });
                             toggle_go();
                             toggle_cross('.' + control_mode + ' .cross', bubble_removed.length);
                             break;
