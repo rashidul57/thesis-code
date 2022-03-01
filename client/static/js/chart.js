@@ -1194,7 +1194,10 @@ function draw_usage_chart() {
 
 
     function draw_layer(k) {
+        
         const ca_space = question_mode ? 3 : 4;
+        const y_factor = y.bandwidth()/x.bandwidth();
+        const y_ca_space = ca_space * y_factor;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -1241,12 +1244,12 @@ function draw_usage_chart() {
                 y_pos = - 1000;
             }
             if (k===3) {
-                return y_pos - ca_space/2;
+                return y_pos - y_ca_space/2;
             } else {
                 let height = y.bandwidth();
-                const h_reduce = (d.r * height)/max_rate;
+                const h_reduce = (d.r * height * y_factor)/max_rate;
                 const change = get_rect_coord_change('y', k, d.deviation*ca_space/100);
-                y_pos = y_pos + ca_space + change;
+                y_pos = y_pos + y_ca_space + change;
                 y_pos += h_reduce/2;
                 return y_pos;
             }
@@ -1256,8 +1259,8 @@ function draw_usage_chart() {
             if (k===3) {
                 return height;
             } else {
-                const h_reduce = (d.r * height)/max_rate;
-                height = height - 2*ca_space;
+                const h_reduce = (d.r * height * y_factor)/max_rate;
+                height = height - 2*y_ca_space;
                 height -= h_reduce;
 
                 if (height < 3) {
