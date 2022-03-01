@@ -1083,7 +1083,7 @@ function draw_usage_chart() {
     let num_countries;
     const prop = 'new_cases';
     let data = [];
-    num_countries = 31;
+    num_countries = 24;
     let top_countries = _.take(countries, num_countries);
     if (question_mode) {
         const codes = ['Canada', 'Iraq', 'Japan', 'Peru', 'Malaysia'];
@@ -1102,7 +1102,7 @@ function draw_usage_chart() {
         if (question_mode) {
             preds = _.take(preds, 6)
         } else {
-            preds = _.take(preds, 50); // to smooth rendering
+            preds = _.take(preds, 20); // to smooth rendering
         }
 
         preds.forEach((value, i) => {
@@ -1126,7 +1126,7 @@ function draw_usage_chart() {
     const dateExtent = d3.extent(data, d => new Date(d.date));
     const margin = ({top: 35, right: 20, bottom: 0, left: 50});
     let width = 954;
-    let cell_height = 12;
+    let cell_height = 25;
     if (question_mode) {
         margin.top = 385;
         margin.left = 115;
@@ -1194,7 +1194,7 @@ function draw_usage_chart() {
 
 
     function draw_layer(k) {
-        const ca_space = question_mode ? 3 : 2;
+        const ca_space = question_mode ? 3 : 4;
         svg.append("g")
         .selectAll("rect")
         .data(data)
@@ -1210,12 +1210,7 @@ function draw_usage_chart() {
                 let width = x.bandwidth();
                 const w_reduce = (d.r * width)/max_rate;
                 const change = get_rect_coord_change('x', k, d.deviation*ca_space/100);
-
-                if (change >= 0) {
-                    x_pos = x_pos + change;
-                } else {
-                    x_pos = x_pos + ca_space - change;
-                }
+                x_pos = x_pos + ca_space + change;
 
                 x_pos += w_reduce/2;
 
@@ -1228,13 +1223,7 @@ function draw_usage_chart() {
                 return width;
             } else {
                 const w_reduce = (d.r * width)/max_rate;
-                const change = get_rect_coord_change('x', k, d.deviation*ca_space/100);
-
-                if (change >= 0) {
-                    width = width - 2*ca_space - change;
-                } else {
-                    width = width - 2*ca_space + change;
-                }
+                width = width - 2*ca_space;
                 width -= w_reduce;
 
                 if (width < 3) {
@@ -1257,14 +1246,8 @@ function draw_usage_chart() {
                 let height = y.bandwidth();
                 const h_reduce = (d.r * height)/max_rate;
                 const change = get_rect_coord_change('y', k, d.deviation*ca_space/100);
-                
-                if (change >= 0) {
-                    y_pos = y_pos + change;
-                } else {
-                    y_pos = y_pos + ca_space - change;
-                }
+                y_pos = y_pos + ca_space + change;
                 y_pos += h_reduce/2;
-
                 return y_pos;
             }
         })
@@ -1274,14 +1257,7 @@ function draw_usage_chart() {
                 return height;
             } else {
                 const h_reduce = (d.r * height)/max_rate;
-                const change = get_rect_coord_change('y', k, d.deviation*ca_space/100);
-                // console.log('k:', k, '  h:', change);
-                if (change >= 0) {
-                    height = height - 2*ca_space - change;
-                } else {
-                    height = height - 2*ca_space + change;
-                }
-
+                height = height - 2*ca_space;
                 height -= h_reduce;
 
                 if (height < 3) {
@@ -1291,9 +1267,6 @@ function draw_usage_chart() {
                 return height;
             }
         })
-        // .attr('fill-opacity', () => {
-        //     return k===3 ? 1 : 0.33;
-        // })
         .style("mix-blend-mode", "darken")
         .attr("fill", (d) => {
             if (k===3) {
@@ -1305,7 +1278,7 @@ function draw_usage_chart() {
                     hex_code = 0 + hex_code;
                 }
                 let colr = bubble_colors[k];
-                const rgb_part = colr.replace(/[(#)(ff)]/g, '');
+                // const rgb_part = colr.replace(/[(#)(ff)]/g, '');
                 
                 // colr = colr.replace(rgb_part, hex_code);
 
