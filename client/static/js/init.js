@@ -97,7 +97,7 @@ async function init() {
         let rec;
         all_covid_data[c].forEach((datedItem, indx) => {
             if (indx === 0) {
-                rec = datedItem;
+                rec = _.cloneDeep(datedItem);
             } else {
                 num_props.forEach(prop => {
                     if (prop === 'population') {
