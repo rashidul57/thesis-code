@@ -1932,6 +1932,7 @@ function draw_bubble_chart(data, params) {
                             drill_country = d.data.name;
                             create_drill_container();
                             break;
+
                         case 'bubble-select':
                             select_deselect('.circle-container', true);
                             if (bubble_selected.indexOf(d.data.name) > -1) {
@@ -1972,11 +1973,11 @@ function draw_bubble_chart(data, params) {
                             }
                             const opacity = global_streams.length ? 0.1 : 0.8;
                             d3.selectAll(".main-stream-chart" + ' .main-stream-cell').style("opacity", opacity);
-                            select_deselect('.circle-container', false);
+                            select_deselect('.circle-container', true);
                             global_streams.forEach(name => {
                                 nameCls = get_name_cls(name);
-                                d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 1);
-                                select_deselect('.circle-container-' + nameCls, true);
+                                d3.select(".main-stream-chart" + ' .stream-cell-' + nameCls).style("opacity", 0.5);
+                                select_deselect('.circle-container-' + nameCls, false);
                             });
 
                             toggle_go();
