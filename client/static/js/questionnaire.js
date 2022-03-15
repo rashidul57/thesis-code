@@ -43,7 +43,7 @@ const nasa_tlx_questions = [
     {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
 ];
 
-let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
+let email = ''; // location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -134,7 +134,7 @@ function show_question() {
             .attr("width", 300)
             .attr("height", 75)
             .html(function(d) {
-                return `<input type="text" class='txt-email' placeholder='Enter Email' id="txt-email">`;
+                return `<input type="text" class='txt-email' placeholder='Enter Your Email' id="txt-email">`;
             });
 
             d3.select('.txt-email').on('keyup', (ev) => {
@@ -144,15 +144,56 @@ function show_question() {
             });
 
         svg
-            .append("text")
-            .text('Next')
-            .attr("x", x + 295)
-            .attr("y", y + 50)
-            .attr("font-size", 30)
-            .attr("fill", 'black')
+        .append("text")
+        .text('Next')
+        .attr("x", x + 295)
+        .attr("y", y + 50)
+        .attr("font-size", 30)
+        .attr("fill", 'black')
+        .on('mousedown', function (ev) {
+            validate_email();
+        });
+
+        svg
+        .append("text")
+        .text('Computer Proficiency:')
+        .attr("x", x)
+        .attr("y", y + 145)
+        .attr("font-size", 25)
+        .attr("fill", 'black')
+        .on('mousedown', function (ev) {
+            validate_email();
+        });
+
+        const options = [
+            {value: 'Basic', left: 0},
+            {value: 'Intermediate', left: 100},
+            {value: 'Expert', left: 280}
+        ];
+
+        options.forEach((item, indx) => {
+            const w = 360;
+            svg
+            .append("foreignObject")
+            .attr("x", x + item.left)
+            .attr("y", y + 160)
+            .attr("font-size", 20)
+            .attr("width", w)
+            .attr("height", 55)
+            .html(function(d) {
+                const checked = item.value === 'Expert' ? 'checked' : '';
+                return `<input type="checkbox" class='comp-prof-chk' id="${item.value}" name='comp-prof-chk' ${checked}>
+                        <label for="${item.value}"  class='comp-prof-lbl'>${item.value}</label>`;
+            })
             .on('mousedown', function (ev) {
-                validate_email();
+                const chks = d3.selectAll('.comp-prof-chk').nodes();
+                chks.forEach(chk => {
+                    if (chk !== ev.target) {
+                        d3.select(chk).property("checked", false);;
+                    }
+                });
             });
+        });
     }
 
 
@@ -161,6 +202,17 @@ function show_question() {
         const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
         if (pattern.test(email)) {
+            let chkboxes = d3.selectAll('.comp-prof-chk').nodes();
+            chkboxes.forEach(chk => {
+                const el = d3.select(chk);
+                const is_checked = el.property('checked');
+                if (is_checked) {
+                    answers['computer-skill'] = el.property('id');
+                }
+            });
+            answers['participant-num'] = cur_session_user_info.index;
+            answers['email'] = email;
+
             d3.select('.email-panel').remove();
             show_question();
         } else {

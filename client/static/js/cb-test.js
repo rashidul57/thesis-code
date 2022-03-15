@@ -26,7 +26,7 @@ function nav_next() {
         show_images();
     } else {
         const perc = correct_count * 100/patterns.length;
-        const msg = perc >= 70 ? 'Congratulations! your participation are accepted.' : 'Sorry! you cannot take part in the survey.';
+        const msg = perc >= 70 ? 'Congratulations! You passed in detection test.' : 'Sorry! you cannot take part in the survey.';
         $('.container-box').addClass('result-mode');
         $('.image, .inputs').hide();
         $('.result').show();

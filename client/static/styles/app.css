@@ -357,6 +357,17 @@ body.questionnaire .txt-opinion {
 body.questionnaire .ag-dis-lbl {
   text-transform: capitalize;
 }
+body.questionnaire .comp-prof-chk {
+  transform: scale(2);
+  width: 20px;
+  height: 9px;
+  margin-top: 10px;
+  margin-left: 0;
+  position: absolute;
+}
+body.questionnaire label.comp-prof-lbl {
+  margin-left: 23px;
+}
 body.questionnaire .bubble-chart foreignObject {
   overflow: visible;
   white-space: nowrap;

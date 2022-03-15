@@ -430,6 +430,18 @@ body.questionnaire{
         text-transform: capitalize;
     }
 
+    .comp-prof-chk{
+        transform: scale(2);
+        width: 20px;
+        height: 9px;
+        margin-top: 10px;
+        margin-left: 0;
+        position: absolute;
+    }
+    label.comp-prof-lbl {
+        margin-left: 23px;
+    }
+
     .bubble-chart{
         foreignObject{
             overflow: visible;
@@ -521,8 +533,6 @@ body.questionnaire{
         width: 20px;
         height: 9px;
     }
-
-
 }
 
 body.cb-test{
