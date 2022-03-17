@@ -2332,7 +2332,7 @@ function prepare_bubble_data(data, model) {
     // Calculate deviation to shift centers of aberrated circles
     const max_uncertainty = _.maxBy(bubble_data, 'avg_uncertainty').avg_uncertainty;
     bubble_data = bubble_data.map((item) => {
-        item.deviation = item.avg_uncertainty * 7 / max_uncertainty;
+        item.deviation = item.avg_uncertainty * 9 / max_uncertainty;
         return item;
     });
     
