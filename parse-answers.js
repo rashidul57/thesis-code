@@ -17,6 +17,7 @@ files.forEach((file, indx) => {
     const data = fs.readFileSync(directoryPath + '/' + file, 'utf8');
     const answers = JSON.parse(data);
     const result = [];
+    // console.log(file)
     modules.forEach(prop => {
       let correctCount = 0;
       for (let indx in answers[prop]) {
@@ -26,6 +27,7 @@ files.forEach((file, indx) => {
       }
       totals[prop] = (totals[prop] || 0) + correctCount;
       result.push(correctCount);
+      // console.log(prop, correctCount)
     })
     studyResults.push(result)
 
