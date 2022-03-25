@@ -422,6 +422,10 @@ body.questionnaire{
         display: none;
     }
 
+    .container-box{
+        display: inline;
+    }
+
     .txt-opinion{
         width: calc(100% - 20px);
     }
@@ -528,10 +532,20 @@ body.questionnaire{
         font-size: 20px;
     }
 
-    .sus-chk, .nasa-chk{
+    .sus-chk{
         transform: scale(3);
         width: 20px;
         height: 9px;
+    }
+    .nasa-chk{
+        transform: scale(2.8);
+        width: 20px;
+        height: 9px;
+    }
+    .section-caption{
+        font-size: 23px;
+        font-weight: bold;
+        margin-bottom: 5px;
     }
 }
 
@@ -578,4 +592,29 @@ body.cb-test{
         }
 
     }
+}
+
+.feedback{
+    .section-caption{
+        font-size: 23px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    svg{
+        border: 1px solid #ccc;
+    }
+
+    .btn-submit{
+        fill: rgb(138 87 237);
+    }
+
+    .txt-email{
+        line-height: 35px;
+        width: 380px;
+        padding-left: 5px;
+        font-size: 20px;
+    }
+
+
 }

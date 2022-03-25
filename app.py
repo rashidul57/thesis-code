@@ -28,6 +28,10 @@ def cn_test():
 def index_html():
     return render_template('index.html')
 
+@app.route('/feedback')
+def feedback_html():
+    return render_template('feedback.html')
+
 @app.route('/questionnaire')
 def questionnaire():
     return render_template('questionnaire.html')

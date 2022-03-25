@@ -22,16 +22,16 @@ const section_session_states = {'ca-bubble': false, 'ca-grid': false, 'vsup-bubb
 const session_msg = 'To begin the session, please click the Start Button';
 
 const sus_questions = [
-    ['I think that I would like to', 'use this system frequently.'],
-    ['I found the system', 'unnecessarily complex.'],
-    ['I thought the system was easy', 'to use.'],
-    ['I think that I would need the', 'support of a technical person to', 'be able to use this system.'],
-    ['I found the various functions in', 'this system were well integrated.'],
-    ['I thought there was too much', 'inconsistency in this system.'],
-    ['I would imagine that most', 'people would learn to use this', 'system very quickly.'],
-    ['I found the system very', 'cumbersome to use.'],
-    ['I felt very confident using the', 'system.'],
-    ['I needed to learn a lot of', 'things before I could get going', 'with this system.'],
+    'I think that I would like to use this system frequently.',
+    'I found the system unnecessarily complex.',
+    'I thought the system was easy to use.',
+    'I think that I would need the support of a technical person to be able to use this system.',
+    'I found the various functions in this system were well integrated.',
+    'I thought there was too much inconsistency in this system.',
+    'I would imagine that most people would learn to use this system very quickly.',
+    'I found the system very cumbersome to use.',
+    'I felt very confident using the system.',
+    'I needed to learn a lot of things before I could get going with this system.'
 ];
 
 const nasa_tlx_questions = [
@@ -43,7 +43,7 @@ const nasa_tlx_questions = [
     {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
 ];
 
-let email = ''; // location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
+let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -73,18 +73,24 @@ const question_seqs = {
     'vsup-bubble': {},
     'vsup-grid': {}
 };
+const modules = ['ca+bubble', 'ca+grid', 'vsup+bubble', 'vsup+grid']
+let start_time, end_time;
 
 function show_question() {
     if (email) {
         sel_model = models[0];
 
         d3.select('.drill-models-container').style('display', 'none');
-        d3.selectAll('.left-chart-container svg').remove();
+        d3.selectAll('.container-box svg').remove();
+        d3.select('.section-caption').html('');
         
         let cur_order = cur_session_user_info.orders[cur_section_indx];
 
         if (question_num%8 === 0) {
-            cur_section_indx++;
+            if (!answers[section_name]['sus']) {
+                return show_sus_questions();
+            }
+            
         }
         
         switch (cur_order) {
@@ -108,18 +114,14 @@ function show_question() {
             draw_vsup_grid_questions();
             break;
         }
-        if (question_num === 33) {
-            section_name = 'sus';
-            show_sus_questions();
-        }
-        if (question_num === 43) {
-            section_name = 'nasa-tlx';
-            show_NASA_TLX_questions();
+
+        if (!cur_order) {
+            show_submission_info();
         }
 
     } else {
         let x = 575, y = 300;
-        const svg = d3.select('.left-chart-container')
+        const svg = d3.select('.container-box')
             .append("svg")
             .attr('class', 'email-panel')
             .attr("width", width)
@@ -234,311 +236,337 @@ function show_question() {
     }
 }
 
-function show_sus_questions() {
-    
-    if (!answers[section_name]) {
-        answers[section_name] = {};
-    }
+function show_sus_questions(page=1) {
+    const sub_module = 'sus';
 
-    d3.select('.sus-svg').remove();
-    d3.selectAll('.container-box').classed('whole-width', true);
+    if (!answers[section_name][sub_module]) {
+        answers[section_name][sub_module] = {};
+    }
 
     const width = 1500;
     const height = 750;
-    const svg = d3.select('.left-chart-container')
-    .append("svg")
-    .attr('class', 'sus-svg')
-    .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", [-10, 0, width, height]);
-
-    const x = 35, y = 50;
-    svg
-    .append("text")
-    .text('System Usability Scale (SUS):')
-    .attr("x", x)
-    .attr("y", y)
-    .attr("font-size", 25)
-    .attr("font-weight", 'bold');
-
-    const svg_g = svg.append('g');
-
-    const q_indx = question_num - 32;
-    const texts = sus_questions[q_indx-1];
-    const yy = y + 250;
-    texts.forEach((text, ind) => {
-        const prefix = ind === 0 ? (question_num + '. ') : '  ';
-        text = prefix + text;
-        svg_g
-        .append("text")
-        .text(text)
-        .attr("x", x + 200)
-        .attr("y", yy + (ind * 25))
-        .attr("font-size", 20);
-    });
-
-    const rect_x = 430;
-    svg_g
-    .append("text")
-    .text('Strongly')
-    .attr("x", x + 110 + rect_x)
-    .attr("y", y + 200)
-    .attr("font-size", 16);
-
-    svg_g
-    .append("text")
-    .text('Disagree')
-    .attr("x", x + 110 + rect_x)
-    .attr("y", y + 225)
-    .attr("font-size", 16);
-
-    svg_g
-    .append("text")
-    .text('Strongly')
-    .attr("x", x + 525 + rect_x)
-    .attr("y", y + 200)
-    .attr("font-size", 16);
-
-    svg_g
-    .append("text")
-    .text('Agree')
-    .attr("x", x + 530 + rect_x)
-    .attr("y", y + 225)
-    .attr("font-size", 16);
-
-    const w = 100;
-    for (let k = 0; k < 5; k++) {
-        svg_g
-        .append("rect")
-        .attr("x", x + 100 + k * w + rect_x)
-        .attr("y", y + 240)
-        .attr("height", 50)
-        .attr("width", w)
-        .attr('fill', 'transparent')
-        .attr('stroke', 'black');
-
-        svg_g
-        .append("foreignObject")
-        .attr("x", x + 100 + ((k+1) * w) - 60 + rect_x)
-        .attr("y", y + 250)
-        .attr("width", 30)
-        .attr("height", 30)
-        .html(function(d) {
-            return `<input type="checkbox" class='sus-chk' name='sus-chk'>`;
-        })
-        .on('mousedown', function (ev) {
-            next_sus_quest(ev, k+1, q_indx);
-        });
-
-        svg_g
-        .append("text")
-        .text(k+1)
-        .attr("x", x + 100 + ((k+1) * 100) - 50 + rect_x)
-        .attr("y", y + 315)
-        .attr("font-size", 16);
-
-        transition_question(svg_g, -2000);
-    }
-
-
-    function next_sus_quest(ev, k, q_indx) {
-        if (ev.which !== 1) {
-            return;
-        }
-        const chks = d3.selectAll('.sus-chk').nodes();
-        chks.forEach(chk => {
-            if (chk !== ev.target) {
-                d3.select(chk).property("checked", false);;
-            }
-        });
-        
-        answers[section_name][question_num] = k;
-
-        question_num++;
-        setTimeout(() => {
-            if (q_indx < 10) {
-                show_sus_questions();
-            } else {
-                d3.select('.sus-svg').remove();
-                section_name = 'nasa-tlx';
-                show_NASA_TLX_questions();
-            }
-        }, 300);
-    }
-}
-
-function show_NASA_TLX_questions() {
-    if (!answers[section_name]) {
-        answers[section_name] = {};
-    }
     
-    d3.select('.nasa-tlx-svg').remove();
-    d3.selectAll('.container-box').classed('whole-width', true);
-
-    const width = 1500;
-    const height = 750;
-    const svg = d3.select('.left-chart-container')
-    .append("svg")
-    .attr('class', 'nasa-tlx-svg')
-    .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", [-10, 0, width, height]);
-
-    const x = 35, y = 50;
-    svg
-    .append("text")
-    .text('NASA TLX:')
-    .attr("x", x)
-    .attr("y", y)
-    .attr("font-size", 25)
-    .attr("font-weight", 'bold');
-
-    const svg_g = svg.append('g');
-
-    const q_indx = question_num - 42;
-    const data = nasa_tlx_questions[q_indx-1];
-
-    svg_g
-    .append("text")
-    .text(question_num + '. ' + data.title + ':')
-    .attr("x", x)
-    .attr("y", y + 220)
-    .attr("font-size", 22)
-    .attr("font-weight", 'bolder');
-    
-    
-    svg_g
-    .append("text")
-    .text(data.question)
-    .attr("x", x + ((data.title.length+2) * 15))
-    .attr("y", y + 220)
-    .attr("font-size", 20);
-
-    svg_g
-    .append("text")
-    .text('Very Low')
-    .attr("x", x)
-    .attr("y", y + 312)
-    .attr("font-size", 16);
-
-    svg_g
-    .append("text")
-    .text('Very High')
-    .attr("x", x + 1250)
-    .attr("y", y + 312)
-    .attr("font-size", 16);
-
-    for (let k = 0; k < 22; k++) {
-        const w = 60;
-        svg_g
-        .append("rect")
-        .attr("x", x + k * w)
-        .attr("y", y + 258)
-        .attr("height", 35)
-        .attr("width", w)
-        .attr('fill', 'transparent')
-        .attr('stroke', 'black');
-
-        svg_g
-        .append("foreignObject")
-        .attr("x", x + ((k+1) * w) - (w-18))
-        .attr("y", y + 261)
-        .attr("width", 30)
-        .attr("height", 30)
-        .html(function(d) {
-            return `<input type="checkbox" class='nasa-chk' name='nasa-chk'>`;
-        })
-        .on('mousedown', function (ev) {
-            next_nasa_quest(ev, k+1, q_indx);
-        });
-
-        transition_question(svg_g, -2000);
-    }
-
-    svg_g
-    .append("line")
-    .attr("x1", x)
-    .attr("y1", y + 258)
-    .attr("x2", x + 1400)
-    .attr("y2", y + 258)
-    .attr('stroke', 'white')
-    .attr("stroke-width", 1);
-
-    svg_g
-    .append("line")
-    .attr("x1", 695)
-    .attr("y1", 283)
-    .attr("x2", 695)
-    .attr("y2", 342)
-    .attr('stroke', 'black')
-    .attr("stroke-width", 1.5);
-
-
-    function next_nasa_quest(ev, k, q_indx) {
-        if (ev.which !== 1) {
-            return;
-        }
-        const chks = d3.selectAll('.nasa-chk').nodes();
-        chks.forEach(chk => {
-            if (chk !== ev.target) {
-                d3.select(chk).property("checked", false);;
-            }
-        });
-        
-        answers[section_name][question_num] = k;
-
-        question_num++;
-        setTimeout(() => {
-            if (q_indx < 6) {
-                show_NASA_TLX_questions();
-            } else {
-                d3.select('.nasa-tlx-svg').remove();
-                show_submission_info();
-            }
-        }, 300);
-    }
-}
-
-function show_submission_info() {
-    
-    const svg = d3.select('.left-chart-container')
+    d3.selectAll('.container-box svg').remove();
+    const svg = d3.select('.container-box')
         .append("svg")
-        .attr('class', 'bubble-svg')
+        .attr('class', 'sus-svg')
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [-10, 0, width, height]);
-    
-    svg
-    .append("text")
-    .text('Submit')
-    .attr("x", 655)
-    .attr("y", 300)
-    .attr('class', 'btn-submit')
-    .attr("font-size", 47)
-    .on('mousedown', function (ev) {
-        cur_session_user_info.submitted = true;
 
-        $.post('./save-feedback', {
-            cb_user_data: JSON.stringify(cb_user_info),
-            answers: JSON.stringify(answers),
-            email
-        },
-        () => {
-            d3.select('.btn-submit').remove();
-            svg
+    d3.select('.section-caption').html('System Usability Scale (SUS)');
+    
+    const x = 35, y = 40;
+    const rect_x = 430;
+    const svg_g = svg.append('g');
+    const QuestionHeight = 130;
+
+    const num_of_question = 5;
+
+    svg_g
+    .append("text")
+    .text('Strongly Disagree')
+    .attr("x", x + 750)
+    .attr("y", y + 5)
+    .attr("font-size", 16);
+
+    svg_g
+    .append("text")
+    .text('Strongly Agree')
+    .attr("x", x + 1140)
+    .attr("y", y + 5)
+    .attr("font-size", 16);
+    
+    for (let k = 0; k < num_of_question; k++) {
+        svg_g.append('line')
+        .style("stroke", "#ceccee")
+        .style("stroke-width", 1)
+        .attr("x1", x)
+        .attr("y1", y + 30 + k*QuestionHeight)
+        .attr("x2", x + width - 100)
+        .attr("y2", y + 30 + k*QuestionHeight);
+
+        draw_row_items(k, x, y, page)
+    }
+
+    function draw_row_items(k, x, y, page) {
+        let yy = y + k*QuestionHeight;
+        const indx = (page-1) * num_of_question + k;
+        const q_indx = indx + 1
+        const question = 'Q-' + (q_indx) + ': ' + sus_questions[indx];
+        svg_g
+        .append("text")
+        .text(question)
+        .attr("x", x + 30)
+        .attr("y", yy + 90)
+        .attr("font-size", 16);
+
+        yy -= 30
+
+        const w = 100;
+        const module_cls = section_name;
+        for (let ik = 0; ik < 5; ik++) {
+            svg_g
+            .append("rect")
+            .attr("x", x + 320 + ik * w + rect_x)
+            .attr("y", yy + 100 - 10)
+            .attr("height", 50)
+            .attr("width", w)
+            .attr('fill', 'transparent')
+            .attr('stroke', 'black');
+
+            svg_g
+            .append("foreignObject")
+            .attr("x", x + 320 + ((ik+1) * w) - 60 + rect_x)
+            .attr("y", yy + 110 - 10)
+            .attr("width", 30)
+            .attr("height", 30)
+            .html(function(d) {
+                return `<input type="checkbox" class='sus-chk ${module_cls}-${k}-sus-chk' name='sus-chk'>`;
+            })
+            .on('mousedown', function (ev) {
+                if (ev.which !== 1) {
+                    return;
+                }
+                next_sus_quest(ev, ik+1, k, page, q_indx, module_cls);
+            });
+
+            svg_g
             .append("text")
-            .text(`Thank you for your participation.`)
-            .attr("x", 430)
-            .attr("y", 230)
-            .attr("font-size", 35);
-            
-            svg
-            .append("text")
-            .text(`Your response has been saved. Please contact md313724@dal.ca for any query.`)
-            .attr("x", 220)
-            .attr("y", 300)
-            .attr("font-size", 25);
+            .text(ik+1)
+            .attr("x", x + 320 + ((ik+1) * 100) - 50 + rect_x)
+            .attr("y", yy + 175 - 10)
+            .attr("font-size", 16);
+
+            transition_question(svg_g, 3000);
+        }
+    }
+
+    function next_sus_quest(ev, ik, k, page, q_indx, module_cls) {
+        let chks = d3.selectAll(`.${module_cls}-${k}-sus-chk`).nodes();
+        chks.forEach(chk => {
+            if (chk !== ev.target) {
+                d3.select(chk).property("checked", false);;
+            }
         });
+        
+        answers[section_name][sub_module][q_indx] = ik;
+
+        setTimeout(() => {
+            let answer_count = 0;
+            chks = d3.selectAll(`.sus-chk`).nodes();
+            chks.forEach(chk => {
+                if (d3.select(chk).property("checked")) {
+                    answer_count++;
+                }
+            });
+    
+            if (answer_count === 5) {
+                if (page === 1) {
+                    show_sus_questions(page+1);
+                } else {
+                    show_NASA_TLX_questions();
+                }
+            }
+        }, 300);
+    }
+}
+
+function show_NASA_TLX_questions(page=1) {
+    const sub_module = 'nasa-tlx';
+
+    if (!answers[section_name][sub_module]) {
+        answers[section_name][sub_module] = {};
+    }
+
+    const width = 1500;
+    const height = 750;
+    
+    d3.selectAll('.container-box svg').remove();
+    const svg = d3.select('.container-box')
+        .append("svg")
+        .attr('class', 'nasa-svg')
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [-10, 0, width, height]);
+
+    d3.select('.section-caption').html('NASA TLX Work Load Scale');
+    
+    const x = 35, y = 20;
+    const rect_x = 430;
+    const svg_g = svg.append('g');
+    const QuestionHeight = 125;
+
+    const q_indx = question_num - 32;
+    const num_of_question = 6;
+    
+    for (let k = 0; k < num_of_question; k++) {
+        if (k > 0) {
+            svg_g.append('line')
+            .style("stroke", "#ff86e3")
+            .style("stroke-width", 1)
+            .attr("x1", x)
+            .attr("y1", y - 20 + k*QuestionHeight)
+            .attr("x2", x + width - 100)
+            .attr("y2", y - 20 + k*QuestionHeight);
+        }
+
+        draw_row_items(k, x, y, page)
+    }
+
+    function draw_row_items(k, x, y, page) {
+        let yy = y + k*QuestionHeight - 150;
+
+        const data = nasa_tlx_questions[k];
+        const q_indx = k + 1
+        const title = 'Question-' +  (q_indx) + '. ' + data.title + ':';
+        svg_g
+        .append("text")
+        .text(title)
+        .attr("x", x + 30)
+        .attr("y", yy + 155)
+        .attr("font-size", 16)
+        .attr("font-weight", 'bold');
+        
+        svg_g
+        .append("text")
+        .text(data.question)
+        .attr("x",  x + 80 + ((title.length+2) * 7))
+        .attr("y", yy + 155)
+        .attr("font-size", 16);
+
+        const row_neg = 75;
+
+        svg_g
+        .append("text")
+        .text('Very Low')
+        .attr("x", x + 175)
+        .attr("y", yy + 312 - row_neg)
+        .attr("font-size", 16);
+
+        svg_g
+        .append("text")
+        .text('Very High')
+        .attr("x", x + 1310)
+        .attr("y", yy + 312 - row_neg)
+        .attr("font-size", 16);
+
+        const xx = x + 170;
+        const module_cls = section_name;
+        for (let ik = 0; ik < 22; ik++) {
+            const w = 55;
+            svg_g
+            .append("rect")
+            .attr("x", xx + ik * w + 5)
+            .attr("y", yy + 258 - row_neg)
+            .attr("height", 35)
+            .attr("width", w)
+            .attr('fill', 'transparent')
+            .attr('stroke', 'black');
+
+            svg_g
+            .append("foreignObject")
+            .attr("x", xx + ((ik+1) * w) - (w-18))
+            .attr("y", yy + 261 - row_neg)
+            .attr("width", 30)
+            .attr("height", 30)
+            .html(function(d) {
+                return `<input type="checkbox" class='nasa-chk ${module_cls}-nasa-chk' name='nasa-chk'>`;
+            })
+            .on('mousedown', function (ev) {
+                if (ev.which !== 1) {
+                    return;
+                }
+                next_nasa_quest(ev, ik, k, q_indx, module_cls);
+            });
+
+            transition_question(svg_g, 2000);
+        }
+
+        svg_g
+        .append("line")
+        .attr("x1", xx)
+        .attr("y1", yy + 258 - row_neg)
+        .attr("x2", xx + 1400)
+        .attr("y2", yy + 258 - row_neg)
+        .attr('stroke', 'white')
+        .attr("stroke-width", 1);
+
+        // mid-bar
+        svg_g
+        .append("line")
+        .attr("x1", 695 + 120)
+        .attr("y1", yy - 59 + 300 - row_neg)
+        .attr("x2", 695 + 120)
+        .attr("y2", yy + 293 - row_neg)
+        .attr('stroke', 'black')
+        .attr("stroke-width", 1.5);
+    }
+
+    function next_nasa_quest(ev, ik, k, q_indx, module_cls) {
+        let chks = d3.selectAll(`.${module_cls}-${k}-nasa-chk`).nodes();
+        chks.forEach(chk => {
+            if (chk !== ev.target) {
+                d3.select(chk).property("checked", false);;
+            }
+        });
+        
+        answers[section_name][sub_module][q_indx] = ik;
+
+        setTimeout(() => {
+            let answer_count = 0;
+            chks = d3.selectAll(`.nasa-chk`).nodes();
+            chks.forEach(chk => {
+                if (d3.select(chk).property("checked")) {
+                    answer_count++;
+                }
+            });
+    
+            if (answer_count === 6) {
+                cur_section_indx++;
+                show_question();
+            }
+        }, 300);
+    }
+}
+
+
+function show_submission_info() {
+    d3.select('.container-box svg').remove();
+    const svg = d3.select('.container-box')
+        .append("svg")
+        .attr('class', 'bubble-svg')
+        .attr("width", 1500)
+        .attr("height", 800);
+
+    cur_session_user_info.submitted = true;
+
+    $.post('./save-feedback', {
+        cb_user_data: JSON.stringify(cb_user_info),
+        answers: JSON.stringify(answers),
+        email
+    },
+    () => {
+        svg
+        .append("text")
+        .text(`Done!`)
+        .attr("x", 640)
+        .attr("y", 170)
+        .attr("font-size", 35);
+
+        svg
+        .append("text")
+        .text(`Thank you for your participation.`)
+        .attr("x", 430)
+        .attr("y", 230)
+        .attr("font-size", 30);
+        
+        svg
+        .append("text")
+        .text(`Your response has been saved. Please contact md313724@dal.ca for any query.`)
+        .attr("x", 220)
+        .attr("y", 300)
+        .attr("font-size", 25);
     });
 }
 
@@ -626,7 +654,7 @@ function draw_ca_bubble_questions() {
     function draw_chart(k, leaves) {
         let svg;
         if (k === 0) {
-            svg = d3.select('.left-chart-container')
+            svg = d3.select('.container-box')
             .append("svg")
             .attr('class', 'bubble-svg')
             .attr("width", width)
@@ -786,7 +814,7 @@ function draw_ca_grid_questions() {
 
     var w = width;
     var h = height;
-    const svg = d3.select('.left-chart-container')
+    const svg = d3.select('.container-box')
         .append("svg")
         .attr("width", w)
         .attr("height", h)
@@ -1189,7 +1217,7 @@ function draw_vsup_bubble_questions() {
     function draw_chart(k, leaves) {
         let svg;
         if (k === 0) {
-            svg = d3.select('.left-chart-container')
+            svg = d3.select('.container-box')
             .append("svg")
             .attr('class', 'bubble-svg')
             .attr("width", width)
@@ -1345,7 +1373,7 @@ function draw_vsup_grid_questions() {
 
     var w = 260;
     var h = 200;
-    const svg = d3.select('.left-chart-container')
+    const svg = d3.select('.container-box')
         .append("svg")
         .attr("width", w)
         .attr("height", h)
