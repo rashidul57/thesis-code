@@ -1,11 +1,14 @@
 //requiring path and fs modules
 const path = require('path');
 const fs = require('fs');
+const _ = require('lodash');
+
 //joining path of directory 
 const directoryPath = path.join(__dirname, 'docs/survey/answers');
 //passsing directoryPath and callback function
-const files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store' 
+let files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store' 
   && file !== 'sbrooks@cs.dal.ca.json')
+
 
 const modules = ['ca-bubble', 'ca-grid', 'vsup-bubble', 'vsup-grid'];
 const totals = {}
@@ -13,9 +16,13 @@ const totals = {}
 let studyResults = [];
 let susResults = []
 let nasaTlxResults = []
-files.forEach((file, indx) => {
+let allAnswers = files.map((file, indx) => {
     const data = fs.readFileSync(directoryPath + '/' + file, 'utf8');
     const answers = JSON.parse(data);
+    return answers;
+})
+allAnswers = _.orderBy(allAnswers, ['participant-num'], ['asc']);
+allAnswers.forEach((answers) => {
     const result = [];
     // console.log(file)
     modules.forEach(prop => {
