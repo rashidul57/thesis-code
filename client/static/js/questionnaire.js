@@ -17,6 +17,7 @@ const question_x = 700;
 const question_y = 450;
 let current_rand_indx;
 let is_single_valued;
+let vsup_grid_render_colors = [];
 
 let section_name;
 let submitted = false;
@@ -64,6 +65,7 @@ const vsup_all_colors = [
     {uncertainty: [61, 80], colors: ['rgb(158, 164, 196)', 'rgb(180, 229, 176)']},
     {uncertainty: [81, 100], colors: ['rgb(205, 227, 225)']}
 ];
+const all_vsups = _.concat(vsup_all_colors[0].colors, vsup_all_colors[1].colors, vsup_all_colors[2].colors, vsup_all_colors[3].colors)
 
 const vsup_data = {
     1: { color: 'rgb(38, 130, 142)', value: 27, uncertainty: 37},
@@ -97,10 +99,10 @@ function show_question() {
         
         let cur_order = cur_session_user_info.orders[cur_section_indx];
 
-        if (question_num%8 === 0) {
+        if (question_num-1 !== 0 && (question_num-1)%8 === 0) {
             if (!answers[section_name]['sus']) {
                 end_time = new Date();
-                const time_diff = (end_time - start_time)/1000;
+                const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
                 answers[section_name]['time'] = time_diff;
                 return show_sus_questions();
             }
@@ -606,9 +608,9 @@ function draw_ca_bubble_questions() {
         .attr("font-size", 25)
         .attr('fill', 'blue')
         .on('mousedown', function (ev) {
+            start_time = new Date();
             d3.selectAll('.txt-session').remove();
             section_session_states['ca-bubble'] = true;
-            start_time = new Date();
             draw_question(svg, question_data, val_conf.radiis);
         });
     }
@@ -733,12 +735,12 @@ function draw_ca_bubble_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        const base_num = question_num % 8;
-        is_single_valued = base_num <= 4
+        const base_num = (question_num-1) % 8;
+        is_single_valued = base_num <= 3;
 
         let ca, radius;
         if (is_single_valued) {
-            const indx = ca_bubble_singles_indxs[base_num-1];
+            const indx = ca_bubble_singles_indxs[base_num];
             const devs = _.uniq(question_data.map(item => item.deviation));
             ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
@@ -894,6 +896,7 @@ function draw_ca_grid_questions() {
         .attr("font-size", 25)
         .attr('fill', 'blue')
         .on('mousedown', function (ev) {
+            start_time = new Date();
             d3.selectAll('.txt-session').remove();
             section_session_states['ca-grid'] = true;
             draw_question(svg, data, val_conf.radiis);
@@ -1095,12 +1098,12 @@ function draw_ca_grid_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        const base_num = question_num % 8;
-        is_single_valued = base_num <= 4
+        const base_num = (question_num-1) % 8;
+        is_single_valued = base_num <= 3;
 
         let ca, radius;
         if (is_single_valued) {
-            const indx = ca_grid_singles_indxs[base_num-1];
+            const indx = ca_grid_singles_indxs[base_num];
             const devs = _.uniq(question_data.map(item => item.deviation));
             ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
@@ -1216,6 +1219,7 @@ function draw_vsup_bubble_questions() {
             if (ev.which !== 1) {
                 return;
             }
+            start_time = new Date();
             d3.selectAll('.txt-session').remove();
             section_session_states['vsup-bubble'] = true;
             draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
@@ -1355,8 +1359,8 @@ function draw_vsup_bubble_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        const base_num = question_num % 8;
-        is_single_valued = base_num <= 4
+        const base_num = (question_num-1) % 8;
+        is_single_valued = base_num <= 3;
         const {value, uncertainty} = get_vsup_conf();
         let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${uncertainty}>`;
         if (is_single_valued) {
@@ -1423,6 +1427,8 @@ function draw_vsup_grid_questions() {
         .attr("height", h).append("g")
         .attr("transform", "translate(230,250)");
     
+    let used_colors = [];
+    
     heatmap.selectAll("rect")
         .data(data)
         .enter()
@@ -1434,8 +1440,24 @@ function draw_vsup_grid_questions() {
         .attr("y", function(d) { return y(d.position_indx); })
         .attr("width", cell_width)
         .attr("height", y.bandwidth())
-        .attr("fill", function(d) {
-            return scale(d.vsup_r, d.deviation);
+        .attr("fill", function(d, indx) {
+            return vsup_grid_render_colors.length === 25 ? vsup_grid_render_colors[indx] : get_color();
+
+            function get_color() {
+                while (true) {
+                    const rand = _.random(0, 14);
+                    if (used_colors.indexOf(rand) === -1) {
+                        const color = all_vsups[rand];
+                        used_colors.push(rand);
+                        if (used_colors.length === all_vsups.length) {
+                            used_colors = [];
+                        }
+                        vsup_grid_render_colors.push(color);
+                        return color;
+                    }
+                }
+                
+            }
         })
         .on('mousedown', function (ev) {
             if (ev.which !== 1 || !section_session_states['vsup-grid']) {
@@ -1532,6 +1554,7 @@ function draw_vsup_grid_questions() {
         .attr("font-size", 25)
         .attr('fill', 'blue')
         .on('mousedown', function (ev) {
+            start_time = new Date();
             d3.selectAll('.txt-session').remove();
             section_session_states['vsup-grid'] = true;
             draw_question(svg_g, question_x, question_y, conf);
@@ -1539,10 +1562,9 @@ function draw_vsup_grid_questions() {
     }
 
     function draw_question(svg_g, question_x, question_y, conf) {
-        const base_num = question_num % 8;
-        is_single_valued = base_num <= 4
-        // const {value, uncertainty} = get_vsup_conf();
-        // const question = `Question-${question_num}: Click on grid-cell where <Uncertainty=${conf.uncertainty}>`;
+        const base_num = (question_num-1) % 8;
+        is_single_valued = base_num <= 3;
+
         let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${conf.uncertainty}>`;
         if (is_single_valued) {
             question = question.replace('$$', ``);
