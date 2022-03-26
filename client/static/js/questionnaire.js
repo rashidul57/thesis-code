@@ -15,6 +15,8 @@ const width = 650;
 const height = 585;
 const question_x = 700; 
 const question_y = 450;
+let current_rand_indx;
+let is_single_valued;
 
 let section_name;
 let submitted = false;
@@ -56,8 +58,15 @@ const vsup_top_colors = {
     8: 'rgb(216, 226, 25)'
 };
 
+const vsup_all_colors = [
+    {uncertainty: [20, 40], colors: ['rgb(72, 24, 106)', 'rgb(66, 64, 134)', 'rgb(51, 99, 141)', 'rgb(38, 130, 142)', 'rgb(31, 160, 136)', 'rgb(63, 188, 115)', 'rgb(132, 212, 75)', 'rgb(216, 226, 25)']},
+    {uncertainty: [41, 60], colors: ['rgb(117, 93, 155)', 'rgb(103, 147, 169)', 'rgb(109, 195, 158)', 'rgb(197, 229, 109)']},
+    {uncertainty: [61, 80], colors: ['rgb(158, 164, 196)', 'rgb(180, 229, 176)']},
+    {uncertainty: [81, 100], colors: ['rgb(205, 227, 225)']}
+];
+
 const vsup_data = {
-    1: { color: 'rgb(38, 130, 142)', value: 27, uncertainty: 37 },
+    1: { color: 'rgb(38, 130, 142)', value: 27, uncertainty: 37},
     2: { color: 'rgb(109, 195, 158)', value: 51, uncertainty: 43 },
     3: { color: 'rgb(72, 24, 106)', value: 8, uncertainty: 38 },
     4: { color: 'rgb(180, 229, 176)', value: 66, uncertainty: 78 },
@@ -75,6 +84,8 @@ const question_seqs = {
 };
 const modules = ['ca+bubble', 'ca+grid', 'vsup+bubble', 'vsup+grid']
 let start_time, end_time;
+const ca_bubble_singles_indxs = get_four_rands();
+const ca_grid_singles_indxs = get_four_rands();
 
 function show_question() {
     if (email) {
@@ -88,9 +99,11 @@ function show_question() {
 
         if (question_num%8 === 0) {
             if (!answers[section_name]['sus']) {
+                end_time = new Date();
+                const time_diff = (end_time - start_time)/1000;
+                answers[section_name]['time'] = time_diff;
                 return show_sus_questions();
             }
-            
         }
         
         switch (cur_order) {
@@ -155,47 +168,6 @@ function show_question() {
         .on('mousedown', function (ev) {
             validate_email();
         });
-
-        svg
-        .append("text")
-        .text('Computer Proficiency:')
-        .attr("x", x)
-        .attr("y", y + 145)
-        .attr("font-size", 25)
-        .attr("fill", 'black')
-        .on('mousedown', function (ev) {
-            validate_email();
-        });
-
-        const options = [
-            {value: 'Basic', left: 0},
-            {value: 'Intermediate', left: 100},
-            {value: 'Expert', left: 280}
-        ];
-
-        options.forEach((item, indx) => {
-            const w = 360;
-            svg
-            .append("foreignObject")
-            .attr("x", x + item.left)
-            .attr("y", y + 160)
-            .attr("font-size", 20)
-            .attr("width", w)
-            .attr("height", 55)
-            .html(function(d) {
-                const checked = item.value === 'Expert' ? 'checked' : '';
-                return `<input type="checkbox" class='comp-prof-chk' id="${item.value}" name='comp-prof-chk' ${checked}>
-                        <label for="${item.value}"  class='comp-prof-lbl'>${item.value}</label>`;
-            })
-            .on('mousedown', function (ev) {
-                const chks = d3.selectAll('.comp-prof-chk').nodes();
-                chks.forEach(chk => {
-                    if (chk !== ev.target) {
-                        d3.select(chk).property("checked", false);;
-                    }
-                });
-            });
-        });
     }
 
 
@@ -204,14 +176,6 @@ function show_question() {
         const pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
         if (pattern.test(email)) {
-            let chkboxes = d3.selectAll('.comp-prof-chk').nodes();
-            chkboxes.forEach(chk => {
-                const el = d3.select(chk);
-                const is_checked = el.property('checked');
-                if (is_checked) {
-                    answers['computer-skill'] = el.property('id');
-                }
-            });
             answers['participant-num'] = cur_session_user_info.index;
             answers['email'] = email;
 
@@ -610,10 +574,8 @@ function draw_ca_bubble_questions() {
     svg.append("g").call(legend);
     d3.select('.legend').attr("transform", "translate(850 160)");
     
-
     // update vsup items
     show_vsup_value_only();
-
 
     // draw_legend(svg, val_conf, max_radius);
     draw_legend(svg, dev_conf, max_radius);
@@ -646,6 +608,7 @@ function draw_ca_bubble_questions() {
         .on('mousedown', function (ev) {
             d3.selectAll('.txt-session').remove();
             section_session_states['ca-bubble'] = true;
+            start_time = new Date();
             draw_question(svg, question_data, val_conf.radiis);
         });
     }
@@ -770,14 +733,32 @@ function draw_ca_bubble_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        // don't parseInt here as used in next line
-        const rand_indx = get_next_index();
-        const radius = radiis[rand_indx];
-        bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
+        const base_num = question_num % 8;
+        is_single_valued = base_num <= 4
 
-        const ca = parseInt(bubble_quest_countries[0].deviation);
-        
-        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        let ca, radius;
+        if (is_single_valued) {
+            const indx = ca_bubble_singles_indxs[base_num-1];
+            const devs = _.uniq(question_data.map(item => item.deviation));
+            ca = devs[indx];
+            bubble_quest_countries = question_data.filter(item => item.deviation === ca);
+        } else {
+            // don't parseInt here as used in next line
+            const rand_indx = get_next_index();
+            radius = radiis[rand_indx]; // radius means color
+            // radius, r_indx represents value(number_of_cases_count)
+            // for user study forcefully we draw all circle with same radius
+            bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
+            ca = parseInt(bubble_quest_countries[0].deviation);
+            bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
+        }
+
+        let question = `Question-${question_num}: Click on chart where $$ <CA=${parseInt(ca)}>`;
+        if (is_single_valued) {
+            question = question.replace('$$', ``);
+        } else {
+            question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
+        }
 
         svg_g
         .append("text")
@@ -789,7 +770,15 @@ function draw_ca_bubble_questions() {
 
         transition_question(svg_g, 2800);
     }
+}
 
+function get_14_random() {
+    while (true) {
+        const rand = _.random(1, 4);
+        if (!answers[section_name].hasOwnProperty(rand)) {
+            return rand;
+        }
+    }
 }
 
 
@@ -1106,13 +1095,32 @@ function draw_ca_grid_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        // don't parseInt here as used in next line
-        const rand_indx = get_next_index();
-        const radius = radiis[rand_indx];
-        bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
+        const base_num = question_num % 8;
+        is_single_valued = base_num <= 4
 
-        const ca = parseInt(bubble_quest_countries[0].deviation);
-        const question = `Question-${question_num}: Click on chart where <Value=${parseInt(radius*8)}> and <CA=${parseInt(ca)}>`;
+        let ca, radius;
+        if (is_single_valued) {
+            const indx = ca_grid_singles_indxs[base_num-1];
+            const devs = _.uniq(question_data.map(item => item.deviation));
+            ca = devs[indx];
+            bubble_quest_countries = question_data.filter(item => item.deviation === ca);
+        } else {
+            // don't parseInt here as used in next line
+            const rand_indx = get_next_index();
+            radius = radiis[rand_indx]; // radius means color
+            // radius, r_indx represents value(number_of_cases_count)
+            // for user study forcefully we draw all circle with same radius
+            bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
+            ca = parseInt(bubble_quest_countries[0].deviation);
+            bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
+        }
+
+        let question = `Question-${question_num}: Click on chart where $$ <CA=${parseInt(ca)}>`;
+        if (is_single_valued) {
+            question = question.replace('$$', ``);
+        } else {
+            question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
+        }
 
         svg_g
         .append("text")
@@ -1283,8 +1291,20 @@ function draw_vsup_bubble_questions() {
                     color.push(c);
                 });
                 
-                const fill_color = 'rgb(' + color.join(', ') + ')';
-                answers[section_name][question_num] = vsup_quest_color === fill_color;
+                const selected_color = 'rgb(' + color.join(', ') + ')';
+                if (is_single_valued) {
+                    const color_item = vsup_all_colors.find(item => {
+                        return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
+                    });
+                    answers[section_name][question_num] = false;
+                    color_item.colors.forEach(vsup_color => {
+                        if (vsup_color === selected_color) {
+                            answers[section_name][question_num] = true;
+                        }
+                    })
+                } else {
+                    answers[section_name][question_num] = vsup_quest_color === selected_color;
+                }
                 
                 // console.log(vsup_quest_color, fill_color, answers[section_name][question_num])
 
@@ -1335,13 +1355,15 @@ function draw_vsup_bubble_questions() {
             .append('g')
             .attr('class', question_g_sel);
 
-        // const rand_indx = get_next_index();
-        // const radius = radiis[rand_indx];
-        // bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
-        // const ca = parseInt(bubble_quest_countries[0].deviation);
-
+        const base_num = question_num % 8;
+        is_single_valued = base_num <= 4
         const {value, uncertainty} = get_vsup_conf();
-        const question = `Question-${question_num}: Click on bubble chart where <Value=${value}> and <Uncertainty=${uncertainty}>`;
+        let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${uncertainty}>`;
+        if (is_single_valued) {
+            question = question.replace('$$', ``);
+        } else {
+            question = question.replace('$$', `<Value=${value}> and `);
+        }
 
         svg_g
         .append("text")
@@ -1419,8 +1441,24 @@ function draw_vsup_grid_questions() {
             if (ev.which !== 1 || !section_session_states['vsup-grid']) {
                 return;
             }
-            const fill_color = d3.select(this).attr('fill');
-            answers[section_name][question_num] = vsup_quest_color === fill_color;
+            const selected_color = d3.select(this).attr('fill');
+            // answers[section_name][question_num] = vsup_quest_color === fill_color;
+            // const selected_color = 'rgb(' + color.join(', ') + ')';
+            if (is_single_valued) {
+                const color_item = vsup_all_colors.find(item => {
+                    return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
+                });
+                answers[section_name][question_num] = false;
+                color_item.colors.forEach(vsup_color => {
+                    if (vsup_color === selected_color) {
+                        answers[section_name][question_num] = true;
+                    }
+                })
+            } else {
+                answers[section_name][question_num] = vsup_quest_color === selected_color;
+            }
+
+
             // console.log(answers[section_name][question_num]);
             show_question(++question_num);
         });
@@ -1501,7 +1539,17 @@ function draw_vsup_grid_questions() {
     }
 
     function draw_question(svg_g, question_x, question_y, conf) {
-        const question = `Question-${question_num}: Click on grid-cell where <Value=${conf.value}> and <Uncertainty=${conf.uncertainty}>`;
+        const base_num = question_num % 8;
+        is_single_valued = base_num <= 4
+        // const {value, uncertainty} = get_vsup_conf();
+        // const question = `Question-${question_num}: Click on grid-cell where <Uncertainty=${conf.uncertainty}>`;
+        let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${conf.uncertainty}>`;
+        if (is_single_valued) {
+            question = question.replace('$$', ``);
+        } else {
+            question = question.replace('$$', `<Value=${conf.value}> and`);
+        }
+        
         svg_g
         .append("text")
         .attr("x", question_x-50)
@@ -1520,6 +1568,7 @@ function get_vsup_conf() {
     vsup_quest_color = cell_data.color;
     const value = cell_data.value;
     const uncertainty = cell_data.uncertainty;
+    vsup_quest_uncertainty = uncertainty;
 
     return {uncertainty, value, vsup_quest_color};
 }
@@ -1787,7 +1836,21 @@ function get_next_index() {
         const rand = _.random(0, 7);
         if (!question_seqs[section_name][rand]) {
             question_seqs[section_name][rand] = true;
+            current_rand_indx = rand;
             return rand;
+        }
+    }
+}
+
+function get_four_rands() {
+    const rands = [];
+    while (true) {
+        const rand = _.random(0, 3);
+        if (rands.indexOf(rand) === -1) {
+            rands.push(rand);
+        }
+        if (rands.length === 4) {
+            return rands;
         }
     }
 }
