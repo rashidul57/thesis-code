@@ -12,10 +12,12 @@ let files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store'
 
 const modules = ['ca-bubble', 'ca-grid', 'vsup-bubble', 'vsup-grid'];
 const correct_totals = {};
-const time_totals = {};
+const fh_time_totals = {};
+const sh_time_totals = {};
 
 let studyResults = [];
-let timeResults = [];
+let fhTimeResults = [];
+let shTimeResults = [];
 let susResults = []
 let nasaTlxResults = []
 let allAnswers = files.map((file, indx) => {
@@ -27,24 +29,27 @@ let allAnswers = files.map((file, indx) => {
 allAnswers = _.orderBy(allAnswers, ['participant-num'], ['asc']);
 allAnswers.forEach((answers) => {
     const count_result = [];
-    const time_results = [];
+    const fh_time_results = [];
+    const sh_time_results = [];
     console.log(answers.email)
     modules.forEach(prop => {
       let correctCount = 0;
 
       for (let indx in answers[prop]) {
 
-        if (answers[prop][indx] && ['nasa-tlx', 'sus', 'time'].indexOf(indx) === -1) {
+        if (answers[prop][indx] && ['nasa-tlx', 'sus', 'first-half-time', 'second-half-time'].indexOf(indx) === -1) {
           correctCount++;
         }
       }
 
       correct_totals[prop] = (correct_totals[prop] || 0) + correctCount;
-      time_totals[prop] = (time_totals[prop] || 0) + (answers[prop]['time'] || 0);
+      fh_time_totals[prop] = (fh_time_totals[prop] || 0) + (answers[prop]['first-half-time'] || 0);
+      sh_time_totals[prop] = (sh_time_totals[prop] || 0) + (answers[prop]['second-half-time'] || 0);
       count_result.push(correctCount);
-      time_results.push((answers[prop]['time'] || 0));
+      fh_time_results.push((answers[prop]['first-half-time'] || 0));
+      sh_time_results.push((answers[prop]['second-half-time'] || 0));
 
-      console.log(prop, correctCount)
+      // console.log(prop, correctCount)
 
       // nasa-tlx data
       const nasaRow = [prop];
@@ -61,7 +66,8 @@ allAnswers.forEach((answers) => {
       susResults.push(susRow);
     })
     studyResults.push(count_result)
-    timeResults.push(time_results);
+    fhTimeResults.push(fh_time_results);
+    shTimeResults.push(sh_time_results);
 });
 
 
@@ -72,16 +78,25 @@ modules.forEach(prop => {
 });
 studyResults.push(result)
 
+// find first half time avg
 result = [];
 modules.forEach(prop => {
-  const avg = time_totals[prop]/files.length;
+  const avg = fh_time_totals[prop]/files.length;
   result.push(Number(avg.toFixed(1)));
 });
-timeResults.push(result);
+fhTimeResults.push(result);
+
+// find second half time avg
+result = [];
+modules.forEach(prop => {
+  const avg = sh_time_totals[prop]/files.length;
+  result.push(Number(avg.toFixed(1)));
+});
+shTimeResults.push(result);
 
 
 writeStudyResults(modules, studyResults, 'study');
-writeStudyResults(modules, timeResults, 'time');
+writeTimeResults(modules, fhTimeResults, shTimeResults, 'time');
 
 writeSusResults(susResults, 'sus.csv')
 writeSusResults(nasaTlxResults, 'nasa-tlx.csv')
@@ -129,6 +144,35 @@ function writeSusResults(results, fileName) {
   csvWriter
     .writeRecords(data)
     .then(()=> console.log('Results written'));
+}
+
+function writeTimeResults(modules, fhTimeResults, shTimeResults, fileName) {
+  const header = [{id: 'participant', title: 'Participant #'}]
+  modules.forEach((prop) => {
+    header.push({id: prop + '-first-half', title: prop + ' first half'})
+    header.push({id: prop + '-second-half', title: prop + ' second half'})
+    header.push({id: prop + '-total', title: prop + ' total'})
+  })
+  const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+  const csvWriter = createCsvWriter({
+    path: `./docs/survey/calc-results/${fileName}.csv`,
+    header
+  });
+  const data = []
+  fhTimeResults.forEach((fh_result, ind) => {
+    const row = {participant: (ind+1)}
+    const sh_result = shTimeResults[ind];
+    modules.forEach((prop, indx) => {
+      row[prop + '-first-half'] = Number(fh_result[indx].toFixed(1));
+      row[prop + '-second-half'] = Number(sh_result[indx].toFixed(1));
+      row[prop + '-total'] = Number((fh_result[indx] + sh_result[indx]).toFixed(1));
+    })
+    data.push(row);
+  })
+
+  csvWriter
+    .writeRecords(data)
+    .then(()=> console.log(fileName + ' results written'));
 }
 
 function writeStudyResults(modules, results, fileName) {

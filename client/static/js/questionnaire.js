@@ -103,7 +103,7 @@ function show_question() {
             if (!answers[section_name]['sus']) {
                 end_time = new Date();
                 const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
-                answers[section_name]['time'] = time_diff;
+                answers[section_name]['second-half-time'] = time_diff;
                 return show_sus_questions();
             }
         }
@@ -614,7 +614,7 @@ function draw_ca_bubble_questions() {
             draw_question(svg, question_data, val_conf.radiis);
         });
     }
-    
+
 
     function draw_chart(k, leaves) {
         let svg;
@@ -737,6 +737,10 @@ function draw_ca_bubble_questions() {
 
         const base_num = (question_num-1) % 8;
         is_single_valued = base_num <= 3;
+
+        if (base_num === 4) {
+            set_first_half_time();
+        }
 
         let ca, radius;
         if (is_single_valued) {
@@ -1101,6 +1105,10 @@ function draw_ca_grid_questions() {
         const base_num = (question_num-1) % 8;
         is_single_valued = base_num <= 3;
 
+        if (base_num === 4) {
+            set_first_half_time();
+        }
+
         let ca, radius;
         if (is_single_valued) {
             const indx = ca_grid_singles_indxs[base_num];
@@ -1361,6 +1369,11 @@ function draw_vsup_bubble_questions() {
 
         const base_num = (question_num-1) % 8;
         is_single_valued = base_num <= 3;
+
+        if (base_num === 4) {
+            set_first_half_time();
+        }
+
         const {value, uncertainty} = get_vsup_conf();
         let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${uncertainty}>`;
         if (is_single_valued) {
@@ -1564,6 +1577,10 @@ function draw_vsup_grid_questions() {
     function draw_question(svg_g, question_x, question_y, conf) {
         const base_num = (question_num-1) % 8;
         is_single_valued = base_num <= 3;
+
+        if (base_num === 4) {
+            set_first_half_time();
+        }
 
         let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${conf.uncertainty}>`;
         if (is_single_valued) {
@@ -1875,4 +1892,12 @@ function get_four_rands() {
             return rands;
         }
     }
+}
+
+
+function set_first_half_time() {
+    end_time = new Date();
+    const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
+    answers[section_name]['first-half-time'] = time_diff;
+    start_time = new Date();
 }
