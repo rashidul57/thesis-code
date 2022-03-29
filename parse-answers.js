@@ -176,9 +176,6 @@ function writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults
     header
   });
   const data = []
-  // console.log('svoTimeResults', svoTimeResults)
-  // console.log('sva', svaTimeResults)
-  // console.log('dv', dvTimeResults)
   svoTimeResults.forEach((svo_result, ind) => {
     const row = {participant: (ind+1)}
     const sva_result = svaTimeResults[ind];
