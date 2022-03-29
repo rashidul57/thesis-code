@@ -126,7 +126,11 @@ async function init() {
                 cur_session_user_info = user;
             }
         });
-        show_question();
+        if (cur_session_user_info) {
+            show_question();
+        } else {
+            alert('Sorry! counter balancing config entirely used already.');
+        }
     } else {
         load_control_data();
         load_country_dropdown();

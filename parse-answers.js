@@ -12,12 +12,14 @@ let files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store'
 
 const modules = ['ca-bubble', 'ca-grid', 'vsup-bubble', 'vsup-grid'];
 const correct_totals = {};
-const fh_time_totals = {};
-const sh_time_totals = {};
+const svo_time_totals = {};
+const sva_time_totals = {};
+const dv_time_totals = {};
 
 let studyResults = [];
-let fhTimeResults = [];
-let shTimeResults = [];
+let svoTimeResults = [];
+let svaTimeResults = [];
+let dvTimeResults = [];
 let susResults = []
 let nasaTlxResults = []
 let allAnswers = files.map((file, indx) => {
@@ -29,25 +31,28 @@ let allAnswers = files.map((file, indx) => {
 allAnswers = _.orderBy(allAnswers, ['participant-num'], ['asc']);
 allAnswers.forEach((answers) => {
     const count_result = [];
-    const fh_time_results = [];
-    const sh_time_results = [];
+    const svo_time_results = [];
+    const sva_time_results = [];
+    const dv_time_results = [];
     console.log(answers.email)
     modules.forEach(prop => {
       let correctCount = 0;
 
       for (let indx in answers[prop]) {
 
-        if (answers[prop][indx] && ['nasa-tlx', 'sus', 'first-half-time', 'second-half-time'].indexOf(indx) === -1) {
+        if (answers[prop][indx] && ['nasa-tlx', 'sus', 'single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
           correctCount++;
         }
       }
 
       correct_totals[prop] = (correct_totals[prop] || 0) + correctCount;
-      fh_time_totals[prop] = (fh_time_totals[prop] || 0) + (answers[prop]['first-half-time'] || 0);
-      sh_time_totals[prop] = (sh_time_totals[prop] || 0) + (answers[prop]['second-half-time'] || 0);
+      svo_time_totals[prop] = (svo_time_totals[prop] || 0) + (answers[prop]['single-var-one-time'] || 0);
+      sva_time_totals[prop] = (sva_time_totals[prop] || 0) + (answers[prop]['single-var-all-time'] || 0);
+      dv_time_totals[prop] = (dv_time_totals[prop] || 0) + (answers[prop]['double-var-time'] || 0);
       count_result.push(correctCount);
-      fh_time_results.push((answers[prop]['first-half-time'] || 0));
-      sh_time_results.push((answers[prop]['second-half-time'] || 0));
+      svo_time_results.push((answers[prop]['single-var-one-time'] || 0));
+      sva_time_results.push((answers[prop]['single-var-all-time'] || 0));
+      dv_time_results.push((answers[prop]['double-var-time'] || 0));
 
       // console.log(prop, correctCount)
 
@@ -66,8 +71,9 @@ allAnswers.forEach((answers) => {
       susResults.push(susRow);
     })
     studyResults.push(count_result)
-    fhTimeResults.push(fh_time_results);
-    shTimeResults.push(sh_time_results);
+    svoTimeResults.push(svo_time_results);
+    svaTimeResults.push(sva_time_results);
+    dvTimeResults.push(dv_time_results);
 });
 
 
@@ -78,36 +84,47 @@ modules.forEach(prop => {
 });
 studyResults.push(result)
 
-// find first half time avg
+// find single variable one time avg
 result = [];
 modules.forEach(prop => {
-  const avg = fh_time_totals[prop]/files.length;
+  const avg = svo_time_totals[prop]/files.length;
   result.push(Number(avg.toFixed(1)));
 });
-fhTimeResults.push(result);
+svoTimeResults.push(result);
+
+// find single variable all time avg
+result = [];
+modules.forEach(prop => {
+  const avg = sva_time_totals[prop]/files.length;
+  result.push(Number(avg.toFixed(1)));
+});
+svaTimeResults.push(result);
 
 // find second half time avg
 result = [];
 modules.forEach(prop => {
-  const avg = sh_time_totals[prop]/files.length;
+  const avg = dv_time_totals[prop]/files.length;
   result.push(Number(avg.toFixed(1)));
 });
-shTimeResults.push(result);
+dvTimeResults.push(result);
 
 
 writeStudyResults(modules, studyResults, 'study');
-writeTimeResults(modules, fhTimeResults, shTimeResults, 'time');
+writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'time');
 
-writeSusResults(susResults, 'sus.csv')
-writeSusResults(nasaTlxResults, 'nasa-tlx.csv')
+modules.forEach((prop) => {
+  const sus_res = susResults.filter(row => row[0] === prop);
+  writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
+
+  const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
+  writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
+});
 
 
-function writeSusResults(results, fileName) {
+function writeSusNasaResults(results, fileName) {
   const header = [
-    {id: 'participant', title: 'Participant #'}, 
-    {id: '0', title: 'Module'}
+    {id: 'participant', title: 'Participant #'}
   ];
-  
 
   results[0].forEach((val, indx) => {
     if (typeof(val) !== 'string') {
@@ -121,16 +138,15 @@ function writeSusResults(results, fileName) {
   });
 
   const data = results.map((result, ind) => {
-    const pid = parseInt(ind/4) + 1;
+    const pid = ind + 1;
     const row = {participant: pid}
     result.forEach((value, indx) => {
-      indx = typeof(indx) === 'string' ? 'module' : indx;
       row[indx] = value;
     })
     return row;
-  })
+  });
 
-  const avg = {}
+  const avg = {};
   for (let prop in data[0]) {
     let sum = 0;
     data.forEach(row => {
@@ -146,12 +162,13 @@ function writeSusResults(results, fileName) {
     .then(()=> console.log('Results written'));
 }
 
-function writeTimeResults(modules, fhTimeResults, shTimeResults, fileName) {
+function writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, fileName) {
   const header = [{id: 'participant', title: 'Participant #'}]
   modules.forEach((prop) => {
-    header.push({id: prop + '-first-half', title: prop + ' first half'})
-    header.push({id: prop + '-second-half', title: prop + ' second half'})
-    header.push({id: prop + '-total', title: prop + ' total'})
+    header.push({id: prop + '-svo', title: prop + 'SV One'})
+    header.push({id: prop + '-sva', title: prop + 'SV All'})
+    header.push({id: prop + '-sva', title: prop + 'DV'})
+    header.push({id: prop + '-total', title: prop + 'Total'})
   })
   const createCsvWriter = require('csv-writer').createObjectCsvWriter;
   const csvWriter = createCsvWriter({
@@ -159,13 +176,18 @@ function writeTimeResults(modules, fhTimeResults, shTimeResults, fileName) {
     header
   });
   const data = []
-  fhTimeResults.forEach((fh_result, ind) => {
+  // console.log('svoTimeResults', svoTimeResults)
+  // console.log('sva', svaTimeResults)
+  // console.log('dv', dvTimeResults)
+  svoTimeResults.forEach((svo_result, ind) => {
     const row = {participant: (ind+1)}
-    const sh_result = shTimeResults[ind];
+    const sva_result = svaTimeResults[ind];
+    const dv_result = dvTimeResults[ind];
     modules.forEach((prop, indx) => {
-      row[prop + '-first-half'] = Number(fh_result[indx].toFixed(1));
-      row[prop + '-second-half'] = Number(sh_result[indx].toFixed(1));
-      row[prop + '-total'] = Number((fh_result[indx] + sh_result[indx]).toFixed(1));
+      row[prop + '-svo'] = Number(svo_result[indx].toFixed(1));
+      row[prop + '-sva'] = Number(sva_result[indx].toFixed(1));
+      row[prop + '-dv'] = Number(dv_result[indx].toFixed(1));
+      row[prop + '-total'] = Number((svo_result[indx] + sva_result[indx] + dv_result[indx]).toFixed(1));
     })
     data.push(row);
   })

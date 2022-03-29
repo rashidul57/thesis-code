@@ -16,11 +16,9 @@ const height = 585;
 const question_x = 700; 
 const question_y = 450;
 let current_rand_indx;
-let is_single_param;
+let is_single_valued;
 let vsup_grid_render_colors = [];
-const dev_mode = false;
-let target_selection_mode;
-let selections_for_all = [];
+const dev_mode = true;
 
 let section_name;
 let submitted = false;
@@ -49,7 +47,7 @@ const nasa_tlx_questions = [
     {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
 ];
 
-let email = ''; // location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
+let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -108,7 +106,7 @@ function show_question() {
                 if (!answers[section_name]['sus']) {
                     end_time = new Date();
                     const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
-                    answers[section_name]['double-var-time'] = time_diff;
+                    answers[section_name]['second-half-time'] = time_diff;
                     return show_sus_questions();
                 }
             }
@@ -443,7 +441,7 @@ function show_NASA_TLX_questions(page=1) {
             .attr("width", 30)
             .attr("height", 30)
             .html(function(d) {
-                return `<input type="checkbox" class='nasa-chk ${module_cls}-${k}-nasa-chk' name='nasa-chk'>`;
+                return `<input type="checkbox" class='nasa-chk ${module_cls}-nasa-chk' name='nasa-chk'>`;
             })
             .on('mousedown', function (ev) {
                 if (ev.which !== 1) {
@@ -683,34 +681,20 @@ function draw_ca_bubble_questions() {
                 if (ev.which !== 1 || !section_session_states['ca-bubble']) {
                     return;
                 }
-                let selection_correct;
+
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.data.name) {
-                        // answers[section_name][question_num] = true;
-                        selection_correct = country.name;
+                        answers[section_name][question_num] = true;
+                        // console.log('true')
                     }
                 });
 
-                if (target_selection_mode === 'all' && selection_correct) {
-                    selections_for_all.push(selection_correct);
-                    selections_for_all = _.uniq(selections_for_all);
-                    if (selections_for_all.length === bubble_quest_countries.length) {
-                        answers[section_name][question_num] = true;
-                        show_question(++question_num);
-                    }
-                } else {
-                    bubble_quest_countries.forEach(country => {
-                        if (country.name === d.data.name) {
-                            answers[section_name][question_num] = true;
-                        }
-                    });
-
-                    if (!answers[section_name][question_num]) {
-                        answers[section_name][question_num] = false;
-                    }
-
-                    show_question(++question_num);
+                if (!answers[section_name][question_num]) {
+                    answers[section_name][question_num] = false;
+                    // console.log('false')
                 }
+
+                show_question(++question_num);
             });
     }
 
@@ -756,22 +740,15 @@ function draw_ca_bubble_questions() {
             .attr('class', question_g_sel);
 
         const base_num = (question_num-1) % 8;
-        is_single_param = base_num <= 4;
+        is_single_valued = base_num <= 3;
 
-        if (base_num === 3 || base_num === 4) {
-            target_selection_mode = 'all';
-            selections_for_all = [];
-        } else {
-            target_selection_mode = 'one';
-        }
-
-        if (base_num === 2 || base_num === 4) {
-            set_signle_var_time();
+        if (base_num === 4) {
+            set_first_half_time();
         }
 
         let ca, radius;
-        if (is_single_param) {
-            const indx = ca_bubble_singles_indxs[base_num%4];
+        if (is_single_valued) {
+            const indx = ca_bubble_singles_indxs[base_num];
             const devs = _.uniq(question_data.map(item => item.deviation));
             ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
@@ -786,9 +763,8 @@ function draw_ca_bubble_questions() {
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
-        if (is_single_param) {
+        let question = `Question-${question_num}: Click on bubble chart where $$ <CA=${parseInt(ca)}>`;
+        if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
             question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
@@ -979,33 +955,19 @@ function draw_ca_grid_questions() {
                     return;
                 }
 
-                let selection_correct;
                 bubble_quest_countries.forEach(country => {
                     if (country.name === d.name) {
-                        selection_correct = country.name;
+                        answers[section_name][question_num] = true;
+                        // console.log('true');
                     }
                 });
 
-                if (target_selection_mode === 'all' && selection_correct) {
-                    selections_for_all.push(selection_correct);
-                    selections_for_all = _.uniq(selections_for_all);
-                    if (selections_for_all.length === bubble_quest_countries.length) {
-                        answers[section_name][question_num] = true;
-                        show_question(++question_num);
-                    }
-                } else {
-                    bubble_quest_countries.forEach(country => {
-                        if (country.name === d.name) {
-                            answers[section_name][question_num] = true;
-                        }
-                    });
-
-                    if (!answers[section_name][question_num]) {
-                        answers[section_name][question_num] = false;
-                    }
-
-                    show_question(++question_num);
+                if (!answers[section_name][question_num]) {
+                    answers[section_name][question_num] = false;
+                    // console.log('false');
                 }
+
+                show_question(++question_num);
             });
 
     }
@@ -1145,22 +1107,15 @@ function draw_ca_grid_questions() {
             .attr('class', question_g_sel);
 
         const base_num = (question_num-1) % 8;
-        is_single_param = base_num <= 4;
+        is_single_valued = base_num <= 3;
 
-        if (base_num === 3 || base_num === 4) {
-            target_selection_mode = 'all';
-            selections_for_all = [];
-        } else {
-            target_selection_mode = 'one';
-        }
-
-        if (base_num === 2 || base_num === 4) {
-            set_signle_var_time();
+        if (base_num === 4) {
+            set_first_half_time();
         }
 
         let ca, radius;
-        if (is_single_param) {
-            const indx = ca_grid_singles_indxs[base_num%4];
+        if (is_single_valued) {
+            const indx = ca_grid_singles_indxs[base_num];
             const devs = _.uniq(question_data.map(item => item.deviation));
             ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
@@ -1175,9 +1130,8 @@ function draw_ca_grid_questions() {
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
-        if (is_single_param) {
+        let question = `Question-${question_num}: Click on grid chart where $$ <CA=${parseInt(ca)}>`;
+        if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
             question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
@@ -1354,51 +1308,23 @@ function draw_vsup_bubble_questions() {
                 });
                 
                 const selected_color = 'rgb(' + color.join(', ') + ')';
-                if (is_single_param) {
+                if (is_single_valued) {
                     const color_item = vsup_all_colors.find(item => {
                         return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
                     });
-                    if (target_selection_mode === 'all') {
-                        const uniq_colors = color_item.colors;
-                        const country_list = [];
-
-                        const circle_cont_nodes = d3.selectAll('.circle-container').nodes();
-                        circle_cont_nodes.forEach(g_node => {
-                            color = [];
-                            g_node.childNodes.forEach(circle => {
-                                const c = d3.select(circle).attr('fill').replace(/(rgb)|,|(255)|\(|\)|\s/g, '');
-                                color.push(c);
-                            });
-                            const circle_color = 'rgb(' + color.join(', ') + ')';
-                            if (uniq_colors.indexOf(circle_color) > -1) {
-                                country_list.push(g_node.__data__.data.name);
-                            }
-                        })
-                        if (country_list.indexOf(d.data.name) > -1) {
-                            selections_for_all.push(d.data.name);
-                            selections_for_all = _.uniq(selections_for_all);
-                            if (selections_for_all.length === country_list.length) {
-                                answers[section_name][question_num] = true;
-                                show_question(++question_num);
-                            }
-                        } else {
-                            answers[section_name][question_num] = false;
-                            show_question(++question_num);
+                    answers[section_name][question_num] = false;
+                    color_item.colors.forEach(vsup_color => {
+                        if (vsup_color === selected_color) {
+                            answers[section_name][question_num] = true;
                         }
-                    } else {
-                        answers[section_name][question_num] = false;
-                        color_item.colors.forEach(vsup_color => {
-                            if (vsup_color === selected_color) {
-                                answers[section_name][question_num] = true;
-                            }
-                        });
-                        show_question(++question_num);
-                    }
-
+                    })
                 } else {
                     answers[section_name][question_num] = vsup_quest_color === selected_color;
-                    show_question(++question_num);
                 }
+                
+                // console.log(vsup_quest_color, fill_color, answers[section_name][question_num])
+
+                show_question(++question_num);
 
             });
     }
@@ -1446,23 +1372,15 @@ function draw_vsup_bubble_questions() {
             .attr('class', question_g_sel);
 
         const base_num = (question_num-1) % 8;
-        is_single_param = base_num <= 4;
+        is_single_valued = base_num <= 3;
 
-        if (base_num === 3 || base_num === 4) {
-            target_selection_mode = 'all';
-            selections_for_all = [];
-        } else {
-            target_selection_mode = 'one';
-        }
-
-        if (base_num === 2 || base_num === 4) {
-            set_signle_var_time();
+        if (base_num === 4) {
+            set_first_half_time();
         }
 
         const {value, uncertainty} = get_vsup_conf();
-        const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(uncertainty)}>`;
-        if (is_single_param) {
+        let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${uncertainty}>`;
+        if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
             question = question.replace('$$', `<Value=${value}> and `);
@@ -1558,73 +1476,52 @@ function draw_vsup_grid_questions() {
                 
             }
         })
-        .on('mousedown', function (ev, d) {
+        .on('mousedown', function (ev) {
             if (ev.which !== 1 || !section_session_states['vsup-grid']) {
                 return;
             }
             const selected_color = d3.select(this).attr('fill');
-            if (is_single_param) {
+            // answers[section_name][question_num] = vsup_quest_color === fill_color;
+            // const selected_color = 'rgb(' + color.join(', ') + ')';
+            if (is_single_valued) {
                 const color_item = vsup_all_colors.find(item => {
                     return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
                 });
-                if (target_selection_mode === 'all') {
-                    const uniq_colors = color_item.colors;
-                    const country_list = [];
-
-                    const rect_nodes = d3.selectAll('rect').nodes();
-                    rect_nodes.forEach(r_node => {
-                        const r_color = d3.select(r_node).attr('fill');
-                        if (uniq_colors.indexOf(r_color) > -1) {
-                            country_list.push(r_node.__data__.name);
-                        }
-                    })
-                    if (country_list.indexOf(d.name) > -1) {
-                        selections_for_all.push(d.name);
-                        selections_for_all = _.uniq(selections_for_all);
-                        if (selections_for_all.length === country_list.length) {
-                            answers[section_name][question_num] = true;
-                            show_question(++question_num);
-                        }
-                    } else {
-                        answers[section_name][question_num] = false;
-                        show_question(++question_num);
+                answers[section_name][question_num] = false;
+                color_item.colors.forEach(vsup_color => {
+                    if (vsup_color === selected_color) {
+                        answers[section_name][question_num] = true;
                     }
-                } else {
-                    answers[section_name][question_num] = false;
-                    color_item.colors.forEach(vsup_color => {
-                        if (vsup_color === selected_color) {
-                            answers[section_name][question_num] = true;
-                        }
-                    });
-                    show_question(++question_num);
-                }
+                })
             } else {
                 answers[section_name][question_num] = vsup_quest_color === selected_color;
-                show_question(++question_num);
             }
-            
+
+
+            // console.log(answers[section_name][question_num]);
+            show_question(++question_num);
         });
 
     // axes
-    // heatmap.append("g")
-    //     .attr("transform", "translate(0," + h + ")")
-    //     .call(d3.axisBottom(xAxis));
+    heatmap.append("g")
+        .attr("transform", "translate(0," + h + ")")
+        .call(d3.axisBottom(xAxis));
 
     heatmap.append("text")
         .style("text-anchor", "middle")
         .style("font-size", 13)
         .attr("transform", "translate(" + (w / 2) + ", " + (h + 40) + ")")
-        // .text("New Cases")
+        .text("New Cases")
 
-    // heatmap.append("g")
-    //     .attr("transform", "translate(" + w + ", 0)")
-    //     .call(d3.axisRight(yAxis));
+    heatmap.append("g")
+        .attr("transform", "translate(" + w + ", 0)")
+        .call(d3.axisRight(yAxis));
 
     heatmap.append("text")
         .style("text-anchor", "middle")
         .style("font-size", 13)
         .attr("transform", "translate(" + (w + 40) + ", " + (h / 2) + ")rotate(90)")
-        // .text("Countries");
+        .text("Countries");
 
     // legend
     var legend = vsup.legend.arcmapLegend();
@@ -1683,22 +1580,14 @@ function draw_vsup_grid_questions() {
 
     function draw_question(svg_g, question_x, question_y, conf) {
         const base_num = (question_num-1) % 8;
-        is_single_param = base_num <= 4;
+        is_single_valued = base_num <= 3;
 
-        if (base_num === 3 || base_num === 4) {
-            target_selection_mode = 'all';
-            selections_for_all = [];
-        } else {
-            target_selection_mode = 'one';
+        if (base_num === 4) {
+            set_first_half_time();
         }
 
-        if (base_num === 2 || base_num === 4) {
-            set_signle_var_time();
-        }
-
-        const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(conf.uncertainty)}>`;
-        if (is_single_param) {
+        let question = `Question-${question_num}: Click on grid chart where $$ <Uncertainty=${conf.uncertainty}>`;
+        if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
             question = question.replace('$$', `<Value=${conf.value}> and`);
@@ -2010,9 +1899,9 @@ function get_four_rands() {
 }
 
 
-function set_signle_var_time() {
+function set_first_half_time() {
     end_time = new Date();
     const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
-    answers[section_name]['single-var-' + target_selection_mode + '-time'] = time_diff;
+    answers[section_name]['first-half-time'] = time_diff;
     start_time = new Date();
 }
