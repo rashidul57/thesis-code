@@ -40,7 +40,7 @@ allAnswers.forEach((answers) => {
 
       for (let indx in answers[prop]) {
 
-        if (answers[prop][indx] && ['nasa-tlx', 'sus', 'single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
+        if (answers[prop][indx] && ['single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
           correctCount++;
         }
       }
@@ -54,22 +54,26 @@ allAnswers.forEach((answers) => {
       sva_time_results.push((answers[prop]['single-var-all-time'] || 0));
       dv_time_results.push((answers[prop]['double-var-time'] || 0));
 
-      // console.log(prop, correctCount)
+    });
 
+    ['ca', 'vsup'].forEach(prop => {
       // nasa-tlx data
       const nasaRow = [prop];
-      for (let indx in answers[prop]['nasa-tlx']) {
-        nasaRow.push(answers[prop]['nasa-tlx'][indx]);
+      for (let indx in answers[prop + '-nasa']) {
+        nasaRow.push(answers[prop + '-nasa'][indx]);
       }
       nasaTlxResults.push(nasaRow)
 
       // sus data
       const susRow = [prop];
-      for (let indx in answers[prop]['sus']) {
-        susRow.push(answers[prop]['sus'][indx]);
+      for (let indx in answers[prop + '-sus']) {
+        susRow.push(answers[prop + '-sus'][indx]);
       }
       susResults.push(susRow);
     })
+    
+
+
     studyResults.push(count_result)
     svoTimeResults.push(svo_time_results);
     svaTimeResults.push(sva_time_results);
@@ -112,7 +116,7 @@ dvTimeResults.push(result);
 writeStudyResults(modules, studyResults, 'study');
 writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'time');
 
-modules.forEach((prop) => {
+['ca', 'vsup'].forEach((prop) => {
   const sus_res = susResults.filter(row => row[0] === prop);
   writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
 

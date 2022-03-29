@@ -91,12 +91,14 @@ const modules = ['ca+bubble', 'ca+grid', 'vsup+bubble', 'vsup+grid']
 let start_time, end_time;
 const ca_bubble_singles_indxs = get_four_rands();
 const ca_grid_singles_indxs = get_four_rands();
+const module_counts = {ca: 0, vsup: 0};
+let module_group;
+let sus_prop, nasa_prop;
 
 function show_question() {
     if (email) {
         sel_model = models[0];
 
-        d3.select('.drill-models-container').style('display', 'none');
         d3.selectAll('.container-box svg').remove();
         d3.select('.section-caption').html('');
         
@@ -104,12 +106,26 @@ function show_question() {
         if (question_num%8 === 0 && dev_mode) {
             cur_section_indx++;
         } else if (!dev_mode) {
-            if (question_num-1 !== 0 && (question_num-1)%8 === 0) {
-                if (!answers[section_name]['sus']) {
-                    end_time = new Date();
-                    const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
-                    answers[section_name]['double-var-time'] = time_diff;
+            if (question_num > 1 && (question_num-1)%8 === 0) {
+                end_time = new Date();
+                const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed(1));
+                answers[section_name]['double-var-time'] = time_diff;
+
+                module_group = ['ca-bubble', 'ca-grid'].indexOf(section_name) > -1 ? 'ca' : 'vsup';
+                sus_prop = module_group + '-' + 'sus';
+                nasa_prop = module_group + '-' + 'nasa';
+                module_counts[module_group]++;
+                if (!answers[sus_prop] && module_counts[module_group] === 2) {
+                    if (!answers[sus_prop]) {
+                        answers[sus_prop] = {};
+                    }
+                    if (!answers[nasa_prop]) {
+                        answers[nasa_prop] = {};
+                    }
                     return show_sus_questions();
+                } else {
+                    cur_section_indx++;
+                    cur_order = cur_session_user_info.orders[cur_section_indx];
                 }
             }
         }
@@ -209,11 +225,6 @@ function show_question() {
 }
 
 function show_sus_questions(page=1) {
-    const sub_module = 'sus';
-
-    if (!answers[section_name][sub_module]) {
-        answers[section_name][sub_module] = {};
-    }
 
     const width = 1500;
     const height = 750;
@@ -322,7 +333,7 @@ function show_sus_questions(page=1) {
             }
         });
         
-        answers[section_name][sub_module][q_indx] = ik;
+        answers[sus_prop][q_indx] = ik;
 
         setTimeout(() => {
             let answer_count = 0;
@@ -345,12 +356,6 @@ function show_sus_questions(page=1) {
 }
 
 function show_NASA_TLX_questions(page=1) {
-    const sub_module = 'nasa-tlx';
-
-    if (!answers[section_name][sub_module]) {
-        answers[section_name][sub_module] = {};
-    }
-
     const width = 1500;
     const height = 750;
     
@@ -483,7 +488,7 @@ function show_NASA_TLX_questions(page=1) {
             }
         });
         
-        answers[section_name][sub_module][q_indx] = ik;
+        answers[nasa_prop][q_indx] = ik;
 
         setTimeout(() => {
             let answer_count = 0;
@@ -495,7 +500,6 @@ function show_NASA_TLX_questions(page=1) {
             });
     
             if (answer_count === 6) {
-                cur_section_indx++;
                 show_question();
             }
         }, 300);
@@ -2012,7 +2016,7 @@ function get_four_rands() {
 
 function set_signle_var_time() {
     end_time = new Date();
-    const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
+    const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed(1));
     answers[section_name]['single-var-' + target_selection_mode + '-time'] = time_diff;
     start_time = new Date();
 }
