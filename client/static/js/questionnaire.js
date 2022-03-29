@@ -18,6 +18,7 @@ const question_y = 450;
 let current_rand_indx;
 let is_single_valued;
 let vsup_grid_render_colors = [];
+const dev_mode = true;
 
 let section_name;
 let submitted = false;
@@ -98,13 +99,16 @@ function show_question() {
         d3.select('.section-caption').html('');
         
         let cur_order = cur_session_user_info.orders[cur_section_indx];
-
-        if (question_num-1 !== 0 && (question_num-1)%8 === 0) {
-            if (!answers[section_name]['sus']) {
-                end_time = new Date();
-                const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
-                answers[section_name]['second-half-time'] = time_diff;
-                return show_sus_questions();
+        if (question_num%8 === 0 && dev_mode) {
+            cur_section_indx++;
+        } else if (!dev_mode) {
+            if (question_num-1 !== 0 && (question_num-1)%8 === 0) {
+                if (!answers[section_name]['sus']) {
+                    end_time = new Date();
+                    const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed('1'));
+                    answers[section_name]['second-half-time'] = time_diff;
+                    return show_sus_questions();
+                }
             }
         }
         
@@ -759,7 +763,7 @@ function draw_ca_bubble_questions() {
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        let question = `Question-${question_num}: Click on chart where $$ <CA=${parseInt(ca)}>`;
+        let question = `Question-${question_num}: Click on bubble chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
@@ -1126,7 +1130,7 @@ function draw_ca_grid_questions() {
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        let question = `Question-${question_num}: Click on chart where $$ <CA=${parseInt(ca)}>`;
+        let question = `Question-${question_num}: Click on grid chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
@@ -1582,7 +1586,7 @@ function draw_vsup_grid_questions() {
             set_first_half_time();
         }
 
-        let question = `Question-${question_num}: Click on bubble chart where $$ <Uncertainty=${conf.uncertainty}>`;
+        let question = `Question-${question_num}: Click on grid chart where $$ <Uncertainty=${conf.uncertainty}>`;
         if (is_single_valued) {
             question = question.replace('$$', ``);
         } else {
