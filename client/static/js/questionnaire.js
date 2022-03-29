@@ -91,7 +91,7 @@ const modules = ['ca+bubble', 'ca+grid', 'vsup+bubble', 'vsup+grid']
 let start_time, end_time;
 const ca_bubble_singles_indxs = get_four_rands();
 const ca_grid_singles_indxs = get_four_rands();
-const module_counts = {ca: 0, vsup: 0};
+const ps_module_passed = {};
 let module_group;
 let sus_prop, nasa_prop;
 
@@ -103,31 +103,15 @@ function show_question() {
         d3.select('.section-caption').html('');
         
         let cur_order = cur_session_user_info.orders[cur_section_indx];
-        if (question_num%8 === 0 && dev_mode) {
+        if (question_num%8 === 0) {
             cur_section_indx++;
-        } else if (!dev_mode) {
-            if (question_num > 1 && (question_num-1)%8 === 0) {
-                end_time = new Date();
-                const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed(1));
-                answers[section_name]['double-var-time'] = time_diff;
-
-                module_group = ['ca-bubble', 'ca-grid'].indexOf(section_name) > -1 ? 'ca' : 'vsup';
-                sus_prop = module_group + '-' + 'sus';
-                nasa_prop = module_group + '-' + 'nasa';
-                module_counts[module_group]++;
-                if (!answers[sus_prop] && module_counts[module_group] === 2) {
-                    if (!answers[sus_prop]) {
-                        answers[sus_prop] = {};
-                    }
-                    if (!answers[nasa_prop]) {
-                        answers[nasa_prop] = {};
-                    }
-                    return show_sus_questions();
-                } else {
-                    cur_section_indx++;
-                    cur_order = cur_session_user_info.orders[cur_section_indx];
-                }
-            }
+        }
+        // track time
+        if (question_num > 1 && (question_num-1)%8 === 0) {
+            end_time = new Date();
+            const time_diff = Number((end_time - start_time)/(1000 * 60).toFixed(1));
+            answers[section_name]['double-var-time'] = time_diff;
+            start_time = new Date();
         }
         
         switch (cur_order) {
@@ -152,8 +136,8 @@ function show_question() {
             break;
         }
 
-        if (!cur_order) {
-            show_submission_info();
+        if (question_num === 32) {
+            show_post_session_questionnaire();
         }
 
     } else {
@@ -224,8 +208,29 @@ function show_question() {
     }
 }
 
-function show_sus_questions(page=1) {
+function show_post_session_questionnaire() {
+    // Even participant will get ca questions first, odd will get vsup first
+    if (Object.keys(ps_module_passed).length === 0) {
+        module_group = cur_session_user_info.index%2 === 0 ? 'ca' : 'vsup';
+    } else {
+        module_group = module_group === 'vsup' ? 'ca' : 'vsup';
+    }
+    sus_prop = module_group + '-' + 'sus';
+    nasa_prop = module_group + '-' + 'nasa';
+    
+    if (ps_module_passed['ca'] && ps_module_passed['vsup']) {
+        return show_submission_info();
+    }
 
+    ps_module_passed[module_group] = true;
+    
+    show_sus_questions();
+}
+
+function show_sus_questions(page=1) {
+    if (!answers[sus_prop]) {
+        answers[sus_prop] = {};
+    }
     const width = 1500;
     const height = 750;
     
@@ -237,7 +242,8 @@ function show_sus_questions(page=1) {
         .attr("height", height)
         .attr("viewBox", [-10, 0, width, height]);
 
-    d3.select('.section-caption').html('System Usability Scale (SUS)');
+    const for_module = _.upperCase(module_group);
+    d3.select('.section-caption').html(for_module + ': System Usability Scale (SUS)');
     
     const x = 35, y = 40;
     const rect_x = 430;
@@ -358,6 +364,10 @@ function show_sus_questions(page=1) {
 function show_NASA_TLX_questions(page=1) {
     const width = 1500;
     const height = 750;
+
+    if (!answers[nasa_prop]) {
+        answers[nasa_prop] = {};
+    }
     
     d3.selectAll('.container-box svg').remove();
     const svg = d3.select('.container-box')
@@ -367,7 +377,8 @@ function show_NASA_TLX_questions(page=1) {
         .attr("height", height)
         .attr("viewBox", [-10, 0, width, height]);
 
-    d3.select('.section-caption').html('NASA TLX Work Load Scale');
+    const for_module = _.upperCase(module_group);
+    d3.select('.section-caption').html(for_module + ': NASA TLX Work Load Scale');
     
     const x = 35, y = 20;
     const rect_x = 430;
@@ -500,7 +511,7 @@ function show_NASA_TLX_questions(page=1) {
             });
     
             if (answer_count === 6) {
-                show_question();
+                show_post_session_questionnaire();
             }
         }, 300);
     }
