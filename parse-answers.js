@@ -34,13 +34,14 @@ allAnswers.forEach((answers) => {
     const svo_time_results = [];
     const sva_time_results = [];
     const dv_time_results = [];
+
     console.log(answers.email)
     modules.forEach(prop => {
       let correctCount = 0;
 
       for (let indx in answers[prop]) {
 
-        if (answers[prop][indx] && ['single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
+        if (answers[prop][indx] && answers[prop][indx].status && ['single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
           correctCount++;
         }
       }
@@ -59,15 +60,15 @@ allAnswers.forEach((answers) => {
     ['ca', 'vsup'].forEach(prop => {
       // nasa-tlx data
       const nasaRow = [prop];
-      for (let indx in answers[prop + '-nasa']) {
-        nasaRow.push(answers[prop + '-nasa'][indx]);
+      for (let indx in answers['nasa-' + prop]) {
+        nasaRow.push(answers['nasa-' + prop][indx]);
       }
       nasaTlxResults.push(nasaRow)
 
       // sus data
       const susRow = [prop];
-      for (let indx in answers[prop + '-sus']) {
-        susRow.push(answers[prop + '-sus'][indx]);
+      for (let indx in answers['sus-' + prop]) {
+        susRow.push(answers['sus-' + prop][indx]);
       }
       susResults.push(susRow);
     })

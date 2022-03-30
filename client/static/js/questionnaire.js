@@ -49,7 +49,7 @@ const nasa_tlx_questions = [
     {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
 ];
 
-let email = ''; // location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
+let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -215,8 +215,8 @@ function show_post_session_questionnaire() {
     } else {
         module_group = module_group === 'vsup' ? 'ca' : 'vsup';
     }
-    sus_prop = module_group + '-' + 'sus';
-    nasa_prop = module_group + '-' + 'nasa';
+    sus_prop = 'sus-' + module_group;
+    nasa_prop = 'nasa-' + module_group;
     
     if (ps_module_passed['ca'] && ps_module_passed['vsup']) {
         return show_submission_info();
@@ -698,31 +698,24 @@ function draw_ca_bubble_questions() {
                 if (ev.which !== 1 || !section_session_states['ca-bubble']) {
                     return;
                 }
-                let selection_correct;
-                bubble_quest_countries.forEach(country => {
-                    if (country.name === d.data.name) {
-                        // answers[section_name][question_num] = true;
-                        selection_correct = country.name;
-                    }
-                });
-
-                if (target_selection_mode === 'all' && selection_correct) {
-                    selections_for_all.push(selection_correct);
-                    selections_for_all = _.uniq(selections_for_all);
-                    if (selections_for_all.length === bubble_quest_countries.length) {
-                        answers[section_name][question_num] = true;
-                        show_question(++question_num);
-                    }
+                
+                if (target_selection_mode === 'all') {
+                    selections_for_all.push({name: d.data.name});
                 } else {
+                    let is_correct = true;
                     bubble_quest_countries.forEach(country => {
                         if (country.name === d.data.name) {
-                            answers[section_name][question_num] = true;
+                            is_correct = true;
                         }
                     });
+                    const mode = is_single_param ? 'single-var-one' : 'double-var';
 
-                    if (!answers[section_name][question_num]) {
-                        answers[section_name][question_num] = false;
-                    }
+                    answers[section_name][question_num] = {
+                        status: is_correct,
+                        mode,
+                        selected: [d.data.name],
+                        tobe_list: bubble_quest_countries.map(c => c.name)
+                    };
 
                     show_question(++question_num);
                 }
@@ -801,7 +794,7 @@ function draw_ca_bubble_questions() {
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
+        const frag = target_selection_mode === 'all' ? `<all bubbles>` : '<a bubble>'
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
@@ -816,6 +809,27 @@ function draw_ca_bubble_questions() {
         .text(question)
         .attr("font-size", 20)
         .attr('fill', 'black');
+
+        if (target_selection_mode === 'all') {
+            draw_finish_button(svg, question_x, question_y, () => {
+                const country_list = bubble_quest_countries.map(c => c.name);
+                selections_for_all = _.uniqBy(selections_for_all, 'name').map(item => item.name);
+                let all_selected = true;
+                country_list.forEach(country => {
+                    if (selections_for_all.indexOf(country) === -1) {
+                        all_selected = false;
+                    }
+                });
+
+                answers[section_name][question_num] = {
+                    status: all_selected,
+                    mode: 'single-var-all',
+                    selected: selections_for_all,
+                    tobe_list: country_list
+                };
+                show_question(++question_num);
+            })
+        }
 
         transition_question(svg_g, 2800);
     }
@@ -994,30 +1008,22 @@ function draw_ca_grid_questions() {
                     return;
                 }
 
-                let selection_correct;
-                bubble_quest_countries.forEach(country => {
-                    if (country.name === d.name) {
-                        selection_correct = country.name;
-                    }
-                });
-
-                if (target_selection_mode === 'all' && selection_correct) {
-                    selections_for_all.push(selection_correct);
-                    selections_for_all = _.uniq(selections_for_all);
-                    if (selections_for_all.length === bubble_quest_countries.length) {
-                        answers[section_name][question_num] = true;
-                        show_question(++question_num);
-                    }
+                if (target_selection_mode === 'all') {
+                    selections_for_all.push({name: d.name});
                 } else {
+                    let is_correct = true;
                     bubble_quest_countries.forEach(country => {
                         if (country.name === d.name) {
-                            answers[section_name][question_num] = true;
+                            is_correct = true;
                         }
                     });
-
-                    if (!answers[section_name][question_num]) {
-                        answers[section_name][question_num] = false;
-                    }
+                    const mode = is_single_param ? 'single-var-one' : 'double-var';
+                    answers[section_name][question_num] = {
+                        status: is_correct,
+                        mode,
+                        selected: [d.name],
+                        tobe_list: bubble_quest_countries.map(c => c.name)
+                    };
 
                     show_question(++question_num);
                 }
@@ -1206,6 +1212,27 @@ function draw_ca_grid_questions() {
         .attr("font-size", 20)
         .attr('fill', 'black');
 
+        if (target_selection_mode === 'all') {
+            draw_finish_button(svg, question_x, question_y, () => {
+                const country_list = bubble_quest_countries.map(c => c.name);
+                selections_for_all = _.uniqBy(selections_for_all, 'name').map(item => item.name);
+                let all_selected = true;
+                country_list.forEach(country => {
+                    if (selections_for_all.indexOf(country) === -1) {
+                        all_selected = false;
+                    }
+                });
+
+                answers[section_name][question_num] = {
+                    status: all_selected,
+                    mode: 'single-var-all',
+                    selected: selections_for_all,
+                    tobe_list: country_list
+                };
+                show_question(++question_num);
+            })
+        }
+
         transition_question(svg_g, 2800);
     }
 
@@ -1257,16 +1284,6 @@ function draw_vsup_bubble_questions() {
     d3.select('.legend').attr("transform", "translate(860 180)");
 
     move_value_legend_upward();
-
-    // draw_legend(svg, val_conf, max_radius);
-    // draw_legend(svg, dev_conf, max_radius);
-
-    // remove pred scales
-    // const legend_comp = d3.select('.legend');
-    // const g_tags = legend_comp.selectAll("g").filter(function() { 
-    //     return this.parentNode == legend_comp.node();
-    // });
-    // d3.select(g_tags.nodes()[1]).remove();
     
     if (section_session_states['vsup-bubble']) {
         draw_question(svg, question_data, val_conf.radiis, dev_conf.deviations);
@@ -1337,7 +1354,6 @@ function draw_vsup_bubble_questions() {
             .append("circle")
             .attr("id", d => (d.data.name + '-' + d.data.count))
             .attr("r", d => d.r)
-            // .attr("r", d => 30)
             .attr('info', (d) => {
                 return 'value=' + d.r + ', unc=' + d.data.deviation;
             })
@@ -1373,45 +1389,32 @@ function draw_vsup_bubble_questions() {
                     const color_item = vsup_all_colors.find(item => {
                         return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
                     });
-                    if (target_selection_mode === 'all') {
-                        const uniq_colors = color_item.colors;
-                        const country_list = [];
 
-                        const circle_cont_nodes = d3.selectAll('.circle-container').nodes();
-                        circle_cont_nodes.forEach(g_node => {
-                            color = [];
-                            g_node.childNodes.forEach(circle => {
-                                const c = d3.select(circle).attr('fill').replace(/(rgb)|,|(255)|\(|\)|\s/g, '');
-                                color.push(c);
-                            });
-                            const circle_color = 'rgb(' + color.join(', ') + ')';
-                            if (uniq_colors.indexOf(circle_color) > -1) {
-                                country_list.push(g_node.__data__.data.name);
-                            }
-                        })
-                        if (country_list.indexOf(d.data.name) > -1) {
-                            selections_for_all.push(d.data.name);
-                            selections_for_all = _.uniq(selections_for_all);
-                            if (selections_for_all.length === country_list.length) {
-                                answers[section_name][question_num] = true;
-                                show_question(++question_num);
-                            }
-                        } else {
-                            answers[section_name][question_num] = false;
-                            show_question(++question_num);
-                        }
+                    if (target_selection_mode === 'all') {
+                        selections_for_all.push({name: d.data.name});
                     } else {
-                        answers[section_name][question_num] = false;
+                        let is_correct = false;
                         color_item.colors.forEach(vsup_color => {
                             if (vsup_color === selected_color) {
-                                answers[section_name][question_num] = true;
+                                is_correct = true;
                             }
                         });
+                        answers[section_name][question_num] = {
+                            status: is_correct,
+                            mode: 'single-var-one',
+                            selected: [selected_color],
+                            tobe_list: [vsup_quest_color]
+                        };
                         show_question(++question_num);
                     }
 
                 } else {
-                    answers[section_name][question_num] = vsup_quest_color === selected_color;
+                    answers[section_name][question_num] = {
+                        status: vsup_quest_color === selected_color,
+                        mode: 'double-var',
+                        selected: [selected_color],
+                        tobe_list: [vsup_quest_color]
+                    };
                     show_question(++question_num);
                 }
 
@@ -1490,6 +1493,45 @@ function draw_vsup_bubble_questions() {
         .text(question)
         .attr("font-size", 20)
         .attr('fill', 'black');
+
+        if (target_selection_mode === 'all') {
+            draw_finish_button(svg, question_x, question_y, () => {
+                const color_item = vsup_all_colors.find(item => {
+                    return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
+                });
+                const uniq_colors = color_item.colors;
+                const country_list = [];
+
+                const circle_cont_nodes = d3.selectAll('.circle-container').nodes();
+                circle_cont_nodes.forEach(g_node => {
+                    color = [];
+                    g_node.childNodes.forEach(circle => {
+                        const c = d3.select(circle).attr('fill').replace(/(rgb)|,|(255)|\(|\)|\s/g, '');
+                        color.push(c);
+                    });
+                    const circle_color = 'rgb(' + color.join(', ') + ')';
+                    if (uniq_colors.indexOf(circle_color) > -1) {
+                        country_list.push(g_node.__data__.data.name);
+                    }
+                });
+
+                selections_for_all = _.uniqBy(selections_for_all, 'name').map(item => item.name);
+                let all_selected = true;
+                country_list.forEach(country => {
+                    if (selections_for_all.indexOf(country) === -1) {
+                        all_selected = false;
+                    }
+                });
+
+                answers[section_name][question_num] = {
+                    status: all_selected,
+                    mode: 'single-var-all',
+                    selected: selections_for_all,
+                    tobe_list: country_list
+                };
+                show_question(++question_num);
+            })
+        }
 
         transition_question(svg_g, 2800);
     }
@@ -1579,67 +1621,46 @@ function draw_vsup_grid_questions() {
             }
             const selected_color = d3.select(this).attr('fill');
             if (is_single_param) {
-                const color_item = vsup_all_colors.find(item => {
-                    return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
-                });
                 if (target_selection_mode === 'all') {
-                    const uniq_colors = color_item.colors;
-                    const country_list = [];
-
-                    const rect_nodes = d3.selectAll('rect').nodes();
-                    rect_nodes.forEach(r_node => {
-                        const r_color = d3.select(r_node).attr('fill');
-                        if (uniq_colors.indexOf(r_color) > -1) {
-                            country_list.push(r_node.__data__.name);
-                        }
-                    })
-                    if (country_list.indexOf(d.name) > -1) {
-                        selections_for_all.push(d.name);
-                        selections_for_all = _.uniq(selections_for_all);
-                        if (selections_for_all.length === country_list.length) {
-                            answers[section_name][question_num] = true;
-                            show_question(++question_num);
-                        }
-                    } else {
-                        answers[section_name][question_num] = false;
-                        show_question(++question_num);
-                    }
+                    selections_for_all.push({name: d.name});
                 } else {
-                    answers[section_name][question_num] = false;
+                    const color_item = vsup_all_colors.find(item => {
+                        return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
+                    });
+                    let is_correct = false;
                     color_item.colors.forEach(vsup_color => {
                         if (vsup_color === selected_color) {
-                            answers[section_name][question_num] = true;
+                            is_correct = true;
                         }
                     });
+                    answers[section_name][question_num] = {
+                        status: is_correct,
+                        mode: 'single-var-one',
+                        selected: [selected_color],
+                        tobe_list: [vsup_quest_color]
+                    };
                     show_question(++question_num);
                 }
             } else {
-                answers[section_name][question_num] = vsup_quest_color === selected_color;
+                answers[section_name][question_num] = {
+                    status: vsup_quest_color === selected_color,
+                    mode: 'double-var',
+                    selected: [selected_color],
+                    tobe_list: [vsup_quest_color]
+                };
                 show_question(++question_num);
             }
-            
         });
 
-    // axes
-    // heatmap.append("g")
-    //     .attr("transform", "translate(0," + h + ")")
-    //     .call(d3.axisBottom(xAxis));
+    heatmap.append("text")
+        .style("text-anchor", "middle")
+        .style("font-size", 13)
+        .attr("transform", "translate(" + (w / 2) + ", " + (h + 40) + ")");
 
     heatmap.append("text")
         .style("text-anchor", "middle")
         .style("font-size", 13)
-        .attr("transform", "translate(" + (w / 2) + ", " + (h + 40) + ")")
-        // .text("New Cases")
-
-    // heatmap.append("g")
-    //     .attr("transform", "translate(" + w + ", 0)")
-    //     .call(d3.axisRight(yAxis));
-
-    heatmap.append("text")
-        .style("text-anchor", "middle")
-        .style("font-size", 13)
-        .attr("transform", "translate(" + (w + 40) + ", " + (h / 2) + ")rotate(90)")
-        // .text("Countries");
+        .attr("transform", "translate(" + (w + 40) + ", " + (h / 2) + ")rotate(90)");
 
     // legend
     var legend = vsup.legend.arcmapLegend();
@@ -1726,8 +1747,77 @@ function draw_vsup_grid_questions() {
         .text(question)
         .attr("font-size", 22);
 
+        if (target_selection_mode === 'all') {
+            draw_finish_button(svg, question_x, question_y, () => {
+                const color_item = vsup_all_colors.find(item => {
+                    return item.uncertainty[0] <= vsup_quest_uncertainty && item.uncertainty[1] >= vsup_quest_uncertainty;
+                });
+                const uniq_colors = color_item.colors;
+                const country_list = [];
+
+                const rect_nodes = d3.selectAll('rect').nodes();
+                rect_nodes.forEach(r_node => {
+                    const r_color = d3.select(r_node).attr('fill');
+                    if (uniq_colors.indexOf(r_color) > -1) {
+                        country_list.push(r_node.__data__.name);
+                    }
+                });
+
+                selections_for_all = _.uniqBy(selections_for_all, 'name').map(item => item.name);
+                let all_selected = true;
+                country_list.forEach(country => {
+                    if (selections_for_all.indexOf(country) === -1) {
+                        all_selected = false;
+                    }
+                });
+
+                answers[section_name][question_num] = {
+                    status: all_selected,
+                    mode: 'single-var-all',
+                    selected: selections_for_all,
+                    tobe_list: country_list
+                };
+                show_question(++question_num);
+            })
+        }
+
         transition_question(svg_g, 3000);
     }
+}
+
+function draw_finish_button(svg, question_x, question_y, callbackFn) {
+    const down = 120;
+    const left = 50;
+    svg
+    .append("text")
+    .attr('class', 'btn-done')
+    .attr("x", question_x + left)
+    .attr("y", question_y + down)
+    .text('Click when finished:')
+    .attr("font-size", 20)
+    .attr('fill', 'black');
+
+    svg
+    .append("rect")
+    .attr("x", question_x + 190 + left)
+    .attr("y", question_y + down - 25)
+    .attr("rx", 6)
+    .attr("ry", 6)
+    .attr("width", 70)
+    .attr("height", 35)
+    .attr('fill', '#c5ffe1')
+    .attr('stroke', '#3bea90');
+
+    svg
+    .append("text")
+    .attr('class', 'btn-done')
+    .attr("x", question_x + 200 + left)
+    .attr("y", question_y + down)
+    .text('Done')
+    .attr("font-size", 20)
+    .attr('fill', 'black')
+    .style("font-weight", "bold")
+    .on('mousedown', callbackFn);
 }
 
 function get_vsup_conf() {
