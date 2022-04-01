@@ -91,9 +91,7 @@ const modules = ['ca+bubble', 'ca+grid', 'vsup+bubble', 'vsup+grid']
 let start_time, end_time;
 const ca_bubble_singles_indxs = get_four_rands();
 const ca_grid_singles_indxs = get_four_rands();
-const ps_module_passed = {};
 let module_group;
-let sus_prop, nasa_prop;
 
 function show_question() {
     if (email) {
@@ -137,7 +135,7 @@ function show_question() {
         }
 
         if (question_num === 32) {
-            show_post_session_questionnaire();
+            show_sus_questions();
         }
 
     } else {
@@ -208,81 +206,112 @@ function show_question() {
     }
 }
 
-function show_post_session_questionnaire() {
-    // Even participant will get ca questions first, odd will get vsup first
-    if (Object.keys(ps_module_passed).length === 0) {
-        module_group = cur_session_user_info.index%2 === 0 ? 'ca' : 'vsup';
-    } else {
-        module_group = module_group === 'vsup' ? 'ca' : 'vsup';
-    }
-    sus_prop = 'sus-' + module_group;
-    nasa_prop = 'nasa-' + module_group;
-    
-    if (ps_module_passed['ca'] && ps_module_passed['vsup']) {
-        return show_submission_info();
-    }
+function show_sus_questions() {
+    ['ca', 'vsup'].forEach(prop => {
+        if (!answers['sus-' + prop]) {
+            answers['sus-' + prop] = {};
+        }
+    });
+    const min_max = {min: 32, max: 41};
 
-    ps_module_passed[module_group] = true;
-    
-    show_sus_questions();
-}
-
-function show_sus_questions(page=1) {
-    if (!answers[sus_prop]) {
-        answers[sus_prop] = {};
-    }
     const width = 1500;
     const height = 750;
+    const x = 35, y = 140;
+    const rect_x = 430;
+    const QuestionHeight = 430;
+    let svg_g;
+
+    let svg = d3.select('.sus-svg');
     
-    d3.selectAll('.container-box svg').remove();
-    const svg = d3.select('.container-box')
+    if (svg.size()) {
+        d3.select('.sus-svg g').remove();
+        svg_g = svg.append('g');
+    } else {
+        d3.selectAll('.container-box svg').remove();
+
+        svg = d3.select('.container-box')
         .append("svg")
         .attr('class', 'sus-svg')
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [-10, 0, width, height]);
 
-    const for_module = _.upperCase(module_group);
-    d3.select('.section-caption').html(for_module + ': System Usability Scale (SUS)');
-    
-    const x = 35, y = 40;
-    const rect_x = 430;
-    const svg_g = svg.append('g');
-    const QuestionHeight = 130;
+        svg_g = svg.append('g');
 
-    const num_of_question = 5;
+        d3.select('.section-caption').html('System Usability Scale (SUS)');
 
-    svg_g
-    .append("text")
-    .text('Strongly Disagree')
-    .attr("x", x + 750)
-    .attr("y", y + 5)
-    .attr("font-size", 16);
-
-    svg_g
-    .append("text")
-    .text('Strongly Agree')
-    .attr("x", x + 1140)
-    .attr("y", y + 5)
-    .attr("font-size", 16);
-    
-    for (let k = 0; k < num_of_question; k++) {
-        svg_g.append('line')
-        .style("stroke", "#ceccee")
-        .style("stroke-width", 1)
+        svg.append('line')
+        .style("stroke", "#e1e1e1")
+        .style("stroke-width", 3)
         .attr("x1", x)
-        .attr("y1", y + 30 + k*QuestionHeight)
+        .attr("y1", y + 200)
         .attr("x2", x + width - 100)
-        .attr("y2", y + 30 + k*QuestionHeight);
+        .attr("y2", y + 200);
 
-        draw_row_items(k, x, y, page)
+        const images = [
+            ['ca+bubble.png', 'ca+bubble-legend.png', 'ca+grid.png', 'ca+grid-legend.png'],
+            ['vsup+bubble.png', 'vsup-legend.png', 'vsup+grid.png', 'vsup-legend.png']
+        ];
+
+        for (let row = 0; row < images.length; row++) {
+            for (let col = 0; col < images[row].length; col++) {
+                const col_gap = 200;
+                let xx = col*col_gap;
+                if (col > 1) {
+                    xx += 600;
+                }
+                svg.append('image')
+                .attr('href', "../static/comp-images/" + images[row][col])
+                .attr("x", 20 + xx)
+                .attr("y", 20 + row*350)
+                .attr("width", 150)
+                .attr("height", 150);
+            }
+        }
     }
 
-    function draw_row_items(k, x, y, page) {
+    // top question
+    draw_row_items(x, y, 'ca');
+
+    // bottom question
+    draw_row_items(x, y, 'vsup');
+
+    function draw_row_items(x, y, modul) {
+        const k = modul === 'ca' ? 0 : 1;
         let yy = y + k*QuestionHeight;
-        const indx = (page-1) * num_of_question + k;
-        const q_indx = indx + 1
-        const question = 'Q-' + (q_indx) + ': ' + sus_questions[indx];
+        if (modul === 'ca') {
+            yy += 30;
+        }
+        const q_indx = question_num - min_max.min;
+
+        let mod_x = x + 750 - 100;
+        let mod_y = yy + 50 - 160
+        if (modul === 'vsup') {
+            mod_x -= 20;
+            mod_y -= 80;
+        }
+        svg
+        .append("text")
+        .text(modul.toUpperCase())
+        .attr("x", mod_x)
+        .attr("y", mod_y)
+        .attr("font-size", 25);
+
+        svg_g
+        .append("text")
+        .text('Strongly Disagree')
+        .attr("x", x + 750)
+        .attr("y", yy + 50)
+        .attr("font-size", 16);
+    
+        svg_g
+        .append("text")
+        .text('Strongly Agree')
+        .attr("x", x + 1140)
+        .attr("y", yy + 50)
+        .attr("font-size", 16);
+
+        const question = 'Q-' + (q_indx+1) + ': ' + sus_questions[q_indx];
         svg_g
         .append("text")
         .text(question)
@@ -311,13 +340,13 @@ function show_sus_questions(page=1) {
             .attr("width", 30)
             .attr("height", 30)
             .html(function(d) {
-                return `<input type="checkbox" class='sus-chk ${module_cls}-${k}-sus-chk' name='sus-chk'>`;
+                return `<input type="checkbox" class='sus-chk ${module_cls}-${modul}-sus-chk' name='sus-chk'>`;
             })
             .on('mousedown', function (ev) {
                 if (ev.which !== 1) {
                     return;
                 }
-                next_sus_quest(ev, ik+1, k, page, q_indx, module_cls);
+                next_sus_quest(ev, ik+1, modul, q_indx, module_cls);
             });
 
             svg_g
@@ -331,15 +360,15 @@ function show_sus_questions(page=1) {
         }
     }
 
-    function next_sus_quest(ev, ik, k, page, q_indx, module_cls) {
-        let chks = d3.selectAll(`.${module_cls}-${k}-sus-chk`).nodes();
+    function next_sus_quest(ev, ik, modul, q_indx, module_cls) {
+        let chks = d3.selectAll(`.${module_cls}-${modul}-sus-chk`).nodes();
         chks.forEach(chk => {
             if (chk !== ev.target) {
                 d3.select(chk).property("checked", false);;
             }
         });
         
-        answers[sus_prop][q_indx] = ik;
+        answers['sus-' + modul][q_indx+1] = ik;
 
         setTimeout(() => {
             let answer_count = 0;
@@ -350,64 +379,114 @@ function show_sus_questions(page=1) {
                 }
             });
     
-            if (answer_count === 5) {
-                if (page === 1) {
-                    show_sus_questions(page+1);
+            if (answer_count === 2) {
+                if (question_num < min_max.max) {
+                    show_sus_questions(++question_num);
                 } else {
-                    show_NASA_TLX_questions();
+                    show_nasa_questions();
                 }
             }
         }, 300);
     }
 }
 
-function show_NASA_TLX_questions(page=1) {
+function show_nasa_questions() {
+    const module_group = 'nasa';
+    ['ca', 'vsup'].forEach(prop => {
+        if (!answers[module_group + '-' + prop]) {
+            answers[module_group + '-' + prop] = {};
+        }
+    });
+    const min_max = {min: 41, max: 46};
+
     const width = 1500;
     const height = 750;
+    const x = 35, y = 140;
+    const QuestionHeight = 330;
+    let svg_g;
 
-    if (!answers[nasa_prop]) {
-        answers[nasa_prop] = {};
-    }
+    const svg_cls = '.' + module_group + '-svg';
+    let svg = d3.select(svg_cls);
     
-    d3.selectAll('.container-box svg').remove();
-    const svg = d3.select('.container-box')
+    if (svg.size(svg_cls)) {
+        d3.select(svg_cls + ' g').remove();
+        svg_g = svg.append('g');
+    } else {
+        d3.selectAll('.container-box svg').remove();
+
+        svg = d3.select('.container-box')
         .append("svg")
         .attr('class', 'nasa-svg')
         .attr("width", width)
         .attr("height", height)
         .attr("viewBox", [-10, 0, width, height]);
 
-    const for_module = _.upperCase(module_group);
-    d3.select('.section-caption').html(for_module + ': NASA TLX Work Load Scale');
-    
-    const x = 35, y = 20;
-    const rect_x = 430;
-    const svg_g = svg.append('g');
-    const QuestionHeight = 125;
+        svg_g = svg.append('g');
 
-    const q_indx = question_num - 32;
-    const num_of_question = 6;
-    
-    for (let k = 0; k < num_of_question; k++) {
-        if (k > 0) {
-            svg_g.append('line')
-            .style("stroke", "#ff86e3")
-            .style("stroke-width", 1)
-            .attr("x1", x)
-            .attr("y1", y - 20 + k*QuestionHeight)
-            .attr("x2", x + width - 100)
-            .attr("y2", y - 20 + k*QuestionHeight);
+        d3.select('.section-caption').html('NASA TLX Work Load Scale');
+
+        svg.append('line')
+        .style("stroke", "#e1e1e1")
+        .style("stroke-width", 3)
+        .attr("x1", x)
+        .attr("y1", y + 200)
+        .attr("x2", x + width - 100)
+        .attr("y2", y + 200);
+
+        const images = [
+            ['ca+bubble.png', 'ca+bubble-legend.png', 'ca+grid.png', 'ca+grid-legend.png'],
+            ['vsup+bubble.png', 'vsup-legend.png', 'vsup+grid.png', 'vsup-legend.png']
+        ];
+
+        for (let row = 0; row < images.length; row++) {
+            for (let col = 0; col < images[row].length; col++) {
+                const col_gap = 200;
+                let xx = col*col_gap;
+                if (col > 1) {
+                    xx += 600;
+                }
+                svg.append('image')
+                .attr('href', "../static/comp-images/" + images[row][col])
+                .attr("x", 20 + xx)
+                .attr("y", 20 + row*350)
+                .attr("width", 150)
+                .attr("height", 150);
+            }
         }
-
-        draw_row_items(k, x, y, page)
     }
 
-    function draw_row_items(k, x, y, page) {
-        let yy = y + k*QuestionHeight - 150;
+    // top question
+    draw_row_items(x, y, 'ca');
 
-        const data = nasa_tlx_questions[k];
-        const q_indx = k + 1
-        const title = 'Question-' +  (q_indx) + '. ' + data.title + ':';
+    // bottom question
+    draw_row_items(x, y, 'vsup');
+
+    function draw_row_items(x, y, modul) {
+        const k = modul === 'ca' ? 0 : 1;
+        let yy = y + k*QuestionHeight;
+        if (modul === 'ca') {
+            yy -= 80;
+        }
+
+        const q_indx = question_num - min_max.min;
+        let mod_x = x + 750 - 100;
+        let mod_y = yy + 50 - 60;
+
+        if (modul === 'vsup') {
+            mod_x -= 20;
+            mod_y -= 60;
+        }
+
+        svg
+        .append("text")
+        .text(modul.toUpperCase())
+        .attr("x", mod_x)
+        .attr("y", mod_y)
+        .attr("font-size", 25);
+
+        const data = nasa_tlx_questions[q_indx];
+        const title = 'Question-' +  (q_indx + 1) + '. ' + data.title + ':';
+
         svg_g
         .append("text")
         .text(title)
@@ -428,18 +507,18 @@ function show_NASA_TLX_questions(page=1) {
         svg_g
         .append("text")
         .text('Very Low')
-        .attr("x", x + 175)
+        .attr("x", x + 105)
         .attr("y", yy + 312 - row_neg)
         .attr("font-size", 16);
 
         svg_g
         .append("text")
         .text('Very High')
-        .attr("x", x + 1310)
+        .attr("x", x + 1240)
         .attr("y", yy + 312 - row_neg)
         .attr("font-size", 16);
 
-        const xx = x + 170;
+        const xx = x + 100;
         const module_cls = section_name;
         for (let ik = 0; ik < 22; ik++) {
             const w = 55;
@@ -465,7 +544,7 @@ function show_NASA_TLX_questions(page=1) {
                 if (ev.which !== 1) {
                     return;
                 }
-                next_nasa_quest(ev, ik, k, q_indx, module_cls);
+                next_nasa_quest(ev, ik, modul, q_indx, module_cls);
             });
 
             transition_question(svg_g, 2000);
@@ -483,23 +562,23 @@ function show_NASA_TLX_questions(page=1) {
         // mid-bar
         svg_g
         .append("line")
-        .attr("x1", 695 + 120)
+        .attr("x1", 695 + 50)
         .attr("y1", yy - 59 + 300 - row_neg)
-        .attr("x2", 695 + 120)
+        .attr("x2", 695 + 50)
         .attr("y2", yy + 293 - row_neg)
         .attr('stroke', 'black')
         .attr("stroke-width", 1.5);
     }
 
-    function next_nasa_quest(ev, ik, k, q_indx, module_cls) {
-        let chks = d3.selectAll(`.${module_cls}-${k}-nasa-chk`).nodes();
+    function next_nasa_quest(ev, ik, modul, q_indx, module_cls) {
+        let chks = d3.selectAll(`.${module_cls}-${modul}-nasa-chk`).nodes();
         chks.forEach(chk => {
             if (chk !== ev.target) {
                 d3.select(chk).property("checked", false);;
             }
         });
         
-        answers[nasa_prop][q_indx] = ik;
+        answers['nasa-' + modul][q_indx+1] = ik;
 
         setTimeout(() => {
             let answer_count = 0;
@@ -510,8 +589,12 @@ function show_NASA_TLX_questions(page=1) {
                 }
             });
     
-            if (answer_count === 6) {
-                show_post_session_questionnaire();
+            if (answer_count === 2) {
+                if (question_num < min_max.max) {
+                    show_nasa_questions(++question_num);
+                } else {
+                    show_submission_info();
+                }
             }
         }, 300);
     }
@@ -1477,7 +1560,21 @@ function draw_vsup_bubble_questions() {
             set_signle_var_time();
         }
 
-        const {value, uncertainty} = get_vsup_conf();
+        let {value, uncertainty} = get_vsup_conf();
+
+        // Trick
+        // if (target_selection_mode === 'all') {
+        //     while (true) {
+        //         if (uncertainty <= 60) {
+        //             break;
+        //         } else {
+        //             delete question_seqs[section_name][cur_section_indx];
+        //             const data = get_vsup_conf();
+        //             value = data.value;
+        //             uncertainty = data.uncertainty;
+        //         }
+        //     }
+        // }
         const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(uncertainty)}>`;
         if (is_single_param) {
@@ -1686,7 +1783,7 @@ function draw_vsup_grid_questions() {
     .attr("y", yy+20)
     .attr("font-size", 22);
 
-    const conf = get_vsup_conf();
+    let conf = get_vsup_conf();
     const svg_g = svg.append('g');
 
     if (section_session_states['vsup-grid']) {
@@ -1731,6 +1828,18 @@ function draw_vsup_grid_questions() {
         if (base_num === 2 || base_num === 4) {
             set_signle_var_time();
         }
+
+        // Trick
+        // if (target_selection_mode === 'all') {
+        //     while (true) {
+        //         if (conf.uncertainty <= 60) {
+        //             break;
+        //         } else {
+        //             delete question_seqs[section_name][cur_section_indx];
+        //             conf = get_vsup_conf();
+        //         }
+        //     }
+        // }
 
         const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(conf.uncertainty)}>`;

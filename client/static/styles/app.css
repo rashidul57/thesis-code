@@ -422,10 +422,6 @@ body.questionnaire .save-container .save-msg {
 body.questionnaire .vsup-svg g.tick {
   font-size: 11px;
 }
-body.questionnaire .vsup-svg input[type=checkbox] {
-  transform: scale(1.8);
-  margin: 0 0 0 7px;
-}
 body.questionnaire .vsup-svg .ag-dis-lbl {
   font-size: 25px;
   position: absolute;

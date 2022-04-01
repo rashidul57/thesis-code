@@ -126,6 +126,7 @@ async function init() {
                 cur_session_user_info = user;
             }
         });
+
         if (cur_session_user_info) {
             show_question();
         } else {
