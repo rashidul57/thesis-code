@@ -261,7 +261,7 @@ function show_sus_questions() {
                     xx += 600;
                 }
                 svg.append('image')
-                .attr('href', "../static/comp-images/" + images[row][col])
+                .attr('href', "./static/comp-images/" + images[row][col])
                 .attr("x", 20 + xx)
                 .attr("y", 20 + row*350)
                 .attr("width", 150)
@@ -446,7 +446,7 @@ function show_nasa_questions() {
                     xx += 600;
                 }
                 svg.append('image')
-                .attr('href', "../static/comp-images/" + images[row][col])
+                .attr('href', "./static/comp-images/" + images[row][col])
                 .attr("x", 20 + xx)
                 .attr("y", 20 + row*350)
                 .attr("width", 150)
