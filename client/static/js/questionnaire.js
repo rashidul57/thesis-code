@@ -21,6 +21,7 @@ let vsup_grid_render_colors = [];
 const dev_mode = false;
 let target_selection_mode;
 let selections_for_all = [];
+let ca_global, val_global;
 
 let section_name;
 let submitted = false;
@@ -49,7 +50,7 @@ const nasa_tlx_questions = [
     {title: 'Frustration', question: 'How insecure, discouraged, irritated, stressed, and annoyed were you?'}
 ];
 
-let email = location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
+let email = ''; // location.href.indexOf('localhost') > -1 ? 'mrashidbd2000@gmail.com' : undefined;
 
 const vsup_top_colors = {
     1: 'rgb(72, 24, 106)',
@@ -134,7 +135,7 @@ function show_question() {
             break;
         }
 
-        if (question_num === 32) {
+        if (question_num === 33) {
             show_sus_questions();
         }
 
@@ -212,7 +213,7 @@ function show_sus_questions() {
             answers['sus-' + prop] = {};
         }
     });
-    const min_max = {min: 32, max: 41};
+    const min_max = {min: 33, max: 42};
 
     const width = 1500;
     const height = 750;
@@ -397,7 +398,7 @@ function show_nasa_questions() {
             answers[module_group + '-' + prop] = {};
         }
     });
-    const min_max = {min: 41, max: 46};
+    const min_max = {min: 42, max: 47};
 
     const width = 1500;
     const height = 750;
@@ -785,20 +786,25 @@ function draw_ca_bubble_questions() {
                 if (target_selection_mode === 'all') {
                     selections_for_all.push({name: d.data.name});
                 } else {
-                    let is_correct = true;
+                    let is_correct = false;
                     bubble_quest_countries.forEach(country => {
                         if (country.name === d.data.name) {
                             is_correct = true;
                         }
                     });
                     const mode = is_single_param ? 'single-var-one' : 'double-var';
-
-                    answers[section_name][question_num] = {
+                    const ans = {
                         status: is_correct,
                         mode,
                         selected: [d.data.name],
-                        tobe_list: bubble_quest_countries.map(c => c.name)
+                        tobe_list: bubble_quest_countries.map(c => c.name),
+                        ca: ca_global
                     };
+                    if (!is_single_param) {
+                        ans.value = value_global;
+                    }
+
+                    answers[section_name][question_num] = ans;
 
                     show_question(++question_num);
                 }
@@ -864,7 +870,7 @@ function draw_ca_bubble_questions() {
         if (is_single_param) {
             const indx = ca_bubble_singles_indxs[base_num%4];
             const devs = _.uniq(question_data.map(item => item.deviation));
-            ca = devs[indx];
+            ca_global = ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
         } else {
             // don't parseInt here as used in next line
@@ -873,16 +879,17 @@ function draw_ca_bubble_questions() {
             // radius, r_indx represents value(number_of_cases_count)
             // for user study forcefully we draw all circle with same radius
             bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
-            ca = parseInt(bubble_quest_countries[0].deviation);
+            ca_global = ca = parseInt(bubble_quest_countries[0].deviation);
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
-        const frag = target_selection_mode === 'all' ? `<all bubbles>` : '<a bubble>'
+        const frag = target_selection_mode === 'all' ? `<all bubbles>` : '<a bubble>';
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
-            question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
+            value_global = parseInt(radius*8);
+            question = question.replace('$$', `<Value=${value_global}> and `);
         }
 
         svg_g
@@ -908,7 +915,8 @@ function draw_ca_bubble_questions() {
                     status: all_selected,
                     mode: 'single-var-all',
                     selected: selections_for_all,
-                    tobe_list: country_list
+                    tobe_list: country_list,
+                    ca: ca_global
                 };
                 show_question(++question_num);
             })
@@ -1094,19 +1102,24 @@ function draw_ca_grid_questions() {
                 if (target_selection_mode === 'all') {
                     selections_for_all.push({name: d.name});
                 } else {
-                    let is_correct = true;
+                    let is_correct = false;
                     bubble_quest_countries.forEach(country => {
                         if (country.name === d.name) {
                             is_correct = true;
                         }
                     });
                     const mode = is_single_param ? 'single-var-one' : 'double-var';
-                    answers[section_name][question_num] = {
+                    const ans = {
                         status: is_correct,
                         mode,
                         selected: [d.name],
-                        tobe_list: bubble_quest_countries.map(c => c.name)
+                        tobe_list: bubble_quest_countries.map(c => c.name),
+                        ca: ca_global
                     };
+                    if (!is_single_param) {
+                        ans.value = value_global;
+                    }
+                    answers[section_name][question_num] = ans;
 
                     show_question(++question_num);
                 }
@@ -1266,7 +1279,7 @@ function draw_ca_grid_questions() {
         if (is_single_param) {
             const indx = ca_grid_singles_indxs[base_num%4];
             const devs = _.uniq(question_data.map(item => item.deviation));
-            ca = devs[indx];
+            ca_global = ca = devs[indx];
             bubble_quest_countries = question_data.filter(item => item.deviation === ca);
         } else {
             // don't parseInt here as used in next line
@@ -1275,7 +1288,7 @@ function draw_ca_grid_questions() {
             // radius, r_indx represents value(number_of_cases_count)
             // for user study forcefully we draw all circle with same radius
             bubble_quest_countries = question_data.filter(item => item.r_indx === radius);
-            ca = parseInt(bubble_quest_countries[0].deviation);
+            ca_global = ca = parseInt(bubble_quest_countries[0].deviation);
             bubble_quest_countries = bubble_quest_countries.filter(item => item.deviation === ca);
         }
 
@@ -1284,7 +1297,8 @@ function draw_ca_grid_questions() {
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
-            question = question.replace('$$', `<Value=${parseInt(radius*8)}> and `);
+            value_global = parseInt(radius*8);
+            question = question.replace('$$', `<Value=${value_global}> and `);
         }
 
         svg_g
@@ -1310,7 +1324,8 @@ function draw_ca_grid_questions() {
                     status: all_selected,
                     mode: 'single-var-all',
                     selected: selections_for_all,
-                    tobe_list: country_list
+                    tobe_list: country_list,
+                    ca: ca_global
                 };
                 show_question(++question_num);
             })
@@ -1486,7 +1501,8 @@ function draw_vsup_bubble_questions() {
                             status: is_correct,
                             mode: 'single-var-one',
                             selected: [selected_color],
-                            tobe_list: [vsup_quest_color]
+                            tobe_list: [vsup_quest_color],
+                            uncertainty: ca_global
                         };
                         show_question(++question_num);
                     }
@@ -1496,7 +1512,9 @@ function draw_vsup_bubble_questions() {
                         status: vsup_quest_color === selected_color,
                         mode: 'double-var',
                         selected: [selected_color],
-                        tobe_list: [vsup_quest_color]
+                        tobe_list: [vsup_quest_color],
+                        uncertainty: ca_global,
+                        value: value_global
                     };
                     show_question(++question_num);
                 }
@@ -1561,20 +1579,9 @@ function draw_vsup_bubble_questions() {
         }
 
         let {value, uncertainty} = get_vsup_conf();
+        ca_global = uncertainty;
+        value_global = value;
 
-        // Trick
-        // if (target_selection_mode === 'all') {
-        //     while (true) {
-        //         if (uncertainty <= 60) {
-        //             break;
-        //         } else {
-        //             delete question_seqs[section_name][cur_section_indx];
-        //             const data = get_vsup_conf();
-        //             value = data.value;
-        //             uncertainty = data.uncertainty;
-        //         }
-        //     }
-        // }
         const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(uncertainty)}>`;
         if (is_single_param) {
@@ -1624,7 +1631,8 @@ function draw_vsup_bubble_questions() {
                     status: all_selected,
                     mode: 'single-var-all',
                     selected: selections_for_all,
-                    tobe_list: country_list
+                    tobe_list: country_list,
+                    uncertainty: ca_global
                 };
                 show_question(++question_num);
             })
@@ -1734,7 +1742,8 @@ function draw_vsup_grid_questions() {
                         status: is_correct,
                         mode: 'single-var-one',
                         selected: [selected_color],
-                        tobe_list: [vsup_quest_color]
+                        tobe_list: [vsup_quest_color],
+                        uncertainty: ca_global
                     };
                     show_question(++question_num);
                 }
@@ -1743,7 +1752,9 @@ function draw_vsup_grid_questions() {
                     status: vsup_quest_color === selected_color,
                     mode: 'double-var',
                     selected: [selected_color],
-                    tobe_list: [vsup_quest_color]
+                    tobe_list: [vsup_quest_color],
+                    uncertainty: ca_global,
+                    value: value_global
                 };
                 show_question(++question_num);
             }
@@ -1829,18 +1840,8 @@ function draw_vsup_grid_questions() {
             set_signle_var_time();
         }
 
-        // Trick
-        // if (target_selection_mode === 'all') {
-        //     while (true) {
-        //         if (conf.uncertainty <= 60) {
-        //             break;
-        //         } else {
-        //             delete question_seqs[section_name][cur_section_indx];
-        //             conf = get_vsup_conf();
-        //         }
-        //     }
-        // }
-
+        ca_global = conf.uncertainty;
+        value_global = conf.value;
         const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
         let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(conf.uncertainty)}>`;
         if (is_single_param) {
@@ -1884,7 +1885,8 @@ function draw_vsup_grid_questions() {
                     status: all_selected,
                     mode: 'single-var-all',
                     selected: selections_for_all,
-                    tobe_list: country_list
+                    tobe_list: country_list,
+                    uncertainty: ca_global
                 };
                 show_question(++question_num);
             })

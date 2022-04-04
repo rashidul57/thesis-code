@@ -4,11 +4,11 @@ const fs = require('fs');
 const _ = require('lodash');
 
 //joining path of directory 
-// const directoryPath = path.join(__dirname, 'docs/survey/answers');
-const directoryPath = path.join(__dirname, './answers');
+const directoryPath = path.join(__dirname, 'docs/survey/answers');
+// const directoryPath = path.join(__dirname, './answers');
 //passsing directoryPath and callback function
 let files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store' 
-  && file !== 'sbrooks@cs.dal.ca.json')
+  && file !== 'sbrooks@cs.dal.ca.json' && file !== 'rashid@gmail.com.json')
 
 const modules = ['ca-bubble', 'ca-grid', 'vsup-bubble', 'vsup-grid'];
 const correct_totals = {};
@@ -24,7 +24,7 @@ let susResults = []
 let nasaTlxResults = []
 let allAnswers = files.map((file, indx) => {
     const data = fs.readFileSync(directoryPath + '/' + file, 'utf8');
-    const answers = JSON.parse(JSON.parse(data));
+    const answers = JSON.parse(data);
     return answers;
 })
 
@@ -35,7 +35,7 @@ allAnswers.forEach((answers) => {
     const sva_time_results = [];
     const dv_time_results = [];
 
-    console.log(answers.email)
+    
     modules.forEach(prop => {
       let correctCount = 0;
 
@@ -56,6 +56,8 @@ allAnswers.forEach((answers) => {
       dv_time_results.push((answers[prop]['double-var-time'] || 0));
 
     });
+
+    console.log(answers.email, count_result.join(',  '));
 
     ['ca', 'vsup'].forEach(prop => {
       // nasa-tlx data
@@ -114,16 +116,16 @@ modules.forEach(prop => {
 dvTimeResults.push(result);
 
 
-writeStudyResults(modules, studyResults, 'study');
-writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'time');
+// writeStudyResults(modules, studyResults, 'study');
+// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'time');
 
-['ca', 'vsup'].forEach((prop) => {
-  const sus_res = susResults.filter(row => row[0] === prop);
-  writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
+// ['ca', 'vsup'].forEach((prop) => {
+//   const sus_res = susResults.filter(row => row[0] === prop);
+//   writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
 
-  const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
-  writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
-});
+//   const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
+//   writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
+// });
 
 
 function writeSusNasaResults(results, fileName) {
