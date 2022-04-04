@@ -58,6 +58,18 @@ allAnswers.forEach((answers) => {
     });
 
     console.log(answers.email, count_result.join(',  '));
+    const avg = ['avg'];
+    const cat_totals = {ca: 0, vsup: 0};
+    modules.forEach(prop => {
+      avg.push((correct_totals[prop]/allAnswers.length).toFixed(1));
+      if (prop.indexOf('ca') > -1) {
+        cat_totals.ca += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+      } else {
+        cat_totals.vsup += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+      }
+    });
+    console.log('Grand:', cat_totals.ca/2, cat_totals.vsup/2);
+
 
     ['ca', 'vsup'].forEach(prop => {
       // nasa-tlx data
@@ -75,8 +87,6 @@ allAnswers.forEach((answers) => {
       susResults.push(susRow);
     })
     
-
-
     studyResults.push(count_result)
     svoTimeResults.push(svo_time_results);
     svaTimeResults.push(sva_time_results);
