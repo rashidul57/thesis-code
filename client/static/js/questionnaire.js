@@ -539,7 +539,7 @@ function show_nasa_questions() {
             .attr("width", 30)
             .attr("height", 30)
             .html(function(d) {
-                return `<input type="checkbox" class='nasa-chk ${module_cls}-${k}-nasa-chk' name='nasa-chk'>`;
+                return `<input type="checkbox" class='nasa-chk ${module_cls}-${modul}-nasa-chk' name='nasa-chk'>`;
             })
             .on('mousedown', function (ev) {
                 if (ev.which !== 1) {

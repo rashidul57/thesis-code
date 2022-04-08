@@ -27,9 +27,13 @@ let allAnswers = files.map((file, indx) => {
     const answers = JSON.parse(data);
     return answers;
 })
+const cat_totals = {ca: 0, vsup: 0};
 
 allAnswers = _.orderBy(allAnswers, ['participant-num'], ['asc']);
-allAnswers.forEach((answers) => {
+
+console.log(modules.join(', '))
+
+allAnswers.forEach((answers, indx) => {
     const count_result = [];
     const svo_time_results = [];
     const sva_time_results = [];
@@ -57,18 +61,7 @@ allAnswers.forEach((answers) => {
 
     });
 
-    console.log(answers.email, count_result.join(',  '));
-    const avg = ['avg'];
-    const cat_totals = {ca: 0, vsup: 0};
-    modules.forEach(prop => {
-      avg.push((correct_totals[prop]/allAnswers.length).toFixed(1));
-      if (prop.indexOf('ca') > -1) {
-        cat_totals.ca += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
-      } else {
-        cat_totals.vsup += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
-      }
-    });
-    console.log('Grand:', cat_totals.ca/2, cat_totals.vsup/2);
+    console.log(answers['participant-num'], answers.email, count_result.join(',  '));
 
 
     ['ca', 'vsup'].forEach(prop => {
@@ -92,6 +85,19 @@ allAnswers.forEach((answers) => {
     svaTimeResults.push(sva_time_results);
     dvTimeResults.push(dv_time_results);
 });
+
+const avg = [];
+modules.forEach(prop => {
+  avg.push((correct_totals[prop]/allAnswers.length).toFixed(1));
+  if (prop.indexOf('ca') > -1) {
+    cat_totals.ca += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+  } else {
+    cat_totals.vsup += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+  }
+});
+console.log('avg', avg.join(', '))
+console.log('Grand:', cat_totals.ca/2, cat_totals.vsup/2);
+console.log(allAnswers.length);
 
 
 let result = [];
@@ -126,16 +132,26 @@ modules.forEach(prop => {
 dvTimeResults.push(result);
 
 
-// writeStudyResults(modules, studyResults, 'study');
-// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'time');
+writeStudyResults(modules, studyResults, 'study-four');
+const pairedResults = studyResults.map(result => {
+  const ca = (result[0] + result[1])/2;
+  const vsup = (result[2] + result[3])/2;
+  return [ca, vsup];
+});
+writeStudyResults(['ca', 'vsup'], pairedResults, 'study-pair');
 
-// ['ca', 'vsup'].forEach((prop) => {
-//   const sus_res = susResults.filter(row => row[0] === prop);
-//   writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
+writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'svo');
+writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'sva');
+writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'dv');
+writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'total');
 
-//   const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
-//   writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
-// });
+['ca', 'vsup'].forEach((prop) => {
+  const sus_res = susResults.filter(row => row[0] === prop);
+  writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
+
+  const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
+  writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
+});
 
 
 function writeSusNasaResults(results, fileName) {
@@ -179,13 +195,24 @@ function writeSusNasaResults(results, fileName) {
     .then(()=> console.log('Results written'));
 }
 
-function writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, fileName) {
+function writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, mode) {
+  const fileName = 'time-' + mode;
   const header = [{id: 'participant', title: 'Participant #'}]
   modules.forEach((prop) => {
-    header.push({id: prop + '-svo', title: prop + 'SV One'})
-    header.push({id: prop + '-sva', title: prop + 'SV All'})
-    header.push({id: prop + '-sva', title: prop + 'DV'})
-    header.push({id: prop + '-total', title: prop + 'Total'})
+    switch (mode) {
+      case 'svo':
+      header.push({id: prop + '-svo', title: prop});
+      break;
+      case 'sva':
+      header.push({id: prop + '-sva', title: prop})
+      break;
+      case 'dv':
+      header.push({id: prop + '-dv', title: prop});
+      break;
+      case 'total':
+      header.push({id: prop + '-total', title: prop});
+      break;
+    }
   })
   const createCsvWriter = require('csv-writer').createObjectCsvWriter;
   const csvWriter = createCsvWriter({
@@ -198,10 +225,20 @@ function writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults
     const sva_result = svaTimeResults[ind];
     const dv_result = dvTimeResults[ind];
     modules.forEach((prop, indx) => {
-      row[prop + '-svo'] = Number(svo_result[indx].toFixed(1));
-      row[prop + '-sva'] = Number(sva_result[indx].toFixed(1));
-      row[prop + '-dv'] = Number(dv_result[indx].toFixed(1));
-      row[prop + '-total'] = Number((svo_result[indx] + sva_result[indx] + dv_result[indx]).toFixed(1));
+      switch (mode) {
+        case 'svo':
+        row[prop + '-svo'] = Number(svo_result[indx].toFixed(1));
+        break;
+        case 'sva':
+        row[prop + '-sva'] = Number(sva_result[indx].toFixed(1));
+        break;
+        case 'dv':
+        row[prop + '-dv'] = Number(dv_result[indx].toFixed(1));
+        break;
+        case 'total':
+        row[prop + '-total'] = Number((svo_result[indx] + sva_result[indx] + dv_result[indx]).toFixed(1));
+        break;
+      }
     })
     data.push(row);
   })
