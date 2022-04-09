@@ -11,12 +11,20 @@ let files = fs.readdirSync(directoryPath).filter(file => file !== '.DS_Store'
   && file !== 'sbrooks@cs.dal.ca.json' && file !== 'rashid@gmail.com.json')
 
 const modules = ['ca-bubble', 'ca-grid', 'vsup-bubble', 'vsup-grid'];
-const correct_totals = {};
+const correct_totals_all = {};
+const correct_totals_sv = {};
+const correct_totals_svsa = {};
+const correct_totals_svaa = {};
+const correct_totals_dv = {};
 const svo_time_totals = {};
 const sva_time_totals = {};
 const dv_time_totals = {};
 
-let studyResults = [];
+let studyResultsAll = [];
+let studyResultsSv = [];
+let studyResultsSvsa = [];
+let studyResultsSvaa = [];
+let studyResultsDv = [];
 let svoTimeResults = [];
 let svaTimeResults = [];
 let dvTimeResults = [];
@@ -33,35 +41,65 @@ allAnswers = _.orderBy(allAnswers, ['participant-num'], ['asc']);
 
 console.log(modules.join(', '))
 
-allAnswers.forEach((answers, indx) => {
-    const count_result = [];
+allAnswers.forEach((answers, p_indx) => {
+    const count_result_all = [];
+    const count_result_sv = [];
+    const count_result_svsa = [];
+    const count_result_svaa = [];
+    const count_result_dv = [];
     const svo_time_results = [];
     const sva_time_results = [];
     const dv_time_results = [];
 
     
     modules.forEach(prop => {
-      let correctCount = 0;
+      let correctCountAll = 0;
+      let correctCountSv = 0;
+      let correctCountSvsa = 0;
+      let correctCountSvaa = 0;
+      let correctCountDv = 0;
 
       for (let indx in answers[prop]) {
-
-        if (answers[prop][indx] && answers[prop][indx].status && ['single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
-          correctCount++;
+        if (['single-var-one-time', 'single-var-all-time', 'double-var-time'].indexOf(indx) === -1) {
+          const q_num = parseInt(indx-1)%8 + 1;
+          if (answers[prop][indx] && answers[prop][indx].status) {
+            correctCountAll++;
+            if (q_num <= 5) {
+              correctCountSv++;
+              if (q_num <= 3) {
+                correctCountSvsa++
+              } else {
+                correctCountSvaa++;
+              }
+            } else {
+              correctCountDv++;
+            }
+          }
         }
       }
 
-      correct_totals[prop] = (correct_totals[prop] || 0) + correctCount;
+      correct_totals_all[prop] = (correct_totals_all[prop] || 0) + correctCountAll;
+      correct_totals_sv[prop] = (correct_totals_sv[prop] || 0) + correctCountSv;
+      correct_totals_svsa[prop] = (correct_totals_svsa[prop] || 0) + correctCountSvsa;
+      correct_totals_svaa[prop] = (correct_totals_svaa[prop] || 0) + correctCountSvaa;
+      correct_totals_dv[prop] = (correct_totals_dv[prop] || 0) + correctCountDv;
       svo_time_totals[prop] = (svo_time_totals[prop] || 0) + (answers[prop]['single-var-one-time'] || 0);
       sva_time_totals[prop] = (sva_time_totals[prop] || 0) + (answers[prop]['single-var-all-time'] || 0);
       dv_time_totals[prop] = (dv_time_totals[prop] || 0) + (answers[prop]['double-var-time'] || 0);
-      count_result.push(correctCount);
+      count_result_all.push(correctCountAll);
+      count_result_sv.push(correctCountSv);
+      count_result_svsa.push(correctCountSvsa);
+      count_result_svaa.push(correctCountSvaa);
+      count_result_dv.push(correctCountDv);
       svo_time_results.push((answers[prop]['single-var-one-time'] || 0));
       sva_time_results.push((answers[prop]['single-var-all-time'] || 0));
       dv_time_results.push((answers[prop]['double-var-time'] || 0));
 
     });
 
-    console.log(answers['participant-num'], answers.email, count_result.join(',  '));
+    const total_time = _.sum(svo_time_results) + _.sum(sva_time_results) + _.sum(dv_time_results);
+
+    console.log(answers['participant-num'], answers.email, count_result_all.join(',  '), 'time: ' + total_time);
 
 
     ['ca', 'vsup'].forEach(prop => {
@@ -80,7 +118,11 @@ allAnswers.forEach((answers, indx) => {
       susResults.push(susRow);
     })
     
-    studyResults.push(count_result)
+    studyResultsAll.push(count_result_all);
+    studyResultsSv.push(count_result_sv);
+    studyResultsSvsa.push(count_result_svsa);
+    studyResultsSvaa.push(count_result_svaa);
+    studyResultsDv.push(count_result_dv);
     svoTimeResults.push(svo_time_results);
     svaTimeResults.push(sva_time_results);
     dvTimeResults.push(dv_time_results);
@@ -88,11 +130,11 @@ allAnswers.forEach((answers, indx) => {
 
 const avg = [];
 modules.forEach(prop => {
-  avg.push((correct_totals[prop]/allAnswers.length).toFixed(1));
+  avg.push((correct_totals_all[prop]/allAnswers.length).toFixed(1));
   if (prop.indexOf('ca') > -1) {
-    cat_totals.ca += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+    cat_totals.ca += Number((correct_totals_all[prop]/allAnswers.length).toFixed(1));
   } else {
-    cat_totals.vsup += Number((correct_totals[prop]/allAnswers.length).toFixed(1));
+    cat_totals.vsup += Number((correct_totals_all[prop]/allAnswers.length).toFixed(1));
   }
 });
 console.log('avg', avg.join(', '))
@@ -100,12 +142,32 @@ console.log('Grand:', cat_totals.ca/2, cat_totals.vsup/2);
 console.log(allAnswers.length);
 
 
-let result = [];
+let result_all = [];
+let result_sv = [];
+let result_svsa = [];
+let result_svaa = [];
+let result_dv = [];
 modules.forEach(prop => {
-  const avg = correct_totals[prop]/files.length;
-  result.push(Number(avg.toFixed(1)));
+  let avg = correct_totals_all[prop]/files.length;
+  result_all.push(Number(avg.toFixed(1)));
+
+  avg = correct_totals_sv[prop]/files.length;
+  result_sv.push(Number(avg.toFixed(1)));
+
+  avg = correct_totals_svsa[prop]/files.length;
+  result_svsa.push(Number(avg.toFixed(1)));
+
+  avg = correct_totals_svaa[prop]/files.length;
+  result_svaa.push(Number(avg.toFixed(1)));
+
+  avg = correct_totals_dv[prop]/files.length;
+  result_dv.push(Number(avg.toFixed(1)));
 });
-studyResults.push(result)
+studyResultsAll.push(result_all);
+studyResultsSv.push(result_sv);
+studyResultsSvsa.push(result_svsa);
+studyResultsSvaa.push(result_svaa);
+studyResultsDv.push(result_dv);
 
 // find single variable one time avg
 result = [];
@@ -132,13 +194,17 @@ modules.forEach(prop => {
 dvTimeResults.push(result);
 
 
-writeStudyResults(modules, studyResults, 'study-four');
-const pairedResults = studyResults.map(result => {
+writeStudyResults(modules, studyResultsAll, 'study-all');
+writeStudyResults(modules, studyResultsSv, 'study-sv');
+writeStudyResults(modules, studyResultsSvsa, 'study-svsa');
+writeStudyResults(modules, studyResultsSvaa, 'study-svaa');
+writeStudyResults(modules, studyResultsDv, 'study-dv');
+const pairedResults = studyResultsAll.map(result => {
   const ca = (result[0] + result[1])/2;
   const vsup = (result[2] + result[3])/2;
   return [ca, vsup];
 });
-writeStudyResults(['ca', 'vsup'], pairedResults, 'study-pair');
+writeStudyResults(['ca', 'vsup'], pairedResults, 'study-ca-vsup');
 
 writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'svo');
 writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'sva');
