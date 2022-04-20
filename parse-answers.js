@@ -194,30 +194,30 @@ modules.forEach(prop => {
 dvTimeResults.push(result);
 
 
-writeStudyResults(modules, studyResultsAll, 'study-all');
-writeStudyResults(modules, studyResultsSv, 'study-sv');
-writeStudyResults(modules, studyResultsSvsa, 'study-svsa');
-writeStudyResults(modules, studyResultsSvaa, 'study-svaa');
-writeStudyResults(modules, studyResultsDv, 'study-dv');
-const pairedResults = studyResultsAll.map(result => {
-  const ca = (result[0] + result[1])/2;
-  const vsup = (result[2] + result[3])/2;
-  return [ca, vsup];
-});
-writeStudyResults(['ca', 'vsup'], pairedResults, 'study-ca-vsup');
+// writeStudyResults(modules, studyResultsAll, 'study-all');
+// writeStudyResults(modules, studyResultsSv, 'study-sv');
+// writeStudyResults(modules, studyResultsSvsa, 'study-svsa');
+// writeStudyResults(modules, studyResultsSvaa, 'study-svaa');
+// writeStudyResults(modules, studyResultsDv, 'study-dv');
+// const pairedResults = studyResultsAll.map(result => {
+//   const ca = ((result[0] + result[1])/2).toFixed(1);
+//   const vsup = ((result[2] + result[3])/2).toFixed(1);
+//   return [ca, vsup];
+// });
+// writeStudyResults(['ca', 'vsup'], pairedResults, 'study-ca-vsup');
 
-writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'svo');
-writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'sva');
-writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'dv');
-writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'total');
+// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'svo');
+// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'sva');
+// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'dv');
+// writeTimeResults(modules, svoTimeResults, svaTimeResults, dvTimeResults, 'total');
 
-['ca', 'vsup'].forEach((prop) => {
-  const sus_res = susResults.filter(row => row[0] === prop);
-  writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
+// ['ca', 'vsup'].forEach((prop) => {
+//   const sus_res = susResults.filter(row => row[0] === prop);
+//   writeSusNasaResults(sus_res, 'sus-' + prop + '.csv')
 
-  const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
-  writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
-});
+//   const nasa_res = nasaTlxResults.filter(row => row[0] === prop);
+//   writeSusNasaResults(nasa_res, 'nasa-tlx-' + prop + '.csv')
+// });
 
 
 function writeSusNasaResults(results, fileName) {
