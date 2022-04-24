@@ -884,7 +884,7 @@ function draw_ca_bubble_questions() {
         }
 
         const frag = target_selection_mode === 'all' ? `<all bubbles>` : '<a bubble>';
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
+        let question = `Question-${(question_num-1)%8+1}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
@@ -1293,7 +1293,7 @@ function draw_ca_grid_questions() {
         }
 
         const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
+        let question = `Question-${(question_num-1)%8+1}: Click on ${frag} in chart where $$ <CA=${parseInt(ca)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
@@ -1583,7 +1583,7 @@ function draw_vsup_bubble_questions() {
         value_global = value;
 
         const frag = target_selection_mode === 'all' ? '<all bubbles>' : '<a bubble>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(uncertainty)}>`;
+        let question = `Question-${(question_num-1)%8+1}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(uncertainty)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
@@ -1843,7 +1843,7 @@ function draw_vsup_grid_questions() {
         ca_global = conf.uncertainty;
         value_global = conf.value;
         const frag = target_selection_mode === 'all' ? '<all squares>' : '<a square>'
-        let question = `Question-${question_num}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(conf.uncertainty)}>`;
+        let question = `Question-${(question_num-1)%8+1}: Click on ${frag} in chart where $$ <Uncertainty=${parseInt(conf.uncertainty)}>`;
         if (is_single_param) {
             question = question.replace('$$', ``);
         } else {
