@@ -65,7 +65,7 @@ def measure_rmse(actual, predicted):
 
 # fit a model
 def mlp_model_fit(train, config):
-	# unpack config
+	# unpack config [24, 500, 100, 100]
 	n_input, n_nodes, n_epochs, n_batch = config
 	#number of outputs
 	no_out_node = 1
@@ -86,7 +86,7 @@ def mlp_model_fit(train, config):
 	return model
 
 def cnn_model_fit(train, config):
-	# unpack config
+	# unpack config [36, 256, 3, 100, 100]
 	n_input, n_filters, n_kernel, n_epochs, n_batch = config
 	#number of outputs
 	no_out_node = 1
@@ -109,7 +109,7 @@ def cnn_model_fit(train, config):
 	return model
 
 def lstm_model_fit(train, config):
-	# unpack config
+	# unpack config [36, 50, 100, 100, 12]
 	n_input, n_nodes, n_epochs, n_batch, n_diff = config
 	#number of outputs
 	no_out_node = 1
